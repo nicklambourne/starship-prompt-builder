@@ -92,6 +92,13 @@ export interface FormatNodeCallbacks {
   inactiveNote(name: string): string | null;
   /** False when a style set on the row cannot reach this module's output. */
   styleReaches(name: string): boolean;
+  /**
+   * Whether a `$name` in this tree is a module or one of a module's own
+   * variables. They are the same node — same kind, same syntax — and only the
+   * tree they sit in can tell them apart: the root format holds modules, a
+   * module's format holds its variables.
+   */
+  nameKind(name: string): "module" | "variable";
   onToggleModule(name: string, enabled: boolean): void;
   /**
    * Literal text has no `disabled` option to set — starship has no such thing
@@ -116,6 +123,9 @@ export interface FormatNodeCallbacks {
   /** Terminal font stack, so glyph-bearing values render rather than tofu. */
   fontStack: string;
 }
+
+/** A module's own variable, which is not a module however alike they look. */
+const VARIABLE_TONE = "text-sky-200";
 
 const TONE: Record<FormatItem["kind"], string> = {
   module: "text-accent-200",
@@ -148,7 +158,20 @@ export function FormatNode({
 
   const isModule = item.kind === "module";
   const isGroup = item.kind === "group";
-  const label = isGroup ? cb.groupLabel(item) : itemLabel(item);
+  const isVariable =
+    isModule
+    && cb.nameKind((item as Extract<FormatItem, { kind: "module" }>).name) === "variable";
+  /*
+   * `${branch}` rather than `$branch` for a variable: starship accepts both
+   * spellings for the same thing, so the braces cost nothing and say which
+   * of the two identical-looking rows you are on. The colour says it again
+   * for anyone scanning rather than reading.
+   */
+  const label = isGroup
+    ? cb.groupLabel(item)
+    : isVariable
+      ? `\${${(item as Extract<FormatItem, { kind: "module" }>).name}}`
+      : itemLabel(item);
   const isText = item.kind === "text";
   const enabled = isModule
     ? cb.isModuleEnabled(item.name)
@@ -282,9 +305,9 @@ export function FormatNode({
           >
             <span className="flex min-w-0 items-center gap-1.5">
               <span
-                className={`truncate font-mono text-sm ${TONE[item.kind]} ${
-                  isText ? "nerd-font" : ""
-                }`}
+                className={`truncate font-mono text-sm ${
+                  isVariable ? VARIABLE_TONE : TONE[item.kind]
+                } ${isText ? "nerd-font" : ""}`}
               >
                 {label}
               </span>
