@@ -305,6 +305,12 @@ export function FormatBuilder({
     inactiveNote: (name) => modules?.inactiveNote(name) ?? null,
     styleReaches: (name) => modules?.styleReaches(name) ?? true,
     onToggleModule: (name, enabled) => modules?.setEnabled(name, enabled),
+    onToggleText: (path, enabled) =>
+      commit(
+        updateAt(items, path, (item) =>
+          item.kind === "text" ? { ...item, disabled: !enabled } : item,
+        ),
+      ),
     isGroupEnabled: (group) =>
       collectModuleNames(group.items).some((name) => modules?.isEnabled(name) ?? true),
     onToggleGroup: (group, enabled) => {

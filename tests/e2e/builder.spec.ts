@@ -847,6 +847,31 @@ test.describe("builder", () => {
     await expect(variable).not.toHaveAttribute("aria-expanded");
   });
 
+  test("a text piece can be switched off without losing it", async ({ page }) => {
+    await page.goto("./");
+    const format = page.locator("[data-format-scope='root-format']");
+    const row = format.locator("[data-format-row]").filter({ hasText: /^Text/ }).first();
+    const terminal = page.getByLabel("Simulated terminal prompt");
+
+    await activate(row.getByRole("button", { name: /^Expand Text/ }));
+    await page.getByLabel(/^Text content of/).first().fill("XX");
+    await expect(terminal).toContainText("XX");
+
+    // Off: gone from the prompt…
+    await activate(row.getByRole("switch"));
+    await expect(terminal).not.toContainText("XX");
+
+    // …but still in the config, as a conditional holding no variables, which
+    // starship renders as nothing. Kept there rather than in the app, so it
+    // comes back with the switch after an export or a reload.
+    await openToml(page);
+    await expect(page.getByLabel("starship.toml")).toHaveValue(/\(\[XX\]\(red\)\)/);
+
+    // And back on.
+    await activate(row.getByRole("switch"));
+    await expect(terminal).toContainText("XX");
+  });
+
   test("installed tools can be simulated", async ({ page }) => {
     await page.goto("./");
     await openEnvSection(page, "Installed tools");

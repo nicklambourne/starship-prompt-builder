@@ -320,3 +320,39 @@ describe("whitespace in a row's label", () => {
     expect(itemLabel({ kind: "text", value: "" })).toBe('Text ""');
   });
 });
+
+describe("a switched-off text piece", () => {
+  it("is written as a conditional holding no variables", () => {
+    expect(fromItems([{ kind: "text", value: "on the way", disabled: true }])).toBe(
+      "(on the way)",
+    );
+    // starship renders that as nothing, which is the whole trick: the text
+    // stays in the config instead of in this app's memory.
+    expect(toItems("A(off)B")).toEqual([
+      { kind: "text", value: "A" },
+      { kind: "text", value: "off", disabled: true },
+      { kind: "text", value: "B" },
+    ]);
+  });
+
+  it("keeps its style", () => {
+    expect(fromItems([{ kind: "text", value: "XX", style: "red", disabled: true }])).toBe(
+      "([XX](red))",
+    );
+    expect(toItems("([XX](red))")).toEqual([
+      { kind: "text", value: "XX", style: "red", disabled: true },
+    ]);
+  });
+
+  it("survives parentheses of its own", () => {
+    const items = toItems("(with \\(parens\\))");
+    expect(items).toEqual([{ kind: "text", value: "with (parens)", disabled: true }]);
+    expect(fromItems(items!)).toBe("(with \\(parens\\))");
+  });
+
+  it("leaves a real conditional alone", () => {
+    // One with a variable in it is a conditional its author meant, not a
+    // piece of text somebody switched off.
+    expect(toItems("($a b)")).toEqual([{ kind: "raw", source: "($a b)" }]);
+  });
+});
