@@ -555,14 +555,24 @@ test.describe("builder", () => {
 
     const option = row.locator('[data-option="min_time"]').first();
     const header = option.locator("button[aria-expanded]").first();
+    const chevron = option.locator("button[aria-expanded]").last();
     await expect(header).toHaveAttribute("aria-expanded", "false");
     // A closed row is worth reading only if it says what the option is for.
     await expect(option).toContainText("Shortest duration to show time for");
     await expect(option.locator("input")).toHaveCount(0);
 
+    // The row opens on being clicked anywhere, as a module's row does — so the
+    // control being driven here is the text, not the chevron beside it.
+    await expect(option.locator("button[aria-expanded]")).toHaveCount(2);
+    await expect(header).toContainText("min_time");
     await activate(header);
     await expect(header).toHaveAttribute("aria-expanded", "true");
     await expect(option.locator("input")).toBeVisible();
+
+    // And the chevron at the end is that same control, not a second state.
+    await activate(chevron);
+    await expect(header).toHaveAttribute("aria-expanded", "false");
+    await expect(option.locator("input")).toHaveCount(0);
   });
 
   test("an overridden option has a reset button, and loses it again", async ({ page }) => {

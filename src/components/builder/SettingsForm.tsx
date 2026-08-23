@@ -97,9 +97,17 @@ function Row({
         {/*
           A module has a dozen options and most people came for one of them, so
           each opens on demand and says what it is for while closed — clipped
-          to a line, so a dozen of them stay scannable.
+          to a line, so a dozen of them stay scannable. The whole row opens it,
+          as a module's own row does; the chevron at the end is the same
+          control, kept because a row of text does not look like one.
         */}
-        <div className="flex min-w-0 flex-1 items-baseline gap-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={regionId}
+          onClick={onToggle}
+          className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
+        >
           <span className="shrink-0 font-mono text-sm text-neutral-200">{label}</span>
           {description ? (
             <span
@@ -110,7 +118,7 @@ function Row({
               {description}
             </span>
           ) : null}
-        </div>
+        </button>
         {isOverridden ? (
           /*
             An icon rather than the word, now that the row is a control of its
