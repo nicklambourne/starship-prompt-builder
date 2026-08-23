@@ -301,6 +301,9 @@ export function FormatBuilder({
         ),
       ),
     describe,
+    // The root format is the only one holding modules; every other instance of
+    // this editor is a module's own format, and holds that module's variables.
+    nameKind: () => (modules ? "module" : "variable"),
     isModuleEnabled: (name) => modules?.isEnabled(name) ?? true,
     inactiveNote: (name) => modules?.inactiveNote(name) ?? null,
     styleReaches: (name) => modules?.styleReaches(name) ?? true,
@@ -496,7 +499,13 @@ export function FormatBuilder({
                   }}
                   className="flex w-full flex-col rounded px-1.5 py-1 text-left transition hover:bg-white/5"
                 >
-                  <span className="font-mono text-xs text-accent-200">${name}</span>
+                  <span
+                    className={`font-mono text-xs ${
+                      modules ? "text-accent-200" : "text-sky-200"
+                    }`}
+                  >
+                    {modules ? `$${name}` : `\${${name}}`}
+                  </span>
                   {describe(name) ? (
                     <span className="truncate text-xs text-neutral-500">
                       {describe(name)}

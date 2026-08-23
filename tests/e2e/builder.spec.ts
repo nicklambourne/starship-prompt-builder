@@ -370,7 +370,9 @@ test.describe("builder", () => {
     // soon as the module is. The row itself is what someone reading a format
     // looks at — the "+ Add variable" list is a different surface, and was
     // the only one carrying these.
-    const row = page.locator("[data-format-row]").filter({ hasText: "$branch" }).last();
+    // `${branch}` rather than `$branch`: a variable is spelled with braces, so
+    // a row cannot be mistaken for a module of the same name.
+    const row = page.locator("[data-format-row]").filter({ hasText: "${branch}" }).last();
     await expect(row).toContainText("The current branch name");
 
     // Still a disclosure, and closing the module puts the whole tree away.
@@ -389,7 +391,7 @@ test.describe("builder", () => {
     // modules, and each one carries starship's own description.
     await page.getByRole("button", { name: "+ Add variable" }).first().click();
     // The innermost match: the outer row contains the list that contains it.
-    const entry = page.getByRole("listitem").filter({ hasText: "$remote_name" }).last();
+    const entry = page.getByRole("listitem").filter({ hasText: "${remote_name}" }).last();
     await expect(entry).toContainText("The remote name. (e.g. origin)");
   });
 
@@ -835,7 +837,7 @@ test.describe("builder", () => {
     // the row used to open on an empty box.
     await activate(format.getByRole("button", { name: "Expand $git_branch" }));
     const variable = page.getByRole("button", {
-      name: /^\$branch — nothing to open/,
+      name: /^\$\{branch\} — nothing to open/,
     });
     await expect(variable).toBeDisabled();
     // Marked as such, the way an inert style button is.
@@ -870,6 +872,43 @@ test.describe("builder", () => {
     // And back on.
     await activate(row.getByRole("switch"));
     await expect(terminal).toContainText("XX");
+  });
+
+  test("a variable does not read as a module", async ({ page }) => {
+    await page.goto("./");
+    const format = page.locator("[data-format-scope='root-format']");
+
+    // A module: bare sigil, in the accent the app uses for modules.
+    const moduleRow = format
+      .locator("[data-format-row]")
+      .filter({ hasText: "$git_branch" })
+      .first();
+    await expect(moduleRow).toContainText("$git_branch");
+
+    await activate(format.getByRole("button", { name: "Expand $git_branch" }));
+
+    // Its variables: braces, and a colour of their own. Both signals, so it
+    // survives greyscale and colour-blindness.
+    const variableRow = page
+      .locator("[data-format-row]")
+      .filter({ hasText: "${branch}" })
+      .last();
+    await expect(variableRow).toBeVisible();
+
+    const colours = await page.evaluate(() => {
+      const label = (row: Element | null) =>
+        row ? getComputedStyle(row.querySelector("span.font-mono")!).color : null;
+      const rows = [...document.querySelectorAll("[data-format-row]")];
+      // The module's row contains its variables, so the outermost match is
+      // the module and the innermost is the variable.
+      return {
+        module: label(rows.find((r) => r.textContent?.includes("$git_branch")) ?? null),
+        variable: label(
+          rows.findLast((r) => r.textContent?.includes("${branch}")) ?? null,
+        ),
+      };
+    });
+    expect(colours.module).not.toBe(colours.variable);
   });
 
   test("installed tools can be simulated", async ({ page }) => {
