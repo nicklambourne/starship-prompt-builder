@@ -58,10 +58,8 @@ function emptyReason(item: FormatItem): string {
 }
 
 /** Why a row's style control is dead for this module. */
-function inertStyleReason(label: string, ownsStyle: boolean): string {
-  return ownsStyle
-    ? `${label} has a style option, but its format never uses $style, so nothing set here would show. Put $style back in the module's format, or style the pieces inside it.`
-    : `A style set here cannot reach ${label} — its whole format sits inside its own style group, and starship replaces the surrounding style rather than inheriting it.`;
+function inertStyleReason(label: string): string {
+  return `A style set here cannot reach ${label} — its whole format sits inside its own style group, and starship replaces the surrounding style rather than inheriting it. Its own style option, in the row below, is not spent by that format either; edit the format to use $style, or style the pieces inside it.`;
 }
 const DANGER_BUTTON = `${ROW_BUTTON} hover:border-red-400 hover:bg-red-400/10 hover:text-red-300`;
 
@@ -390,7 +388,7 @@ export function FormatNode({
             className="inline-flex"
             title={
               styleIsInert
-                ? inertStyleReason(label, moduleStyle !== null)
+                ? inertStyleReason(label)
                 : moduleStyle !== null
                   ? `Set ${label}'s own style`
                   : undefined
@@ -400,7 +398,7 @@ export function FormatNode({
               type="button"
               aria-label={
                 styleIsInert
-                  ? `Style of ${label} — no effect. ${inertStyleReason(label, moduleStyle !== null)}`
+                  ? `Style of ${label} — no effect. ${inertStyleReason(label)}`
                   : `Change the style of ${label}`
               }
               aria-expanded={styleIsInert ? undefined : styling}

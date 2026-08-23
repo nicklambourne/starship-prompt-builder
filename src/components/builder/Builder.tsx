@@ -305,10 +305,24 @@ export function Builder() {
     [],
   );
 
-  /** Whether a module carries the plain `style` option the row control edits. */
-  const hasStyleOption = useCallback(
-    (name: string) => typeof MODULES_BY_NAME.get(name)?.defaults.style === "string",
-    [],
+  /**
+   * Whether the row's swatch is this module's `style` option.
+   *
+   * It is, for any module that has one and spends `$style` in its format —
+   * which is nearly all of them. Where the format never spends it the option
+   * paints nothing, so the swatch goes back to being the style written around
+   * the module, and the option goes back in the list below: leaving it out of
+   * both is how a value ends up with nowhere to edit it.
+   */
+  const rowOwnsStyle = useCallback(
+    (name: string) => {
+      const definition = MODULES_BY_NAME.get(name);
+      if (!definition || typeof definition.defaults.style !== "string") return false;
+      const options = (config[name] as Record<string, unknown>) ?? {};
+      const format = options.format ?? definition.defaults.format;
+      return typeof format === "string" ? moduleStyleReaches(format) : true;
+    },
+    [config],
   );
 
   const optionsFor = useCallback((name: string): OptionDescriptor[] => {
@@ -316,16 +330,16 @@ export function Builder() {
     if (!definition) return [];
     const meta = MODULE_META[name];
     return Object.entries(definition.defaults)
-      // `disabled` is the switch on the row, and `style` is the swatch beside
-      // it: both are settings, but the row is where people look for them.
-      .filter(([key]) => key !== "disabled" && key !== "style")
+      // `disabled` is the switch on the row, and `style` is usually the swatch
+      // beside it: both are settings, but the row is where people look.
+      .filter(([key]) => key !== "disabled" && !(key === "style" && rowOwnsStyle(name)))
       .map(([key, defaultValue]) => ({
         key,
         kind: optionKind(name, key, defaultValue, meta),
         defaultValue,
         description: describeOption(name, key),
       }));
-  }, []);
+  }, [rowOwnsStyle]);
 
   /** Variables a module's own format strings may reference. */
   const variablesFor = useCallback(
@@ -420,12 +434,13 @@ export function Builder() {
        * and that option only shows where the format spends `$style`.
        */
       styleReaches(name: string) {
+        // A `style` option the row owns is spent by definition — owning it is
+        // what having `$style` in the format means. Otherwise the swatch is a
+        // style written around the module, under the older rule.
+        if (rowOwnsStyle(name)) return true;
         const options = (config[name] as Record<string, unknown>) ?? {};
         const format = options.format ?? MODULES_BY_NAME.get(name)?.defaults.format;
-        if (typeof format !== "string") return true;
-        return hasStyleOption(name)
-          ? moduleStyleReaches(format)
-          : rowStyleReaches(format);
+        return typeof format === "string" ? rowStyleReaches(format) : true;
       },
       /*
        * A module's own style is the one that shows — a style written around
@@ -434,6 +449,7 @@ export function Builder() {
        * the option, and the option leaves the list below.
        */
       styleOption(name: string) {
+        if (!rowOwnsStyle(name)) return null;
         const definition = MODULES_BY_NAME.get(name);
         if (!definition || typeof definition.defaults.style !== "string") return null;
         const options = (config[name] as Record<string, unknown>) ?? {};
@@ -462,7 +478,7 @@ export function Builder() {
       config,
       inactiveNotes,
       setModuleDisabled,
-      hasStyleOption,
+      rowOwnsStyle,
       updateModuleOption,
       resetModuleOption,
     ],
