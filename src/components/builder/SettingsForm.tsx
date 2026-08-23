@@ -59,37 +59,14 @@ function isStringMap(value: unknown): value is Record<string, string> {
   return Object.values(value).every((entry) => typeof entry === "string");
 }
 
-/**
- * What an option holds, short enough to sit on a collapsed row.
- *
- * Without it a closed module is a column of bare keys, which is worse than
- * the wall of controls it replaced: you would have to open each one to find
- * the one you meant.
- */
-function summarise(value: unknown): string {
-  if (typeof value === "boolean") return value ? "on" : "off";
-  if (typeof value === "number") return String(value);
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed === "") return "empty";
-    return trimmed.length > 44 ? `${trimmed.slice(0, 44)}…` : trimmed;
-  }
-  if (Array.isArray(value)) {
-    return value.length === 0 ? "none" : `${value.length} item${value.length === 1 ? "" : "s"}`;
-  }
-  if (value && typeof value === "object") {
-    const size = Object.keys(value).length;
-    return size === 0 ? "none" : `${size} entr${size === 1 ? "y" : "ies"}`;
-  }
-  // An option the schema leaves without a default, e.g. `notification_timeout`.
-  return "unset";
-}
+/** The row's controls, sized like every other icon button in the builder. */
+const OPTION_BUTTON =
+  "grid size-7 shrink-0 place-items-center rounded border border-white/15 text-neutral-400 transition hover:border-accent-400 hover:text-accent-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400";
 
 function Row({
   label,
   labelFor,
   description,
-  summary,
   isOverridden,
   onReset,
   open,
@@ -104,7 +81,6 @@ function Row({
    */
   labelFor?: string;
   description?: string;
-  summary: string;
   isOverridden: boolean;
   onReset(): void;
   open: boolean;
@@ -117,29 +93,24 @@ function Row({
       data-option={label}
       className="flex flex-col border-b border-white/5 py-2 last:border-b-0"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         {/*
           A module has a dozen options and most people came for one of them, so
-          each opens on demand. The row still says its name and what it holds,
-          which is what makes a closed list worth reading.
+          each opens on demand and says what it is for while closed — clipped
+          to a line, so a dozen of them stay scannable.
         */}
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={regionId}
-          onClick={onToggle}
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
-        >
+        <div className="flex min-w-0 flex-1 items-baseline gap-2">
           <span className="shrink-0 font-mono text-sm text-neutral-200">{label}</span>
-          <span className="min-w-0 flex-1 truncate font-mono text-xs text-neutral-500">
-            {summary}
-          </span>
-          <ChevronIcon
-            className={`shrink-0 text-neutral-500 transition-transform ${
-              open ? "rotate-90" : ""
-            }`}
-          />
-        </button>
+          {description ? (
+            <span
+              className={`min-w-0 flex-1 text-xs leading-relaxed text-neutral-500 ${
+                open ? "" : "truncate"
+              }`}
+            >
+              {description}
+            </span>
+          ) : null}
+        </div>
         {isOverridden ? (
           /*
             An icon rather than the word, now that the row is a control of its
@@ -151,26 +122,39 @@ function Row({
             aria-label={`Reset ${label} to its default`}
             title={`Reset ${label} to its default`}
             onClick={onReset}
-            className="grid size-7 shrink-0 place-items-center rounded border border-white/15 text-neutral-400 transition hover:border-accent-400 hover:text-accent-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400"
+            className={OPTION_BUTTON}
           >
             <RestoreIcon />
           </button>
         ) : null}
+        {/*
+          The disclosure is its own control at the end of the row, where the
+          rows above it keep theirs: an option is a row like any other, and a
+          whole-row hit target would swallow clicks meant for the controls
+          inside it once one is open.
+        */}
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={regionId}
+          aria-label={`${open ? "Collapse" : "Expand"} ${label}`}
+          title={open ? "Hide this option" : "Show this option"}
+          onClick={onToggle}
+          className={OPTION_BUTTON}
+        >
+          <ChevronIcon className={`transition-transform ${open ? "rotate-90" : ""}`} />
+        </button>
       </div>
       {open ? (
-        <div id={regionId} className="mt-2 flex flex-col gap-1.5">
+        <div id={regionId} className="mt-2 flex flex-col gap-1.5 pl-3">
           {/*
-            The name is on the header button above, but a bare input still
-            needs one of its own, so it is here and hidden rather than shown
-            twice.
+            The name is on the header above, but a bare input still needs one
+            of its own, so it is here and hidden rather than shown twice.
           */}
           {labelFor ? (
             <label htmlFor={labelFor} className="sr-only">
               {label}
             </label>
-          ) : null}
-          {description ? (
-            <p className="text-xs leading-relaxed text-neutral-500">{description}</p>
           ) : null}
           {children}
         </div>
@@ -197,7 +181,11 @@ export function SettingsForm({
   const [open, setOpen] = useState<Set<string>>(new Set());
 
   return (
-    <div className="flex flex-col">
+    /*
+      Set in from the row above and ruled off down the side: a module's options
+      are a level below it, and a flat column of them read as a sibling list.
+    */
+    <div className="flex flex-col border-l border-white/10 pl-3">
       {options.map((option) => {
         const isOverridden = Object.hasOwn(values, option.key);
         const value = isOverridden ? values[option.key] : option.defaultValue;
@@ -211,7 +199,6 @@ export function SettingsForm({
               option.kind === "number" || option.kind === "enum" ? controlId : undefined
             }
             description={option.description}
-            summary={summarise(value)}
             open={open.has(option.key)}
             onToggle={() =>
               setOpen((current) => {
