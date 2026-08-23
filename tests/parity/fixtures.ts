@@ -266,4 +266,19 @@ add_newline = false
     scenario: scenario("nested-groups", {}),
     setup: [],
   },
+  {
+    /*
+     * A conditional holding no variables renders nothing, which is what the
+     * editor writes when a piece of text is switched off. The whole feature
+     * rests on starship agreeing, so it is checked against the binary rather
+     * than against this port's reading of the grammar.
+     */
+    id: "switched-off-text",
+    config: `
+format = "A(off)B([styled](red))C(  )D"
+add_newline = false
+`,
+    scenario: scenario("switched-off-text", {}),
+    setup: [],
+  },
 ];

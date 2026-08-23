@@ -22,7 +22,13 @@ import { spaceName } from "./unicodeSymbols";
 
 export type FormatItem =
   | { kind: "module"; name: string; style?: string }
-  | { kind: "text"; value: string; style?: string }
+  /**
+   * Literal text. `disabled` is written as starship's own `(…)` — a
+   * conditional holding no variables renders nothing, verified against the
+   * binary — so switching a piece off keeps it in the config rather than in
+   * this app's memory, and it survives an export, a reload and a share link.
+   */
+  | { kind: "text"; value: string; style?: string; disabled?: boolean }
   /**
    * A starship text group holding several pieces. Grouping is what lets a run
    * of related modules — every VCS module, say — share one style, so it is a
@@ -73,6 +79,24 @@ function elementToItem(element: FormatElement): FormatItem {
       return { kind: "group", items: inner.map(elementToItem), style };
     }
   }
+  if (element.type === "conditional") {
+    const inner = element.format;
+    // A styled piece switched off is `([text](style))`, so ask the usual
+    // conversion what the inside is rather than only matching bare text.
+    if (inner.length === 1) {
+      const only = elementToItem(inner[0]);
+      if (only.kind === "text") return { ...only, disabled: true };
+    }
+    // Only a run of pure literal: a conditional with a variable in it is a
+    // real conditional, and its author meant it.
+    if (inner.length > 0 && inner.every((el) => el.type === "text")) {
+      return {
+        kind: "text",
+        value: inner.map((el) => (el.type === "text" ? el.value : "")).join(""),
+        disabled: true,
+      };
+    }
+  }
   return { kind: "raw", source: printFormat([element]) };
 }
 
@@ -114,7 +138,14 @@ export function itemToSource(item: FormatItem): string {
   }
 
   const escaped = item.value.replace(/[[\]()\\$]/g, (ch) => `\\${ch}`);
-  return item.style ? `[${escaped}](${item.style})` : escaped;
+  const styled = item.style ? `[${escaped}](${item.style})` : escaped;
+  /*
+   * Switched off: wrapped in a conditional holding no variables, which
+   * starship renders as nothing — checked against the binary, not just
+   * against this port. The text stays in the config, so it comes back with
+   * the switch rather than living in a session somewhere.
+   */
+  return item.disabled ? `(${styled})` : styled;
 }
 
 export function fromItems(items: FormatItem[]): string {

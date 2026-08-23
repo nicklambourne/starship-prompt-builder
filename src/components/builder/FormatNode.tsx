@@ -93,6 +93,12 @@ export interface FormatNodeCallbacks {
   /** False when a style set on the row cannot reach this module's output. */
   styleReaches(name: string): boolean;
   onToggleModule(name: string, enabled: boolean): void;
+  /**
+   * Literal text has no `disabled` option to set — starship has no such thing
+   * — so switching a piece off wraps it in a conditional that renders
+   * nothing, which is the format string's own way of saying the same.
+   */
+  onToggleText(path: Path, enabled: boolean): void;
   isGroupEnabled(item: Extract<FormatItem, { kind: "group" }>): boolean;
   onToggleGroup(item: Extract<FormatItem, { kind: "group" }>, enabled: boolean): void;
   groupLabel(item: Extract<FormatItem, { kind: "group" }>): string;
@@ -143,11 +149,14 @@ export function FormatNode({
   const isModule = item.kind === "module";
   const isGroup = item.kind === "group";
   const label = isGroup ? cb.groupLabel(item) : itemLabel(item);
+  const isText = item.kind === "text";
   const enabled = isModule
     ? cb.isModuleEnabled(item.name)
     : isGroup
       ? cb.isGroupEnabled(item)
-      : true;
+      : isText
+        ? !(item as Extract<FormatItem, { kind: "text" }>).disabled
+        : true;
 
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
@@ -159,7 +168,6 @@ export function FormatNode({
     }
   };
 
-  const isText = item.kind === "text";
   /*
    * Rendered once and reused: it is both the answer to "is there anything
    * under this row" and the thing the row shows when opened. A variable
@@ -235,13 +243,15 @@ export function FormatNode({
           </svg>
         </button>
 
-        {isModule || isGroup ? (
+        {isModule || isGroup || isText ? (
           <Toggle
             size="sm"
             label={
               isModule
                 ? `Enable ${(item as Extract<FormatItem, { kind: "module" }>).name}`
-                : `Enable everything in ${label}`
+                : isText
+                  ? `Enable ${label}`
+                  : `Enable everything in ${label}`
             }
             checked={enabled}
             onChange={(next) =>
@@ -250,10 +260,12 @@ export function FormatNode({
                     (item as Extract<FormatItem, { kind: "module" }>).name,
                     next,
                   )
-                : cb.onToggleGroup(
-                    item as Extract<FormatItem, { kind: "group" }>,
-                    next,
-                  )
+                : isText
+                  ? cb.onToggleText(path, next)
+                  : cb.onToggleGroup(
+                      item as Extract<FormatItem, { kind: "group" }>,
+                      next,
+                    )
             }
           />
         ) : null}
