@@ -1266,21 +1266,36 @@ test.describe("builder", () => {
   }) => {
     await page.goto("./");
     await openToml(page);
-    // A format that never spends $style leaves the option nothing to paint.
-    await page
-      .getByLabel("starship.toml")
-      .fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "$symbol"\n');
+    const osRow = page
+      .locator("li")
+      .filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) })
+      .first();
+    const toml = page.getByLabel("starship.toml");
+
+    // Wrapped in a style of its own and never spending $style, neither control
+    // can show anything — but the option is back in the list, since the row is
+    // no longer the place it is edited.
+    await toml.fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol](bold red)"\n');
     await expect(
       page.getByRole("button", { name: /^Style of \$os — no effect/ }),
     ).toBeDisabled();
+    await activate(osRow.getByRole("button", { name: /^Expand \$os/ }));
+    await expect(osRow.locator('[data-option="style"]')).toHaveCount(1);
 
-    // Put $style back and the control returns.
-    await page
-      .getByLabel("starship.toml")
-      .fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol]($style)"\n');
+    // Unwrapped, the swatch goes back to styling the module from the prompt
+    // format, and the option stays in the list beside it.
+    await toml.fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "$symbol"\n');
     await expect(
       page.getByRole("button", { name: "Change the style of $os" }),
     ).toBeEnabled();
+    await expect(osRow.locator('[data-option="style"]')).toHaveCount(1);
+
+    // Put $style back and the row owns it again.
+    await toml.fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol]($style)"\n');
+    await expect(
+      page.getByRole("button", { name: "Change the style of $os" }),
+    ).toBeEnabled();
+    await expect(osRow.locator('[data-option="style"]')).toHaveCount(0);
   });
 
   test("modules carry a collapse indicator", async ({ page }) => {
