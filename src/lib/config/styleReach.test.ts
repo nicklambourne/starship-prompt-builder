@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { rowStyleReaches } from "@/lib/config/styleReach";
+import { moduleStyleReaches, rowStyleReaches } from "@/lib/config/styleReach";
 import { ALL_MODULES } from "@/lib/engine/modules";
 
 describe("rowStyleReaches", () => {
@@ -38,5 +38,27 @@ describe("rowStyleReaches", () => {
     // and `[os] style = "bold blue"`, the glyph comes out bold blue and the
     // red never appears — not even as a background.
     expect(blocked.sort()).toEqual(["custom", "fill", "nats", "os", "sudo"]);
+  });
+});
+
+describe("moduleStyleReaches", () => {
+  it("is true where the format spends $style", () => {
+    expect(moduleStyleReaches("[$symbol]($style)")).toBe(true);
+    expect(moduleStyleReaches("[$path]($style)[$read_only]($read_only_style) ")).toBe(true);
+    expect(moduleStyleReaches("${style}$symbol")).toBe(true);
+  });
+
+  it("is false where nothing uses it", () => {
+    expect(moduleStyleReaches("$symbol$name ")).toBe(false);
+    expect(moduleStyleReaches("[$symbol](bold red)")).toBe(false);
+  });
+
+  it("does not count the options that merely start with the same word", () => {
+    expect(moduleStyleReaches("[$user]($style_user)")).toBe(false);
+    expect(moduleStyleReaches("[$user]($style_root)")).toBe(false);
+  });
+
+  it("leaves the control alone when the format cannot be read", () => {
+    expect(moduleStyleReaches("[$symbol")).toBe(true);
   });
 });

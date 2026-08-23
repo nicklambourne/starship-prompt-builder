@@ -58,8 +58,10 @@ function emptyReason(item: FormatItem): string {
 }
 
 /** Why a row's style control is dead for this module. */
-function inertStyleReason(label: string): string {
-  return `A style set here cannot reach ${label} — its whole format sits inside its own style group, and starship replaces the surrounding style rather than inheriting it. Open the row and set the module's style option instead.`;
+function inertStyleReason(label: string, ownsStyle: boolean): string {
+  return ownsStyle
+    ? `${label} has a style option, but its format never uses $style, so nothing set here would show. Put $style back in the module's format, or style the pieces inside it.`
+    : `A style set here cannot reach ${label} — its whole format sits inside its own style group, and starship replaces the surrounding style rather than inheriting it.`;
 }
 const DANGER_BUTTON = `${ROW_BUTTON} hover:border-red-400 hover:bg-red-400/10 hover:text-red-300`;
 
@@ -86,6 +88,8 @@ export interface FormatNodeCallbacks {
   inactiveNote(name: string): string | null;
   /** False when a style set on the row cannot reach this module's output. */
   styleReaches(name: string): boolean;
+  /** A module's own `style` option, which its row edits in place of a wrapper. */
+  moduleStyle(name: string): string | null;
   /**
    * Whether a `$name` in this tree is a module or one of a module's own
    * variables. They are the same node — same kind, same syntax — and only the
@@ -209,6 +213,14 @@ export function FormatNode({
    */
   const styleIsInert =
     isModule && !cb.styleReaches((item as Extract<FormatItem, { kind: "module" }>).name);
+  /*
+   * Most modules print nothing a wrapper style could paint, so where one has a
+   * `style` option of its own the row's control edits that instead — and the
+   * swatch shows it, since that is the colour the module prints.
+   */
+  const moduleStyle = isModule
+    ? cb.moduleStyle((item as Extract<FormatItem, { kind: "module" }>).name)
+    : null;
   const moduleNote = isModule
     ? cb.inactiveNote((item as Extract<FormatItem, { kind: "module" }>).name)
     : null;
@@ -376,13 +388,19 @@ export function FormatNode({
            */
           <span
             className="inline-flex"
-            title={styleIsInert ? inertStyleReason(label) : undefined}
+            title={
+              styleIsInert
+                ? inertStyleReason(label, moduleStyle !== null)
+                : moduleStyle !== null
+                  ? `Set ${label}'s own style`
+                  : undefined
+            }
           >
             <button
               type="button"
               aria-label={
                 styleIsInert
-                  ? `Style of ${label} — no effect. ${inertStyleReason(label)}`
+                  ? `Style of ${label} — no effect. ${inertStyleReason(label, moduleStyle !== null)}`
                   : `Change the style of ${label}`
               }
               aria-expanded={styleIsInert ? undefined : styling}
@@ -415,7 +433,11 @@ export function FormatNode({
               }
             >
               <span className="relative inline-grid place-items-center">
-                <StyleSwatch style={item.style} theme={cb.theme} palette={cb.palette} />
+                <StyleSwatch
+                  style={moduleStyle ?? item.style}
+                  theme={cb.theme}
+                  palette={cb.palette}
+                />
                 {styleIsInert ? (
                   // Struck through: the control stays where the eye expects
                   // it, and says plainly that it does nothing here.
