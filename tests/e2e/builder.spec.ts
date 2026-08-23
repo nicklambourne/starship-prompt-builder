@@ -44,6 +44,21 @@ async function openEnvSection(page: import("@playwright/test").Page, section: st
   );
 }
 
+/**
+ * A module's options are closed until asked for; this opens one by name.
+ *
+ * The header button reads "<key> <what it holds>", so the key anchors it.
+ */
+async function openOption(
+  scope: import("@playwright/test").Locator,
+  key: string,
+): Promise<void> {
+  // By `data-option` rather than by name: a header reads "<key><summary>" with
+  // no separator, so `style` and `style_root` are indistinguishable by text.
+  const toggle = scope.locator(`[data-option="${key}"] button[aria-expanded]`).first();
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await activate(toggle);
+}
+
 /** The TOML card is collapsed by default; open it before reading or editing. */
 async function openToml(page: import("@playwright/test").Page) {
   const toggle = page.locator("[data-section='toml'] button[aria-expanded]");
@@ -364,6 +379,7 @@ test.describe("builder", () => {
   test("a variable's row explains it, not just the picker", async ({ page }) => {
     await page.goto("./");
     await activate(page.getByRole("button", { name: "Expand $git_branch" }));
+    await openOption(page.locator("[data-format-row]").filter({ hasText: "$git_branch" }).first(), "format");
 
     // No further clicking: a module's format opens with its style groups
     // already open, so the variables and their explanations are on screen as
@@ -386,6 +402,10 @@ test.describe("builder", () => {
   test("a module's format editor explains its variables", async ({ page }) => {
     await page.goto("./");
     await page.getByRole("button", { name: "Expand $git_branch" }).click();
+    await openOption(
+      page.locator("[data-format-row]").filter({ hasText: "$git_branch" }).first(),
+      "format",
+    );
 
     // The list of what can go in this module's format is variables, not
     // modules, and each one carries starship's own description.
@@ -486,10 +506,16 @@ test.describe("builder", () => {
     await page.goto("./");
     await activate(page.getByRole("button", { name: "Expand $username" }));
 
-    // Every row under a module used to be a bare key: starship's JSON Schema,
-    // which the rows are built from, describes none of its options.
     const settings = page.locator("[data-format-row]").filter({ hasText: "$username" }).last();
+    // Closed, a row still says its name and what it holds.
+    await expect(settings).toContainText("show_always");
+    await expect(settings).not.toContainText("Always shows the username module.");
+
+    // Opened, it explains itself: starship's JSON Schema, which these rows are
+    // built from, describes none of its options.
+    await openOption(settings, "show_always");
     await expect(settings).toContainText("Always shows the username module.");
+    await openOption(settings, "style_root");
     await expect(settings).toContainText("The style used when the user is root/admin.");
   });
 
@@ -501,12 +527,14 @@ test.describe("builder", () => {
       .first();
     const name = (await styleButton.getAttribute("aria-label"))!
       .replace("Change the style of ", "");
-    // Style editors are counted rather than located: the module's settings
-    // contain one of their own for its `style` option, so the row's editor is
+    // Style editors are counted rather than located: opening the module's
+    // `style` option puts a second one on screen, so the row's own editor is
     // the difference between one and two.
     const editors = page.getByRole("button", { name: "Foreground: none" });
+    const settings = page.locator("[data-format-row]").filter({ hasText: name }).first();
 
     await activate(page.getByRole("button", { name: `Expand ${name}` }));
+    await openOption(settings, "style");
     await expect(editors).toHaveCount(1); // the style option's, inside settings
     await activate(styleButton);
     await expect(editors).toHaveCount(2); // and now the row's own
@@ -516,10 +544,50 @@ test.describe("builder", () => {
     await activate(page.getByRole("button", { name: `Collapse ${name}` }));
     await expect(editors).toHaveCount(0);
 
-    // Closed, not merely hidden: reopening the row brings back the settings
-    // and their editor, not the row's.
+    // Closed, not merely hidden: reopening the row builds the settings afresh,
+    // with their options collapsed again, so nothing is on screen until the
+    // `style` option is reopened — and then it is that one, not the row's.
     await activate(page.getByRole("button", { name: `Expand ${name}` }));
+    await expect(editors).toHaveCount(0);
+    await openOption(settings, "style");
     await expect(editors).toHaveCount(1);
+  });
+
+  test("a module's options start closed, saying what they hold", async ({ page }) => {
+    await page.goto("./");
+    const row = page.locator("[data-format-row]").filter({ hasText: "$cmd_duration" }).first();
+    await activate(page.getByRole("button", { name: "Expand $cmd_duration" }));
+
+    const option = row.locator('[data-option="min_time"]').first();
+    const header = option.locator("button[aria-expanded]").first();
+    await expect(header).toHaveAttribute("aria-expanded", "false");
+    // A closed row is worth reading only if it says what it is set to.
+    await expect(header).toContainText("2000");
+    await expect(option.getByLabel("min_time")).toHaveCount(0);
+
+    await activate(header);
+    await expect(header).toHaveAttribute("aria-expanded", "true");
+    await expect(option.getByLabel("min_time")).toBeVisible();
+  });
+
+  test("an overridden option has a reset button, and loses it again", async ({ page }) => {
+    await page.goto("./");
+    const row = page.locator("[data-format-row]").filter({ hasText: "$cmd_duration" }).first();
+    await activate(page.getByRole("button", { name: "Expand $cmd_duration" }));
+    await openOption(row, "show_milliseconds");
+
+    // The preset sets this one, so the button is there from the start; it
+    // marks the row whether or not the row is open.
+    const reset = row.getByRole("button", { name: "Reset show_milliseconds to its default" });
+    await expect(reset).toBeVisible();
+
+    await activate(reset);
+    await expect(reset).toHaveCount(0);
+
+    // Setting it again brings the button back, so it tracks the value rather
+    // than having been spent.
+    await activate(row.getByLabel("show_milliseconds"));
+    await expect(reset).toBeVisible();
   });
 
   test("the font size field resizes the prompt, and survives a reload", async ({
@@ -562,6 +630,7 @@ test.describe("builder", () => {
     await page.goto("./");
     await activate(page.getByRole("button", { name: "Expand $git_status" }));
     const panel = page.locator("[data-format-row]").filter({ hasText: "$git_status" }).last();
+    await openOption(panel, "format");
     await activate(panel.getByRole("button", { name: "Edit raw format string" }).first());
 
     // Either the raw editor or, once the string stops parsing, the one the
@@ -836,6 +905,7 @@ test.describe("builder", () => {
     // Its variables do not: `$branch` takes its value from git_branch, and
     // the row used to open on an empty box.
     await activate(format.getByRole("button", { name: "Expand $git_branch" }));
+    await openOption(format.locator("[data-format-row]").filter({ hasText: "$git_branch" }).first(), "format");
     const variable = page.getByRole("button", {
       name: /^\$\{branch\} — nothing to open/,
     });
@@ -886,6 +956,7 @@ test.describe("builder", () => {
     await expect(moduleRow).toContainText("$git_branch");
 
     await activate(format.getByRole("button", { name: "Expand $git_branch" }));
+    await openOption(moduleRow, "format");
 
     // Its variables: braces, and a colour of their own. Both signals, so it
     // survives greyscale and colour-blindness.
@@ -1268,6 +1339,10 @@ test.describe("builder", () => {
   }) => {
     await page.goto("./");
     await page.getByRole("button", { name: /^\$os/ }).first().click();
+    await openOption(
+      page.locator("[data-format-row]").filter({ hasText: "$os" }).first(),
+      "symbols",
+    );
 
     // os.symbols used to fall through to a JSON textarea, which rendered its
     // Nerd Font glyphs as tofu and offered no way to insert one.
