@@ -507,15 +507,10 @@ test.describe("builder", () => {
     await activate(page.getByRole("button", { name: "Expand $username" }));
 
     const settings = page.locator("[data-format-row]").filter({ hasText: "$username" }).last();
-    // Closed, a row still says its name and what it holds.
+    // Every row explains itself without being opened: starship's JSON Schema,
+    // which these rows are built from, describes none of its options.
     await expect(settings).toContainText("show_always");
-    await expect(settings).not.toContainText("Always shows the username module.");
-
-    // Opened, it explains itself: starship's JSON Schema, which these rows are
-    // built from, describes none of its options.
-    await openOption(settings, "show_always");
     await expect(settings).toContainText("Always shows the username module.");
-    await openOption(settings, "style_root");
     await expect(settings).toContainText("The style used when the user is root/admin.");
   });
 
@@ -553,7 +548,7 @@ test.describe("builder", () => {
     await expect(editors).toHaveCount(1);
   });
 
-  test("a module's options start closed, saying what they hold", async ({ page }) => {
+  test("a module's options start closed, saying what they are for", async ({ page }) => {
     await page.goto("./");
     const row = page.locator("[data-format-row]").filter({ hasText: "$cmd_duration" }).first();
     await activate(page.getByRole("button", { name: "Expand $cmd_duration" }));
@@ -561,13 +556,13 @@ test.describe("builder", () => {
     const option = row.locator('[data-option="min_time"]').first();
     const header = option.locator("button[aria-expanded]").first();
     await expect(header).toHaveAttribute("aria-expanded", "false");
-    // A closed row is worth reading only if it says what it is set to.
-    await expect(header).toContainText("2000");
-    await expect(option.getByLabel("min_time")).toHaveCount(0);
+    // A closed row is worth reading only if it says what the option is for.
+    await expect(option).toContainText("Shortest duration to show time for");
+    await expect(option.locator("input")).toHaveCount(0);
 
     await activate(header);
     await expect(header).toHaveAttribute("aria-expanded", "true");
-    await expect(option.getByLabel("min_time")).toBeVisible();
+    await expect(option.locator("input")).toBeVisible();
   });
 
   test("an overridden option has a reset button, and loses it again", async ({ page }) => {
@@ -586,7 +581,7 @@ test.describe("builder", () => {
 
     // Setting it again brings the button back, so it tracks the value rather
     // than having been spent.
-    await activate(row.getByLabel("show_milliseconds"));
+    await activate(row.getByLabel("show_milliseconds", { exact: true }));
     await expect(reset).toBeVisible();
   });
 

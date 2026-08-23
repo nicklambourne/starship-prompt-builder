@@ -43,12 +43,6 @@ const NEUTRAL_BUTTON = `${ROW_BUTTON} hover:border-accent-400 hover:bg-white/5 h
   resolve by their order in the stylesheet, not in the attribute, so
   overriding a border colour by appending one is a coin toss.
 */
-/*
-  A row control holding a panel open. Built from the shape rather than by
-  adding classes to NEUTRAL_BUTTON: two utilities setting the same property
-  resolve by their order in the stylesheet, not in the attribute, so
-  overriding a border colour by appending one is a coin toss.
-*/
 const NEUTRAL_BUTTON_OPEN =
   `${ROW_BUTTON_SHAPE} border-accent-400 bg-accent-400/15 text-accent-200`;
 
@@ -487,7 +481,7 @@ export function FormatNode({
       ) : null}
 
       {expanded && isModule && settings ? (
-        <div className="border-t border-white/10 px-2.5 pb-3 pt-1">{settings}</div>
+        <div className="border-t border-white/10 pb-3 pl-6 pr-2.5 pt-1">{settings}</div>
       ) : null}
 
       {expanded && isText ? (
