@@ -35,3 +35,22 @@ export function rowStyleReaches(format: string): boolean {
   if (elements.length === 0) return true;
   return elements.some((element) => element.type !== "textGroup");
 }
+
+/**
+ * A module's own `style` option is spent through `$style`, which a format
+ * writes in a group's style slot — `[$symbol]($style)` — where the element
+ * tree keeps it as a string rather than parsed elements. So the reference is
+ * looked for in the text, having first checked the text is a format string at
+ * all. `$style_root` and friends are other options and must not count.
+ */
+const STYLE_VARIABLE = /\$\{?style\}?(?!\w)/;
+
+/** True when a module's `style` option could change something it prints. */
+export function moduleStyleReaches(format: string): boolean {
+  try {
+    parseFormatString(format);
+  } catch {
+    return true;
+  }
+  return STYLE_VARIABLE.test(format);
+}

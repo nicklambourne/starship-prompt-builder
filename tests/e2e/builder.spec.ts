@@ -522,30 +522,23 @@ test.describe("builder", () => {
       .first();
     const name = (await styleButton.getAttribute("aria-label"))!
       .replace("Change the style of ", "");
-    // Style editors are counted rather than located: opening the module's
-    // `style` option puts a second one on screen, so the row's own editor is
-    // the difference between one and two.
+    // Style editors are counted rather than located: there is one editor in
+    // the app at a time, and the question is whether it is still standing.
     const editors = page.getByRole("button", { name: "Foreground: none" });
-    const settings = page.locator("[data-format-row]").filter({ hasText: name }).first();
 
     await activate(page.getByRole("button", { name: `Expand ${name}` }));
-    await openOption(settings, "style");
-    await expect(editors).toHaveCount(1); // the style option's, inside settings
     await activate(styleButton);
-    await expect(editors).toHaveCount(2); // and now the row's own
+    await expect(editors).toHaveCount(1);
 
     // The row's editor sits outside the part that collapses, so it used to
     // stay open on a row showing nothing else.
     await activate(page.getByRole("button", { name: `Collapse ${name}` }));
     await expect(editors).toHaveCount(0);
 
-    // Closed, not merely hidden: reopening the row builds the settings afresh,
-    // with their options collapsed again, so nothing is on screen until the
-    // `style` option is reopened — and then it is that one, not the row's.
+    // Closed, not merely hidden: reopening the row brings back the settings
+    // and leaves the editor shut.
     await activate(page.getByRole("button", { name: `Expand ${name}` }));
     await expect(editors).toHaveCount(0);
-    await openOption(settings, "style");
-    await expect(editors).toHaveCount(1);
   });
 
   test("a module's options start closed, saying what they are for", async ({ page }) => {
@@ -1240,30 +1233,32 @@ test.describe("builder", () => {
     await expect(page.getByLabel("Simulated terminal prompt")).toContainText("|");
   });
 
-  test("a style control that cannot reach its module is struck out", async ({
-    page,
-  }) => {
+  test("a module's row edits the module's own style option", async ({ page }) => {
     await page.goto("./");
-    // $os is `[$symbol]($style)` end to end: verified against real starship,
-    // a style set on the row never appears, not even as a background.
+    // $os is `[$symbol]($style)` end to end: verified against real starship, a
+    // style written around it in the prompt format never appears. Its own
+    // `style` option is the one that paints, so the row's control sets that.
     const osRow = page
       .locator("li")
       .filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) })
       .first();
-    const dead = osRow.getByRole("button", { name: /^Style of \$os — no effect/ });
-    await expect(dead).toBeDisabled();
-    await expect(osRow.locator("span[title*='cannot reach']")).toHaveCount(1);
+    const control = osRow.getByRole("button", { name: "Change the style of $os" });
+    await expect(control).toBeEnabled();
 
-    // Under starship's own defaults $directory ends in a space outside its
-    // style group, so there the control does something and stays live.
-    await useStructuredDefault(page);
-    await expect(
-      page.getByRole("button", { name: "Change the style of $directory" }),
-    ).toBeEnabled();
-    // $os is fully wrapped in its defaults too, so it stays struck.
-    await expect(
-      page.getByRole("button", { name: /^Style of \$os — no effect/ }),
-    ).toBeDisabled();
+    await activate(control);
+    await expect(osRow).toContainText("style option");
+    await activate(osRow.getByRole("button", { name: "Foreground: red" }));
+
+    // Written to the module, not as a wrapper around $os in the format.
+    await openToml(page);
+    const toml = page.getByLabel("starship.toml");
+    await expect(toml).toHaveValue(/\[os\][\s\S]*style = ["'][^"']*red/);
+    await expect(toml).not.toHaveValue(/\[\$os\]\(/);
+
+    // And the option itself is gone from the list, being on the row instead.
+    await activate(page.getByRole("button", { name: "Expand $os" }));
+    await expect(osRow.locator('[data-option="style"]')).toHaveCount(0);
+    await expect(osRow.locator("[data-option]").first()).toBeVisible();
   });
 
   test("the strike follows the module's format, not a fixed list", async ({
@@ -1271,20 +1266,21 @@ test.describe("builder", () => {
   }) => {
     await page.goto("./");
     await openToml(page);
-    // Give $os something outside its style group and the control comes back.
+    // A format that never spends $style leaves the option nothing to paint.
     await page
       .getByLabel("starship.toml")
-      .fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "x[$symbol]($style)"\n');
+      .fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "$symbol"\n');
     await expect(
-      page.getByRole("button", { name: "Change the style of $os" }),
-    ).toBeEnabled();
+      page.getByRole("button", { name: /^Style of \$os — no effect/ }),
+    ).toBeDisabled();
 
+    // Put $style back and the control returns.
     await page
       .getByLabel("starship.toml")
       .fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol]($style)"\n');
     await expect(
-      page.getByRole("button", { name: /^Style of \$os — no effect/ }),
-    ).toBeDisabled();
+      page.getByRole("button", { name: "Change the style of $os" }),
+    ).toBeEnabled();
   });
 
   test("modules carry a collapse indicator", async ({ page }) => {

@@ -69,6 +69,15 @@ interface FormatBuilderProps {
     isEnabled(name: string): boolean;
     inactiveNote(name: string): string | null;
     styleReaches(name: string): boolean;
+    /**
+     * The module's own `style` option, when it has one. The row's style
+     * control edits that rather than a style written around the module in the
+     * format string, which is the one starship actually paints with.
+     */
+    styleOption(
+      name: string,
+    ): { value: string; isDefault: boolean; defaultValue: string } | null;
+    setStyleOption(name: string, value: string | undefined): void;
     setEnabled(name: string, enabled: boolean): void;
     renderSettings(name: string): React.ReactNode;
   };
@@ -307,6 +316,7 @@ export function FormatBuilder({
     isModuleEnabled: (name) => modules?.isEnabled(name) ?? true,
     inactiveNote: (name) => modules?.inactiveNote(name) ?? null,
     styleReaches: (name) => modules?.styleReaches(name) ?? true,
+    moduleStyle: (name) => modules?.styleOption(name)?.value ?? null,
     onToggleModule: (name, enabled) => modules?.setEnabled(name, enabled),
     onToggleText: (path, enabled) =>
       commit(
@@ -324,36 +334,72 @@ export function FormatBuilder({
     groupLabel: (group) =>
       `${groupName(group, categoryOf)} (${group.items.length})`,
     renderModuleSettings: (name) => modules?.renderSettings(name) ?? null,
-    renderStyleEditor: (path, item) => (
-      <>
-        {item.kind === "module" ? (
-          <p className="mb-2 text-xs text-neutral-500">
-            Applies only to parts of{" "}
-            <code className="text-neutral-400">${item.name}</code> that do not
-            set their own style. To change the rest, edit that module&rsquo;s{" "}
-            <code className="text-neutral-400">style</code> option below.
-          </p>
-        ) : null}
-        <StyleStringBuilder
-          value={item.kind === "raw" ? "" : (item.style ?? "")}
-          onChange={(style) =>
-            onChange(
-              fromItems(
-                updateAt(items, path, (target) =>
-                  target.kind === "raw"
-                    ? target
-                    : { ...target, style: style || undefined },
+    renderStyleEditor: (path, item) => {
+      const own = item.kind === "module" ? (modules?.styleOption(item.name) ?? null) : null;
+      /*
+        For a module that has one, this is its `style` option — the value
+        `$style` resets to inside its own format, and the only style most
+        modules ever show. It is edited here rather than in the list below so
+        that the swatch on the row is the colour the module prints.
+      */
+      if (own && item.kind === "module") {
+        return (
+          <>
+            <p className="mb-2 text-xs text-neutral-500">
+              Sets <code className="text-neutral-400">${item.name}</code>&rsquo;s{" "}
+              <code className="text-neutral-400">style</code> option, which is what{" "}
+              <code className="text-neutral-400">$style</code> stands for in its format.
+            </p>
+            <StyleStringBuilder
+              value={own.value}
+              onChange={(style) => modules?.setStyleOption(item.name, style)}
+              palette={palette}
+              paletteNames={paletteNames}
+              inUseColors={inUseColors}
+              theme={theme}
+            />
+            {own.isDefault ? null : (
+              <button
+                type="button"
+                onClick={() => modules?.setStyleOption(item.name, undefined)}
+                className="mt-2 self-start text-xs text-neutral-400 underline underline-offset-2 hover:text-accent-200"
+              >
+                Reset to the default ({own.defaultValue || "no style"})
+              </button>
+            )}
+          </>
+        );
+      }
+      return (
+        <>
+          {item.kind === "module" ? (
+            <p className="mb-2 text-xs text-neutral-500">
+              Applies only to parts of{" "}
+              <code className="text-neutral-400">${item.name}</code> that do not
+              set their own style.
+            </p>
+          ) : null}
+          <StyleStringBuilder
+            value={item.kind === "raw" ? "" : (item.style ?? "")}
+            onChange={(style) =>
+              onChange(
+                fromItems(
+                  updateAt(items, path, (target) =>
+                    target.kind === "raw"
+                      ? target
+                      : { ...target, style: style || undefined },
+                  ),
                 ),
-              ),
-            )
-          }
-          palette={palette}
-          paletteNames={paletteNames}
-          inUseColors={inUseColors}
-          theme={theme}
-        />
-      </>
-    ),
+              )
+            }
+            palette={palette}
+            paletteNames={paletteNames}
+            inUseColors={inUseColors}
+            theme={theme}
+          />
+        </>
+      );
+    },
     isExpanded: (path) => {
       // A search auto-opens the groups holding its matches.
       if (needle) {

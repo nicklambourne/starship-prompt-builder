@@ -45,7 +45,7 @@ import { colorsInUse } from "@/lib/config/colorsInUse";
 import { inactiveReason } from "@/lib/config/inactiveReason";
 import { describeOption } from "@/lib/config/options";
 import { describeVariable } from "@/lib/config/variables";
-import { rowStyleReaches } from "@/lib/config/styleReach";
+import { moduleStyleReaches, rowStyleReaches } from "@/lib/config/styleReach";
 import { MODULE_META, optionKind } from "@/lib/config/meta";
 import { PRESETS } from "@/lib/config/presets";
 import { decodeShare, encodeShare } from "@/lib/config/share";
@@ -305,12 +305,20 @@ export function Builder() {
     [],
   );
 
+  /** Whether a module carries the plain `style` option the row control edits. */
+  const hasStyleOption = useCallback(
+    (name: string) => typeof MODULES_BY_NAME.get(name)?.defaults.style === "string",
+    [],
+  );
+
   const optionsFor = useCallback((name: string): OptionDescriptor[] => {
     const definition = MODULES_BY_NAME.get(name);
     if (!definition) return [];
     const meta = MODULE_META[name];
     return Object.entries(definition.defaults)
-      .filter(([key]) => key !== "disabled")
+      // `disabled` is the switch on the row, and `style` is the swatch beside
+      // it: both are settings, but the row is where people look for them.
+      .filter(([key]) => key !== "disabled" && key !== "style")
       .map(([key, defaultValue]) => ({
         key,
         kind: optionKind(name, key, defaultValue, meta),
@@ -407,12 +415,38 @@ export function Builder() {
       /*
        * Whether a style set here could change anything this module prints.
        * Read from the module's live format, not a fixed list, so editing that
-       * format re-enables the control.
+       * format re-enables the control. Which rule applies depends on what the
+       * control edits: a module with a `style` option is edited through it,
+       * and that option only shows where the format spends `$style`.
        */
       styleReaches(name: string) {
         const options = (config[name] as Record<string, unknown>) ?? {};
         const format = options.format ?? MODULES_BY_NAME.get(name)?.defaults.format;
-        return typeof format === "string" ? rowStyleReaches(format) : true;
+        if (typeof format !== "string") return true;
+        return hasStyleOption(name)
+          ? moduleStyleReaches(format)
+          : rowStyleReaches(format);
+      },
+      /*
+       * A module's own style is the one that shows — a style written around
+       * `$module` in the prompt format only paints what the module emits
+       * unstyled, which for most of them is nothing. So the row's swatch edits
+       * the option, and the option leaves the list below.
+       */
+      styleOption(name: string) {
+        const definition = MODULES_BY_NAME.get(name);
+        if (!definition || typeof definition.defaults.style !== "string") return null;
+        const options = (config[name] as Record<string, unknown>) ?? {};
+        const set = typeof options.style === "string" ? options.style : null;
+        return {
+          value: set ?? definition.defaults.style,
+          isDefault: set === null,
+          defaultValue: definition.defaults.style,
+        };
+      },
+      setStyleOption(name: string, value: string | undefined) {
+        if (value === undefined) resetModuleOption(name, "style");
+        else updateModuleOption(name, "style", value);
       },
       setEnabled(name: string, enabled: boolean) {
         setModuleDisabled(name, !enabled);
@@ -424,7 +458,14 @@ export function Builder() {
     // renderSettings is redefined whenever the config changes, which is also
     // exactly when enablement can change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [config, inactiveNotes, setModuleDisabled],
+    [
+      config,
+      inactiveNotes,
+      setModuleDisabled,
+      hasStyleOption,
+      updateModuleOption,
+      resetModuleOption,
+    ],
   );
 
   /**
