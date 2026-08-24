@@ -1347,6 +1347,17 @@ test.describe("builder", () => {
     await expect(toml).not.toHaveValue(/\(red\)/);
     // and the value it was holding all along is untouched
     await expect(toml).toHaveValue(/style = "bold green"/);
+
+    // The edit lands in the `format` option, so that is what it opens on.
+    const format = osRow.locator('[data-option="format"]').first();
+    await expect(format.locator("button[aria-expanded]").first()).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    // Back on the module's own default, so nothing is marked as overridden —
+    // the TOML prints no format line either.
+    await expect(format.getByRole("button", { name: /^Reset format/ })).toHaveCount(0);
+    await expect(toml).not.toHaveValue(/\[os\][\s\S]*format =/);
   });
 
   test("modules carry a collapse indicator", async ({ page }) => {
