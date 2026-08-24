@@ -4,7 +4,7 @@ import { ROOT_OPTIONS, isKnownModule } from "./schema";
 import { parseConfig } from "./toml";
 
 describe("PRESETS", () => {
-  it("vendors all twelve official presets", () => {
+  it("vendors all twelve official presets, then the community themes", () => {
     expect(PRESETS.map((p) => p.id)).toEqual([
       "nerd-font-symbols",
       "no-nerd-font",
@@ -18,6 +18,11 @@ describe("PRESETS", () => {
       "gruvbox-rainbow",
       "jetpack",
       "catppuccin-powerline",
+      "catppuccin",
+      "dracula",
+      "rose-pine",
+      "rose-pine-moon",
+      "rose-pine-dawn",
     ]);
   });
 
@@ -26,6 +31,16 @@ describe("PRESETS", () => {
       expect(preset.label, preset.id).toBeTruthy();
       expect(preset.description, preset.id).toBeTruthy();
       expect(preset.toml.length, preset.id).toBeGreaterThan(0);
+    }
+  });
+
+  it("says where every preset came from, under a licence that allows it", () => {
+    for (const preset of PRESETS) {
+      expect(preset.source.project, preset.id).toBeTruthy();
+      expect(preset.source.url, preset.id).toMatch(/^https:\/\//);
+      // Vendoring someone's theme is redistribution; these are the terms it
+      // happens under, and THIRD_PARTY.md repeats them.
+      expect(["ISC", "MIT"], preset.id).toContain(preset.source.licence);
     }
   });
 

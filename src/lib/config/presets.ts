@@ -1,10 +1,13 @@
 /**
- * The official starship presets, vendored from upstream.
+ * The presets the builder can start from, vendored from upstream.
  *
- * The TOMLs live in `data/presets/` exactly as starship publishes them;
- * `scripts/build-presets.mjs` folds them into `data/presets.generated.json`
- * with their labels and descriptions, because neither Next.js nor vitest can
- * import a `.toml` as text without extra loader configuration in both.
+ * Starship's twelve official presets live in `data/presets/` exactly as it
+ * publishes them, and the themes their own projects publish — Catppuccin,
+ * Dracula, Rosé Pine — in `data/presets-community/`, equally verbatim and
+ * equally MIT. `scripts/build-presets.mjs` folds both into
+ * `data/presets.generated.json` with their labels, descriptions and where they
+ * came from, because neither Next.js nor vitest can import a `.toml` as text
+ * without extra loader configuration in both.
  */
 
 import generated from "../../../data/presets.generated.json";
@@ -16,6 +19,8 @@ export interface Preset {
   id: string;
   label: string;
   description: string;
+  /** Who publishes it, shown for the ones starship does not. */
+  source: { project: string; url: string; licence: string };
   /** The preset's TOML, verbatim. */
   toml: string;
 }

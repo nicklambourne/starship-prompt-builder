@@ -1,10 +1,11 @@
 # Vendored data
 
-Everything here comes from [starship](https://github.com/starship/starship),
-© the Starship contributors and [ISC
-licensed](https://github.com/starship/starship/blob/master/LICENSE). None of it
-is hand-edited: files are either synced from upstream or generated from files
-that were.
+Everything here except [`presets-community/`](presets-community) comes from
+[starship](https://github.com/starship/starship), © the Starship contributors
+and [ISC licensed](https://github.com/starship/starship/blob/master/LICENSE);
+that directory holds MIT-licensed themes from the projects whose palettes they
+are, and has a README of its own. None of it is hand-edited: files are either
+synced from upstream or generated from files that were.
 
 `*.generated.json` artefacts are committed so the app builds without a codegen
 step. Regenerate them with `pnpm build:data` after any upstream sync.

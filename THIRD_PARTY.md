@@ -105,6 +105,19 @@ are vendored under [`data/`](data). Starship is © the Starship contributors and
 [ISC licensed](https://github.com/starship/starship/blob/master/LICENSE). See
 [`data/README.md`](data/README.md) for retrieval details.
 
+Three themes published by the projects whose palettes they are, rather than by
+starship, are vendored verbatim under
+[`data/presets-community/`](data/presets-community), each © its project and MIT
+licensed:
+
+| Preset | Project | Licence |
+| --- | --- | --- |
+| Catppuccin | [catppuccin/starship](https://github.com/catppuccin/starship) | [MIT](https://github.com/catppuccin/starship/blob/main/LICENSE) |
+| Dracula | [dracula/starship](https://github.com/dracula/starship) | [MIT](https://github.com/dracula/starship/blob/master/LICENSE) |
+| Rosé Pine, Moon, Dawn | [rose-pine/starship](https://github.com/rose-pine/starship) | [MIT](https://github.com/rose-pine/starship/blob/main/LICENSE) |
+
+The picker names the project and licence beside each of them.
+
 ## Where the font files live
 
 The `.woff2` files are in `src/assets/fonts/`, not here. Anything under
