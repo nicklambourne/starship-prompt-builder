@@ -1142,12 +1142,44 @@ test.describe("builder", () => {
 
   test("the preset picker starts the prompt format section", async ({ page }) => {
     await page.goto("./");
-    const preset = page.getByLabel("Start from");
-    await expect(preset).toBeVisible();
     // It sits in the format card, not the preview and not the header.
-    await expect(
-      page.locator("[data-section='format']").getByLabel("Start from"),
-    ).toBeVisible();
+    const trigger = page
+      .locator("[data-section='format']")
+      .getByRole("button", { name: "Start from a preset" });
+    await expect(trigger).toBeVisible();
+  });
+
+  test("the preset list says what each preset does, and whose it is", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await activate(page.getByRole("button", { name: "Start from a preset" }));
+    const panel = page.locator("[aria-label='Presets']");
+
+    // Seventeen names alone say nothing — "Jetpack" and "No Empty Icons" mean
+    // something only to someone who has already seen them.
+    await expect(panel.getByRole("button", { name: "Jetpack", exact: true })).toHaveAccessibleDescription(
+      /pseudo-minimalist prompt/,
+    );
+
+    // The ones starship does not publish name their project and licence.
+    await expect(panel).toContainText("rose-pine/starship · MIT");
+    await expect(panel.getByRole("button", { name: "Rosé Pine Dawn", exact: true })).toBeVisible();
+  });
+
+  test("a community preset loads like any other", async ({ page }) => {
+    await page.goto("./");
+    await openToml(page);
+    await activate(page.getByRole("button", { name: "Start from a preset" }));
+    await activate(
+      page.locator("[aria-label='Presets']").getByRole("button", { name: "Dracula", exact: true }),
+    );
+
+    // Its own palette, and the lambda its project is known for.
+    const toml = page.getByLabel("starship.toml");
+    await expect(toml).toHaveValue(/\[palettes\.dracula\]/);
+    await expect(toml).toHaveValue(/λ/);
+    await expect(page.getByLabel("Simulated terminal prompt")).toContainText("λ");
   });
 
   test("a module can be removed outright, as well as switched off", async ({

@@ -15,6 +15,7 @@ import { EnvironmentPanel } from "./EnvironmentPanel";
 import { Explainer } from "./Explainer";
 import { PaletteEditor } from "./PaletteEditor";
 import { FormatBuilder } from "./FormatBuilder";
+import { PresetPicker } from "./PresetPicker";
 import { PreviewPane } from "./PreviewPane";
 import { SiteFooter } from "./SiteFooter";
 import { SettingsForm, type OptionDescriptor } from "./SettingsForm";
@@ -818,27 +819,7 @@ export function Builder() {
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
               {/* A preset replaces the whole format, so it starts this section. */}
               <div className="ml-auto flex items-center gap-2">
-                <label htmlFor="preset-select" className="text-xs text-neutral-400">
-                  Start from
-                </label>
-                <select
-                  id="preset-select"
-                  defaultValue=""
-                  onChange={(event) => {
-                    loadPreset(event.target.value);
-                    event.target.value = "";
-                  }}
-                  className="rounded border border-white/10 bg-neutral-950 px-2 py-1 text-base text-neutral-200 focus:border-accent-400 focus:outline-none"
-                >
-                  <option value="" disabled>
-                    a preset…
-                  </option>
-                  {PRESETS.map((preset) => (
-                    <option key={preset.id} value={preset.id}>
-                      {preset.label}
-                    </option>
-                  ))}
-                </select>
+                <PresetPicker onPick={loadPreset} />
               </div>
             </div>
             <p className="mb-3 text-xs text-neutral-500">
