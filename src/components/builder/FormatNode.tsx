@@ -92,7 +92,12 @@ export interface FormatNodeCallbacks {
    * `style` option — its swatch on the root format, or a piece its format
    * paints with `$style` — it is the option's value, and `ownTitle` says so.
    */
-  rowStyle(item: FormatItem): { value?: string; ownTitle?: string };
+  rowStyle(item: FormatItem): {
+    value?: string;
+    ownTitle?: string;
+    /** Set where the piece's style is the module's `$style`, not a literal. */
+    paintedByStyle?: boolean;
+  };
   /**
    * Whether a `$name` in this tree is a module or one of a module's own
    * variables. They are the same node — same kind, same syntax — and only the
@@ -331,6 +336,19 @@ export function FormatNode({
                 >
                   <EyeOffIcon className="size-3 shrink-0" />
                   Not visible
+                </span>
+              ) : null}
+              {rowStyle.paintedByStyle ? (
+                /*
+                 * `[$symbol]($style)` reads back as this one piece, so without
+                 * saying it the row is the only thing on screen and the
+                 * reference has vanished from the format it is written in.
+                 */
+                <span
+                  title="Painted by the module's style option. The swatch on this row sets it."
+                  className="inline-flex shrink-0 items-center rounded-full border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400"
+                >
+                  $style
                 </span>
               ) : null}
             </span>
