@@ -434,6 +434,7 @@ export function FormatBuilder({
         return {
           value: ownerStyle.value,
           ownTitle: "Painted by the module's style option — this sets that",
+          paintedByStyle: true,
         };
       }
       return { value: item.style };

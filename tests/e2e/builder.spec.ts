@@ -1311,8 +1311,11 @@ test.describe("builder", () => {
 
     await activate(osRow.getByRole("button", { name: /^Expand \$os/ }));
     await openOption(osRow, "format");
-    // `[$symbol]($style)` reads back as one piece carrying the reference.
+    // `[$symbol]($style)` reads back as one piece carrying the reference, so
+    // the piece says what paints it — otherwise the format section shows no
+    // sign of the `$style` that is written in it.
     const piece = osRow.locator('[data-option="format"] [data-format-row]').first();
+    await expect(piece).toContainText("$style");
     await activate(piece.getByRole("button", { name: /style of/i }).first());
     await expect(piece).toContainText("Painted by the module");
 
