@@ -86,8 +86,13 @@ export interface FormatNodeCallbacks {
   inactiveNote(name: string): string | null;
   /** False when a style set on the row cannot reach this module's output. */
   styleReaches(name: string): boolean;
-  /** A module's own `style` option, which its row edits in place of a wrapper. */
-  moduleStyle(name: string): string | null;
+  /**
+   * What the row's swatch shows and stands for. Usually the style written
+   * around the piece in the format, but where that style is a module's own
+   * `style` option — its swatch on the root format, or a piece its format
+   * paints with `$style` — it is the option's value, and `ownTitle` says so.
+   */
+  rowStyle(item: FormatItem): { value?: string; ownTitle?: string };
   /**
    * Whether a `$name` in this tree is a module or one of a module's own
    * variables. They are the same node — same kind, same syntax — and only the
@@ -216,9 +221,7 @@ export function FormatNode({
    * `style` option of its own the row's control edits that instead — and the
    * swatch shows it, since that is the colour the module prints.
    */
-  const moduleStyle = isModule
-    ? cb.moduleStyle((item as Extract<FormatItem, { kind: "module" }>).name)
-    : null;
+  const rowStyle = cb.rowStyle(item);
   const moduleNote = isModule
     ? cb.inactiveNote((item as Extract<FormatItem, { kind: "module" }>).name)
     : null;
@@ -386,13 +389,7 @@ export function FormatNode({
            */
           <span
             className="inline-flex"
-            title={
-              styleIsInert
-                ? inertStyleReason(label)
-                : moduleStyle !== null
-                  ? `Set ${label}'s own style`
-                  : undefined
-            }
+            title={styleIsInert ? inertStyleReason(label) : rowStyle.ownTitle}
           >
             <button
               type="button"
@@ -432,7 +429,7 @@ export function FormatNode({
             >
               <span className="relative inline-grid place-items-center">
                 <StyleSwatch
-                  style={moduleStyle ?? item.style}
+                  style={rowStyle.value}
                   theme={cb.theme}
                   palette={cb.palette}
                 />

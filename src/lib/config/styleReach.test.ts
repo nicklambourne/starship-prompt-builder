@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { moduleStyleReaches, rowStyleReaches } from "@/lib/config/styleReach";
+import { isStyleVariable, moduleStyleReaches, rowStyleReaches } from "@/lib/config/styleReach";
 import { ALL_MODULES } from "@/lib/engine/modules";
 
 describe("rowStyleReaches", () => {
@@ -60,5 +60,19 @@ describe("moduleStyleReaches", () => {
 
   it("leaves the control alone when the format cannot be read", () => {
     expect(moduleStyleReaches("[$symbol")).toBe(true);
+  });
+});
+
+describe("isStyleVariable", () => {
+  it("recognises the reference on its own", () => {
+    expect(isStyleVariable("$style")).toBe(true);
+    expect(isStyleVariable(" ${style} ")).toBe(true);
+  });
+
+  it("does not claim a literal, or a style that merely mentions it", () => {
+    expect(isStyleVariable("bold red")).toBe(false);
+    expect(isStyleVariable("bold $style")).toBe(false);
+    expect(isStyleVariable("$style_root")).toBe(false);
+    expect(isStyleVariable("")).toBe(false);
   });
 });

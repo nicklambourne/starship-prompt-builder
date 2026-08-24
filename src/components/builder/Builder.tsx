@@ -42,6 +42,7 @@ import { collectVariables, tryParseFormatString } from "@/lib/engine/formatStrin
 import { resolvePalette } from "@/lib/engine/styleString";
 import { expandAll, structuredFormatString } from "@/lib/config/defaultFormat";
 import { colorsInUse } from "@/lib/config/colorsInUse";
+import { withStyleVariable } from "@/lib/config/formatItems";
 import { inactiveReason } from "@/lib/config/inactiveReason";
 import { describeOption } from "@/lib/config/options";
 import { describeVariable } from "@/lib/config/variables";
@@ -316,6 +317,35 @@ export function Builder() {
     [],
   );
 
+  /**
+   * A module's `style` option as a control: its value, whether the format
+   * still spends it, and how to set it. The row's swatch and the pieces its
+   * own format paints with `$style` are the same option, so they are the same
+   * object here.
+   */
+  const ownStyleFor = useCallback(
+    (name: string) => {
+      const definition = MODULES_BY_NAME.get(name);
+      if (!definition || typeof definition.defaults.style !== "string") return null;
+      const options = (config[name] as Record<string, unknown>) ?? {};
+      const set = typeof options.style === "string" ? options.style : null;
+      const format = options.format ?? definition.defaults.format;
+      return {
+        value: set ?? definition.defaults.style,
+        isDefault: set === null,
+        defaultValue: definition.defaults.style,
+        // `$style` is what spends this option. A format that has lost it
+        // still takes a value; it just will not show one.
+        spent: typeof format === "string" ? moduleStyleReaches(format) : true,
+        set(value: string | undefined) {
+          if (value === undefined) resetModuleOption(name, "style");
+          else updateModuleOption(name, "style", value);
+        },
+      };
+    },
+    [config, resetModuleOption, updateModuleOption],
+  );
+
   const optionsFor = useCallback((name: string): OptionDescriptor[] => {
     const definition = MODULES_BY_NAME.get(name);
     if (!definition) return [];
@@ -444,23 +474,23 @@ export function Builder() {
        * the option, and the option leaves the list below.
        */
       styleOption(name: string) {
-        const definition = MODULES_BY_NAME.get(name);
-        if (!definition || typeof definition.defaults.style !== "string") return null;
-        const options = (config[name] as Record<string, unknown>) ?? {};
-        const set = typeof options.style === "string" ? options.style : null;
-        const format = options.format ?? definition.defaults.format;
-        return {
-          value: set ?? definition.defaults.style,
-          isDefault: set === null,
-          defaultValue: definition.defaults.style,
-          // `$style` is what spends this option. A format that has lost it
-          // still takes a value; it just will not show one.
-          spent: typeof format === "string" ? moduleStyleReaches(format) : true,
-        };
+        return ownStyleFor(name);
       },
       setStyleOption(name: string, value: string | undefined) {
-        if (value === undefined) resetModuleOption(name, "style");
-        else updateModuleOption(name, "style", value);
+        ownStyleFor(name)?.set(value);
+      },
+      /*
+       * The one edit that makes the option worth setting again, offered where
+       * the format has stopped spending it. Written to the format like any
+       * other change — visible in the TOML, and undoable — rather than being
+       * put back behind the reader's back.
+       */
+      restoreStyleVariable(name: string) {
+        const definition = MODULES_BY_NAME.get(name);
+        const options = (config[name] as Record<string, unknown>) ?? {};
+        const format = options.format ?? definition?.defaults.format;
+        if (typeof format !== "string") return;
+        updateModuleOption(name, "format", withStyleVariable(format));
       },
       setEnabled(name: string, enabled: boolean) {
         setModuleDisabled(name, !enabled);
@@ -477,6 +507,7 @@ export function Builder() {
       inactiveNotes,
       setModuleDisabled,
       rowOwnsStyle,
+      ownStyleFor,
       updateModuleOption,
       resetModuleOption,
     ],
@@ -503,6 +534,7 @@ export function Builder() {
         palette={palette}
         paletteNames={paletteNames}
         inUseColors={inUseTokens}
+        ownStyle={ownStyleFor(name) ?? undefined}
         theme={theme}
         fontStack={font.stack}
       />
@@ -511,6 +543,7 @@ export function Builder() {
     [
       config,
       optionsFor,
+      ownStyleFor,
       variablesFor,
       updateModuleOption,
       resetModuleOption,

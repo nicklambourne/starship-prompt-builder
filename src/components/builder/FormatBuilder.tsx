@@ -39,6 +39,7 @@ import {
   updateAt,
 } from "@/lib/config/formatTree";
 import { describeModule } from "@/lib/config/descriptions";
+import { isStyleVariable } from "@/lib/config/styleReach";
 import { MODULE_META } from "@/lib/config/meta";
 import { tryParseFormatString } from "@/lib/engine/formatString";
 import type { Palette } from "@/lib/engine/styleString";
@@ -82,8 +83,22 @@ interface FormatBuilderProps {
       spent: boolean;
     } | null;
     setStyleOption(name: string, value: string | undefined): void;
+    /** Rewrites the module's format so it spends `$style` again. */
+    restoreStyleVariable(name: string): void;
     setEnabled(name: string, enabled: boolean): void;
     renderSettings(name: string): React.ReactNode;
+  };
+  /**
+   * The `style` option of the module whose format this is, when this editor is
+   * a module's own format. A piece painted with `$style` is painted by that
+   * option, so its swatch edits the option rather than writing a literal over
+   * the reference — which would leave the option paying for nothing.
+   */
+  ownerStyle?: {
+    value: string;
+    isDefault: boolean;
+    defaultValue: string;
+    set(value: string | undefined): void;
   };
   /** Shows a search box; worth it once the tree is long. */
   searchable?: boolean;
@@ -101,6 +116,76 @@ const SMALL_BUTTON =
 const SMALL_BUTTON_OPEN =
   `${SMALL_BUTTON_SHAPE} border-accent-400 bg-accent-400/15 text-accent-200`;
 
+/**
+ * The panel behind a swatch that edits a module's `style` option — from the
+ * module's row, or from a piece its own format paints with `$style`.
+ */
+function ModuleStyleEditor({
+  own,
+  set,
+  onRestore,
+  note,
+  palette,
+  paletteNames,
+  inUseColors,
+  theme,
+}: {
+  own: { value: string; isDefault: boolean; defaultValue: string; spent: boolean };
+  set(value: string | undefined): void;
+  /** Offered where the format has stopped spending the option. */
+  onRestore?(): void;
+  note: React.ReactNode;
+  palette?: Palette;
+  paletteNames?: string[];
+  inUseColors?: string[];
+  theme: TerminalTheme;
+}) {
+  return (
+    <>
+      <p className="mb-2 text-xs text-neutral-500">{note}</p>
+      {own.spent ? null : (
+        /*
+          The value is still the module's to hold, so the control stays; what
+          is missing is the format that would spend it, and that is a sentence
+          — with the edit that fixes it attached — rather than a reason to
+          remove the only way to set it.
+        */
+        <p className="mb-2 text-xs text-amber-300/90">
+          This module&rsquo;s format no longer uses{" "}
+          <code className="text-amber-200">$style</code>, so nothing set here will
+          show until it does.{" "}
+          {onRestore ? (
+            <button
+              type="button"
+              onClick={onRestore}
+              className="underline underline-offset-2 hover:text-amber-200"
+            >
+              Put $style back
+            </button>
+          ) : null}
+        </p>
+      )}
+      <StyleStringBuilder
+        value={own.value}
+        onChange={set}
+        palette={palette}
+        paletteNames={paletteNames}
+        inUseColors={inUseColors}
+        theme={theme}
+      />
+      {own.isDefault ? null : (
+        <button
+          type="button"
+          onClick={() => set(undefined)}
+          className="mt-2 self-start text-xs text-neutral-400 underline underline-offset-2 hover:text-accent-200"
+        >
+          Reset to the default ({own.defaultValue || "no style"})
+        </button>
+      )}
+    </>
+  );
+}
+
 export function FormatBuilder({
   value,
   onChange,
@@ -115,6 +200,7 @@ export function FormatBuilder({
   theme,
   fontStack,
   modules,
+  ownerStyle,
   searchable = false,
 }: FormatBuilderProps) {
   const [showRaw, setShowRaw] = useState(false);
@@ -320,7 +406,20 @@ export function FormatBuilder({
     isModuleEnabled: (name) => modules?.isEnabled(name) ?? true,
     inactiveNote: (name) => modules?.inactiveNote(name) ?? null,
     styleReaches: (name) => modules?.styleReaches(name) ?? true,
-    moduleStyle: (name) => modules?.styleOption(name)?.value ?? null,
+    rowStyle: (item) => {
+      if (item.kind === "raw") return {};
+      if (item.kind === "module") {
+        const own = modules?.styleOption(item.name) ?? null;
+        if (own) return { value: own.value, ownTitle: `Set $${item.name}'s own style` };
+      }
+      if (ownerStyle && item.style && isStyleVariable(item.style)) {
+        return {
+          value: ownerStyle.value,
+          ownTitle: "Painted by the module's style option — this sets that",
+        };
+      }
+      return { value: item.style };
+    },
     onToggleModule: (name, enabled) => modules?.setEnabled(name, enabled),
     onToggleText: (path, enabled) =>
       commit(
@@ -341,6 +440,33 @@ export function FormatBuilder({
     renderStyleEditor: (path, item) => {
       const own = item.kind === "module" ? (modules?.styleOption(item.name) ?? null) : null;
       /*
+        Inside a module's own format, a piece painted with `$style` is painted
+        by the same option the row above edits — so the same panel opens here,
+        rather than a control whose first click writes a literal over the
+        reference and leaves the option spending nothing.
+      */
+      if (!own && ownerStyle && item.kind !== "raw" && item.style && isStyleVariable(item.style)) {
+        return (
+          <ModuleStyleEditor
+            own={{ ...ownerStyle, spent: true }}
+            set={ownerStyle.set}
+            note={
+              <>
+                Painted by the module&rsquo;s{" "}
+                <code className="text-neutral-400">style</code> option, which this
+                sets. To paint it with something else, replace{" "}
+                <code className="text-neutral-400">$style</code> in the raw style
+                string.
+              </>
+            }
+            palette={palette}
+            paletteNames={paletteNames}
+            inUseColors={inUseColors}
+            theme={theme}
+          />
+        );
+      }
+      /*
         For a module that has one, this is its `style` option — the value
         `$style` resets to inside its own format, and the only style most
         modules ever show. It is edited here rather than in the list below so
@@ -348,43 +474,23 @@ export function FormatBuilder({
       */
       if (own && item.kind === "module") {
         return (
-          <>
-            <p className="mb-2 text-xs text-neutral-500">
-              Sets <code className="text-neutral-400">${item.name}</code>&rsquo;s{" "}
-              <code className="text-neutral-400">style</code> option, which is what{" "}
-              <code className="text-neutral-400">$style</code> stands for in its format.
-            </p>
-            {own.spent ? null : (
-              /*
-                The value is still the module's to hold, so the control stays;
-                what is missing is the format that would spend it, and that is
-                a sentence rather than a reason to remove the only way to set
-                it.
-              */
-              <p className="mb-2 text-xs text-amber-300/90">
-                This module&rsquo;s format no longer uses{" "}
-                <code className="text-amber-200">$style</code>, so nothing set here
-                will show until it does.
-              </p>
-            )}
-            <StyleStringBuilder
-              value={own.value}
-              onChange={(style) => modules?.setStyleOption(item.name, style)}
-              palette={palette}
-              paletteNames={paletteNames}
-              inUseColors={inUseColors}
-              theme={theme}
-            />
-            {own.isDefault ? null : (
-              <button
-                type="button"
-                onClick={() => modules?.setStyleOption(item.name, undefined)}
-                className="mt-2 self-start text-xs text-neutral-400 underline underline-offset-2 hover:text-accent-200"
-              >
-                Reset to the default ({own.defaultValue || "no style"})
-              </button>
-            )}
-          </>
+          <ModuleStyleEditor
+            own={own}
+            set={(style) => modules?.setStyleOption(item.name, style)}
+            onRestore={() => modules?.restoreStyleVariable(item.name)}
+            note={
+              <>
+                Sets <code className="text-neutral-400">${item.name}</code>&rsquo;s{" "}
+                <code className="text-neutral-400">style</code> option, which is what{" "}
+                <code className="text-neutral-400">$style</code> stands for in its
+                format.
+              </>
+            }
+            palette={palette}
+            paletteNames={paletteNames}
+            inUseColors={inUseColors}
+            theme={theme}
+          />
         );
       }
       return (
