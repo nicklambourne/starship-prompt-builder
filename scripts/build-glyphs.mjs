@@ -6,12 +6,23 @@
  * carries fields the picker does not need, so this trims it to a name, a
  * codepoint and a category, which the picker loads on demand.
  *
+ * Two things keep the picker honest about what it can draw. The names are read
+ * from the release the bundled fonts come from, not `master`, and whatever
+ * survives that is filtered against the fonts themselves — because a release's
+ * names can still run ahead of its own patched fonts. In 3.5.0 they do: it
+ * names 105 devicons (U+E8F0–U+E958, `nats` through `zustand`) that no font in
+ * that release contains, and offering them drew 105 tofu boxes.
+ *
  *   pnpm build:glyphs
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
 
-const SOURCE = "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/glyphnames.json";
+import { bundledCodepoints } from "./font-coverage.mjs";
+
+/** The Nerd Fonts release `src/assets/fonts` was taken from. */
+const VERSION = "v3.5.0";
+const SOURCE = `https://raw.githubusercontent.com/ryanoasis/nerd-fonts/${VERSION}/glyphnames.json`;
 const INPUT = process.argv[2] ?? "/tmp/glyphnames.json";
 const OUTPUT = "data/glyphs.generated.json";
 
@@ -58,6 +69,13 @@ for (const [name, entry] of Object.entries(raw)) {
   });
 }
 
+// Nothing the fonts cannot draw: the picker's promise is a glyph, not a name.
+const { faces, codepoints } = await bundledCodepoints();
+const undrawable = glyphs.filter((glyph) => !codepoints.has(Number.parseInt(glyph.c, 16)));
+const drawable = glyphs.filter((glyph) => codepoints.has(Number.parseInt(glyph.c, 16)));
+glyphs.length = 0;
+glyphs.push(...drawable);
+
 // Sort by category order, then name, so the picker can slice contiguously.
 const order = new Map(CATEGORIES.map(([, label], index) => [label, index]));
 glyphs.sort((a, b) => {
@@ -73,6 +91,9 @@ writeFileSync(
   JSON.stringify({
     source: SOURCE,
     nerdFontsVersion: metadata.version ?? "unknown",
+    // What the names offered that the fonts could not draw, so a future
+    // regeneration can see whether upstream has caught up.
+    omitted: undrawable.length,
     categories,
     glyphs,
   }),
@@ -81,6 +102,13 @@ writeFileSync(
 console.log(
   `wrote ${OUTPUT}: ${glyphs.length} glyphs across ${categories.length} categories`,
 );
+if (undrawable.length > 0) {
+  const points = undrawable.map((glyph) => Number.parseInt(glyph.c, 16)).sort((a, b) => a - b);
+  console.log(
+    `  omitted ${undrawable.length} named glyphs no bundled font draws ` +
+      `(${points[0].toString(16)}–${points.at(-1).toString(16)}, checked against ${faces} faces)`,
+  );
+}
 for (const category of categories) {
   console.log(`  ${category}: ${glyphs.filter((g) => g.g === category).length}`);
 }

@@ -9,6 +9,15 @@ Every font here is redistributable and web-embeddable under its licence. All
 files were taken from the **Nerd Fonts v3.5.0** release (published 2026-08-02),
 via `https://github.com/ryanoasis/nerd-fonts/releases/latest/download/<Name>.zip`.
 
+## What the picker offers
+
+Nerd Fonts ships `glyphnames.json` alongside the fonts, and it can name glyphs
+the release's own fonts do not contain: 3.5.0 names 105 devicons
+(U+E8F0–U+E958, `nats` through `zustand`) that none of these files can draw.
+`pnpm build:glyphs` filters the catalogue against the `cmap` of every face
+here, so the symbol picker offers a glyph only if something can draw it, and
+`tests/unit/glyph-coverage.test.ts` fails if that stops being true.
+
 ## What is bundled
 
 Only the **Regular** and **Bold** weights of the **Mono** (`NerdFontMono`)
