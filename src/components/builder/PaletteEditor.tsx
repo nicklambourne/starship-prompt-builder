@@ -10,12 +10,13 @@
  * one thing this app exists to avoid.
  */
 
-import { useId, useState } from "react";
+import { Fragment, useId, useState } from "react";
+import Link from "next/link";
 
 import { ColorField } from "@/components/ui/ColorField";
 import { StyleSwatch } from "@/components/ui/StyleSwatch";
 import type { ColorInUse } from "@/lib/config/colorsInUse";
-import { CURATED_PALETTES } from "@/lib/config/curatedPalettes";
+import { CURATED_PALETTES, type CuratedPalette } from "@/lib/config/curatedPalettes";
 import { TrashIcon } from "@/components/ui/icons";
 import { parseColorString, type Palette } from "@/lib/engine/styleString";
 import { resolveSwatchColor } from "@/components/ui/StyleSwatch";
@@ -32,6 +33,18 @@ interface PaletteEditorProps {
   inUse: ColorInUse[];
   theme: TerminalTheme;
 }
+
+/**
+ * One entry per project the curated palettes come from, in the order they
+ * first appear. Derived rather than listed: a preset added upstream brings its
+ * palette, and its credit, without anyone remembering to write it here.
+ */
+const CREDITS = CURATED_PALETTES.reduce<CuratedPalette["source"][]>((found, palette) => {
+  if (!found.some((credit) => credit.project === palette.source.project)) {
+    found.push(palette.source);
+  }
+  return found;
+}, []);
 
 const INPUT =
   "w-full rounded border border-white/10 bg-neutral-950 px-2 py-1 text-base text-neutral-100 focus:border-accent-400 focus:outline-none";
@@ -191,9 +204,41 @@ export function PaletteEditor({
               <option key={palette.name} value={palette.name}>
                 {palette.name} — {Object.keys(palette.colours).length} colours, from{" "}
                 {palette.from}
+                {palette.source.project === "starship" ? "" : ` (${palette.source.project})`}
               </option>
             ))}
           </select>
+          {/*
+            The colours are the part of a theme its authors are known for, so
+            the panel that hands them out says whose they are. The full notices
+            are on the licences page; this is the line that stops the palettes
+            reading as ours.
+          */}
+          <p className="text-xs text-neutral-500">
+            Palettes belong to their projects —{" "}
+            {CREDITS.map((credit, index) => (
+              <Fragment key={credit.project}>
+                {index > 0 ? ", " : ""}
+                <a
+                  href={credit.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-neutral-400 underline underline-offset-2 hover:text-accent-200"
+                >
+                  {credit.project}
+                </a>{" "}
+                ({credit.licence})
+              </Fragment>
+            ))}
+            .{" "}
+            <Link
+              href="/licences"
+              className="text-neutral-400 underline underline-offset-2 hover:text-accent-200"
+            >
+              Full notices
+            </Link>
+            .
+          </p>
         </div>
       </div>
 

@@ -7,8 +7,9 @@
  * licence, the upstream project, and links both the canonical upstream licence
  * and the verbatim copy served from `public/fonts/licences/`.
  *
- * The font list is derived from `TERMINAL_FONTS` rather than restated, so the
- * picker and this page cannot disagree about what is shipped. The reasoning
+ * The font list is derived from `TERMINAL_FONTS` rather than restated, and the
+ * vendored themes from `PRESETS`, so the pickers and this page cannot disagree
+ * about what is shipped. The reasoning
  * behind each grant (and the two families excluded on licence grounds) lives in
  * `THIRD_PARTY.md` and `public/fonts/README.md`.
  *
@@ -20,6 +21,7 @@
 import Link from "next/link";
 
 import { SiteFooter } from "@/components/builder/SiteFooter";
+import { PRESETS, type Preset } from "@/lib/config/presets";
 import { TERMINAL_FONTS } from "@/lib/fonts";
 
 export const metadata = { title: "Licences — Starship Prompt Builder" };
@@ -127,6 +129,22 @@ if (UNDOCUMENTED.length > 0) {
 const LINK = "text-accent-300 underline underline-offset-2 hover:text-accent-200";
 const CARD = "rounded-xl border border-white/10 bg-neutral-900/40 p-4";
 const H2 = "text-base font-semibold text-neutral-100";
+
+/**
+ * The presets starship does not publish, grouped by the project that does.
+ * Read from the preset data rather than restated, so the picker and this page
+ * cannot disagree about whose work is being redistributed — the same reason
+ * the font list is derived from `TERMINAL_FONTS`.
+ */
+const COMMUNITY_PRESETS: Array<{ source: Preset["source"]; presets: Preset[] }> =
+  PRESETS.filter((preset) => preset.source.project !== "starship").reduce<
+    Array<{ source: Preset["source"]; presets: Preset[] }>
+  >((groups, preset) => {
+    const existing = groups.find((group) => group.source.project === preset.source.project);
+    if (existing) existing.presets.push(preset);
+    else groups.push({ source: preset.source, presets: [preset] });
+    return groups;
+  }, []);
 
 function External({ href, children }: { href: string; children: string }) {
   return (
@@ -268,10 +286,34 @@ export default function LicencesPage() {
         </section>
 
         <section className="flex flex-col gap-3">
+          <h2 className={H2}>Presets and palettes</h2>
+          <p className="text-sm text-neutral-400">
+            Five of the presets in the picker are themes their own projects
+            publish for starship, vendored verbatim, and the palettes they carry
+            are offered separately in the palette editor. The colours and the
+            names are their authors&rsquo; work.
+          </p>
+          <ul className="flex flex-col gap-3">
+            {COMMUNITY_PRESETS.map(({ source, presets }) => (
+              <li key={source.project} className="flex flex-col gap-1">
+                <span className="text-sm text-neutral-200">
+                  <External href={source.url}>{source.project}</External>{" "}
+                  <span className="text-neutral-500">{source.copyright}</span>
+                </span>
+                <span className="text-sm text-neutral-400">
+                  {presets.map((preset) => preset.label).join(", ")} —{" "}
+                  <External href={source.licenceUrl}>{`${source.licence} licensed`}</External>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="flex flex-col gap-3">
           <h2 className={H2}>Starship</h2>
           <p className="text-sm text-neutral-400">
-            Starship&rsquo;s configuration JSON Schema, its official preset
-            TOMLs and its configuration reference are vendored into this site
+            Starship&rsquo;s configuration JSON Schema, its twelve official
+            preset TOMLs and its configuration reference are vendored into this site
             to drive the module list, the preset picker and the explanations of
             what each module and each format variable does. Starship is © the
             Starship contributors and{" "}
