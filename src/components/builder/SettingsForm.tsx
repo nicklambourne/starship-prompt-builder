@@ -10,7 +10,7 @@
  * so the whole config surface stays reachable.
  */
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { FormatBuilder } from "./FormatBuilder";
 import { ChevronIcon, RestoreIcon } from "@/components/ui/icons";
@@ -53,6 +53,12 @@ interface SettingsFormProps {
     defaultValue: string;
     set(value: string | undefined): void;
   };
+  /**
+   * An option to open because something outside this form has just written it.
+   * The nonce is what makes a second edit of the same option open it again
+   * after the reader has closed it.
+   */
+  reveal?: { key: string; nonce: number };
   /** Nested format editors show style swatches, which are theme-coloured. */
   theme: TerminalTheme;
   /** Terminal font stack: module symbols are Nerd Font glyphs. */
@@ -192,12 +198,22 @@ export function SettingsForm({
   paletteNames,
   inUseColors,
   ownStyle,
+  reveal,
   theme,
   fontStack,
 }: SettingsFormProps) {
   const formId = useId();
   /** Closed until asked for; the module decides which of its dozen matters. */
   const [open, setOpen] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!reveal) return;
+    // Same set back when it is already open: the prop is a fresh object every
+    // render, and a fresh Set every time would be a loop.
+    setOpen((current) =>
+      current.has(reveal.key) ? current : new Set(current).add(reveal.key),
+    );
+  }, [reveal]);
 
   return (
     /*

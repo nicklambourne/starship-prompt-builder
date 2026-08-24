@@ -130,7 +130,14 @@ function ModuleStyleEditor({
   inUseColors,
   theme,
 }: {
-  own: { value: string; isDefault: boolean; defaultValue: string; spent: boolean };
+  own: {
+    value: string;
+    isDefault: boolean;
+    defaultValue: string;
+    spent: boolean;
+    /** The format that putting `$style` back would write. */
+    restoreTo?: string | null;
+  };
   set(value: string | undefined): void;
   /** Offered where the format has stopped spending the option. */
   onRestore?(): void;
@@ -158,10 +165,21 @@ function ModuleStyleEditor({
             <button
               type="button"
               onClick={onRestore}
+              title={
+                own.restoreTo
+                  ? `Sets this module's format option to ${own.restoreTo}`
+                  : undefined
+              }
               className="underline underline-offset-2 hover:text-amber-200"
             >
               Put $style back
             </button>
+          ) : null}
+          {onRestore ? (
+            <span className="mt-1 block text-neutral-500">
+              Edits the module&rsquo;s <code className="text-neutral-400">format</code>{" "}
+              option, which opens below.
+            </span>
           ) : null}
         </p>
       )}
@@ -477,7 +495,12 @@ export function FormatBuilder({
           <ModuleStyleEditor
             own={own}
             set={(style) => modules?.setStyleOption(item.name, style)}
-            onRestore={() => modules?.restoreStyleVariable(item.name)}
+            onRestore={() => {
+              modules?.restoreStyleVariable(item.name);
+              // The settings are what the edit lands in, so open them: the
+              // option itself opens from the other end, in the form.
+              setExpanded((current) => new Set(current).add(pathKey(path)));
+            }}
             note={
               <>
                 Sets <code className="text-neutral-400">${item.name}</code>&rsquo;s{" "}

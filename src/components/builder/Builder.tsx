@@ -330,13 +330,17 @@ export function Builder() {
       const options = (config[name] as Record<string, unknown>) ?? {};
       const set = typeof options.style === "string" ? options.style : null;
       const format = options.format ?? definition.defaults.format;
+      const spent = typeof format === "string" ? moduleStyleReaches(format) : true;
       return {
         value: set ?? definition.defaults.style,
         isDefault: set === null,
         defaultValue: definition.defaults.style,
         // `$style` is what spends this option. A format that has lost it
         // still takes a value; it just will not show one.
-        spent: typeof format === "string" ? moduleStyleReaches(format) : true,
+        spent,
+        /** The format putting it back would write, for the control to name. */
+        restoreTo:
+          spent || typeof format !== "string" ? null : withStyleVariable(format),
         set(value: string | undefined) {
           if (value === undefined) resetModuleOption(name, "style");
           else updateModuleOption(name, "style", value);
@@ -345,6 +349,13 @@ export function Builder() {
     },
     [config, resetModuleOption, updateModuleOption],
   );
+
+  /** An option an edit elsewhere has just written, for its row to open on. */
+  const [revealed, setRevealed] = useState<{
+    module: string;
+    key: string;
+    nonce: number;
+  } | null>(null);
 
   const optionsFor = useCallback((name: string): OptionDescriptor[] => {
     const definition = MODULES_BY_NAME.get(name);
@@ -490,7 +501,18 @@ export function Builder() {
         const options = (config[name] as Record<string, unknown>) ?? {};
         const format = options.format ?? definition?.defaults.format;
         if (typeof format !== "string") return;
-        updateModuleOption(name, "format", withStyleVariable(format));
+        const next = withStyleVariable(format);
+        // Landing back on the module's own default is a reset, not a setting
+        // equal to it: an override the TOML does not print is one the options
+        // list should not mark either.
+        if (next === definition?.defaults.format) resetModuleOption(name, "format");
+        else updateModuleOption(name, "format", next);
+        // The edit lands in an option, so the option is where it is shown.
+        setRevealed((previous) => ({
+          module: name,
+          key: "format",
+          nonce: (previous?.nonce ?? 0) + 1,
+        }));
       },
       setEnabled(name: string, enabled: boolean) {
         setModuleDisabled(name, !enabled);
@@ -535,6 +557,11 @@ export function Builder() {
         paletteNames={paletteNames}
         inUseColors={inUseTokens}
         ownStyle={ownStyleFor(name) ?? undefined}
+        reveal={
+          revealed?.module === name
+            ? { key: revealed.key, nonce: revealed.nonce }
+            : undefined
+        }
         theme={theme}
         fontStack={font.stack}
       />
@@ -544,6 +571,7 @@ export function Builder() {
       config,
       optionsFor,
       ownStyleFor,
+      revealed,
       variablesFor,
       updateModuleOption,
       resetModuleOption,
