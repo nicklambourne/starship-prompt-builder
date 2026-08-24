@@ -1271,31 +1271,29 @@ test.describe("builder", () => {
       .filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) })
       .first();
     const toml = page.getByLabel("starship.toml");
+    const osControl = page.getByRole("button", { name: "Change the style of $os" });
 
-    // Wrapped in a style of its own and never spending $style, neither control
-    // can show anything — but the option is back in the list, since the row is
-    // no longer the place it is edited.
+    // A module that has a style option is edited through it, whatever its
+    // format spends: the control is the option, and the option always takes a
+    // value. A format that has lost $style is said in the panel instead.
     await toml.fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol](bold red)"\n');
-    await expect(
-      page.getByRole("button", { name: /^Style of \$os — no effect/ }),
-    ).toBeDisabled();
+    await expect(osControl).toBeEnabled();
+    await activate(osControl);
+    await expect(osRow).toContainText("no longer uses");
     await activate(osRow.getByRole("button", { name: /^Expand \$os/ }));
-    await expect(osRow.locator('[data-option="style"]')).toHaveCount(1);
-
-    // Unwrapped, the swatch goes back to styling the module from the prompt
-    // format, and the option stays in the list beside it.
-    await toml.fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "$symbol"\n');
-    await expect(
-      page.getByRole("button", { name: "Change the style of $os" }),
-    ).toBeEnabled();
-    await expect(osRow.locator('[data-option="style"]')).toHaveCount(1);
-
-    // Put $style back and the row owns it again.
-    await toml.fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol]($style)"\n');
-    await expect(
-      page.getByRole("button", { name: "Change the style of $os" }),
-    ).toBeEnabled();
     await expect(osRow.locator('[data-option="style"]')).toHaveCount(0);
+
+    // Spending it again, the warning goes and the control is unchanged.
+    await toml.fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol]($style)"\n');
+    await expect(osControl).toBeEnabled();
+    await expect(osRow).not.toContainText("no longer uses");
+
+    // The strike is for the six modules with no style option of their own,
+    // where the swatch is still a style written around them in the format.
+    await toml.fill('format = "$username"\n\n[username]\nshow_always = true\nformat = "[$user]($style)"\n');
+    await expect(
+      page.getByRole("button", { name: /^Style of \$username — no effect/ }),
+    ).toBeDisabled();
   });
 
   test("modules carry a collapse indicator", async ({ page }) => {

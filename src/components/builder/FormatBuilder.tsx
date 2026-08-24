@@ -74,9 +74,13 @@ interface FormatBuilderProps {
      * control edits that rather than a style written around the module in the
      * format string, which is the one starship actually paints with.
      */
-    styleOption(
-      name: string,
-    ): { value: string; isDefault: boolean; defaultValue: string } | null;
+    styleOption(name: string): {
+      value: string;
+      isDefault: boolean;
+      defaultValue: string;
+      /** Whether the module's format still spends `$style`. */
+      spent: boolean;
+    } | null;
     setStyleOption(name: string, value: string | undefined): void;
     setEnabled(name: string, enabled: boolean): void;
     renderSettings(name: string): React.ReactNode;
@@ -350,6 +354,19 @@ export function FormatBuilder({
               <code className="text-neutral-400">style</code> option, which is what{" "}
               <code className="text-neutral-400">$style</code> stands for in its format.
             </p>
+            {own.spent ? null : (
+              /*
+                The value is still the module's to hold, so the control stays;
+                what is missing is the format that would spend it, and that is
+                a sentence rather than a reason to remove the only way to set
+                it.
+              */
+              <p className="mb-2 text-xs text-amber-300/90">
+                This module&rsquo;s format no longer uses{" "}
+                <code className="text-amber-200">$style</code>, so nothing set here
+                will show until it does.
+              </p>
+            )}
             <StyleStringBuilder
               value={own.value}
               onChange={(style) => modules?.setStyleOption(item.name, style)}

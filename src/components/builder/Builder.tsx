@@ -306,23 +306,14 @@ export function Builder() {
   );
 
   /**
-   * Whether the row's swatch is this module's `style` option.
-   *
-   * It is, for any module that has one and spends `$style` in its format —
-   * which is nearly all of them. Where the format never spends it the option
-   * paints nothing, so the swatch goes back to being the style written around
-   * the module, and the option goes back in the list below: leaving it out of
-   * both is how a value ends up with nowhere to edit it.
+   * Whether the row's swatch is this module's `style` option: it is, for every
+   * module that has one. The swatch replaces the option rather than standing
+   * beside it, so it is available on the same terms the option was — always,
+   * whatever the module's format happens to spend.
    */
   const rowOwnsStyle = useCallback(
-    (name: string) => {
-      const definition = MODULES_BY_NAME.get(name);
-      if (!definition || typeof definition.defaults.style !== "string") return false;
-      const options = (config[name] as Record<string, unknown>) ?? {};
-      const format = options.format ?? definition.defaults.format;
-      return typeof format === "string" ? moduleStyleReaches(format) : true;
-    },
-    [config],
+    (name: string) => typeof MODULES_BY_NAME.get(name)?.defaults.style === "string",
+    [],
   );
 
   const optionsFor = useCallback((name: string): OptionDescriptor[] => {
@@ -434,9 +425,13 @@ export function Builder() {
        * and that option only shows where the format spends `$style`.
        */
       styleReaches(name: string) {
-        // A `style` option the row owns is spent by definition — owning it is
-        // what having `$style` in the format means. Otherwise the swatch is a
-        // style written around the module, under the older rule.
+        /*
+         * A swatch that edits the module's own option is never struck: it
+         * writes a real setting, and a format that does not spend `$style`
+         * yet is a thing to say in the panel, not a reason to take the only
+         * control away. The strike is for the other six modules, where the
+         * swatch is still a style written around the module in the format.
+         */
         if (rowOwnsStyle(name)) return true;
         const options = (config[name] as Record<string, unknown>) ?? {};
         const format = options.format ?? MODULES_BY_NAME.get(name)?.defaults.format;
@@ -449,15 +444,18 @@ export function Builder() {
        * the option, and the option leaves the list below.
        */
       styleOption(name: string) {
-        if (!rowOwnsStyle(name)) return null;
         const definition = MODULES_BY_NAME.get(name);
         if (!definition || typeof definition.defaults.style !== "string") return null;
         const options = (config[name] as Record<string, unknown>) ?? {};
         const set = typeof options.style === "string" ? options.style : null;
+        const format = options.format ?? definition.defaults.format;
         return {
           value: set ?? definition.defaults.style,
           isDefault: set === null,
           defaultValue: definition.defaults.style,
+          // `$style` is what spends this option. A format that has lost it
+          // still takes a value; it just will not show one.
+          spent: typeof format === "string" ? moduleStyleReaches(format) : true,
         };
       },
       setStyleOption(name: string, value: string | undefined) {
