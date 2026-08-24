@@ -375,3 +375,21 @@ export function applyDrop(
     ...withoutDragged.slice(insertAt),
   ];
 }
+
+/**
+ * The same format, spending `$style` — what puts a module's `style` option
+ * back to work after an edit has written a literal style over the reference.
+ *
+ * A format that is one styled piece has that piece's style replaced, which is
+ * the edit being undone. Anything else is wrapped, since there is no single
+ * place inside a longer format that obviously wanted it.
+ */
+export function withStyleVariable(format: string): string {
+  const items = toItems(format);
+  if (!items || items.length === 0) return format;
+  const only = items.length === 1 ? items[0] : null;
+  if (only && only.kind !== "raw" && only.style) {
+    return fromItems([{ ...only, style: "$style" }]);
+  }
+  return `[${format}]($style)`;
+}

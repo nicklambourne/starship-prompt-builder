@@ -54,3 +54,13 @@ export function moduleStyleReaches(format: string): boolean {
   }
   return STYLE_VARIABLE.test(format);
 }
+
+/**
+ * Whether a style string is the `$style` reference and nothing else — the
+ * shape a module's own format uses to spend its `style` option. A row painted
+ * by it is painted by that option, so its swatch edits the option rather than
+ * replacing the reference with a literal.
+ */
+export function isStyleVariable(style: string): boolean {
+  return /^\s*\$\{?style\}?\s*$/.test(style);
+}

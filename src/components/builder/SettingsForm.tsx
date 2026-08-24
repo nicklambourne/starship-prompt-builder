@@ -43,6 +43,16 @@ interface SettingsFormProps {
   paletteNames?: string[];
   /** Colours the prompt already uses, for the style editors' own row. */
   inUseColors?: string[];
+  /**
+   * This module's `style` option, for the format editors below: a piece the
+   * format paints with `$style` is painted by it, and its swatch says so.
+   */
+  ownStyle?: {
+    value: string;
+    isDefault: boolean;
+    defaultValue: string;
+    set(value: string | undefined): void;
+  };
   /** Nested format editors show style swatches, which are theme-coloured. */
   theme: TerminalTheme;
   /** Terminal font stack: module symbols are Nerd Font glyphs. */
@@ -181,6 +191,7 @@ export function SettingsForm({
   palette,
   paletteNames,
   inUseColors,
+  ownStyle,
   theme,
   fontStack,
 }: SettingsFormProps) {
@@ -235,6 +246,7 @@ export function SettingsForm({
                 paletteNames={paletteNames}
                 inUseColors={inUseColors}
                 noun="variable"
+                ownerStyle={ownStyle}
                 theme={theme}
                 fontStack={fontStack}
               />

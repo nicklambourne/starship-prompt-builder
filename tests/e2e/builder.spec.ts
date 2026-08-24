@@ -1296,6 +1296,59 @@ test.describe("builder", () => {
     ).toBeDisabled();
   });
 
+  test("a piece painted by $style edits the module's style option", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await openToml(page);
+    await page
+      .getByLabel("starship.toml")
+      .fill('format = "$os"\n\n[os]\ndisabled = false\n');
+    const osRow = page
+      .locator("li")
+      .filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) })
+      .first();
+
+    await activate(osRow.getByRole("button", { name: /^Expand \$os/ }));
+    await openOption(osRow, "format");
+    // `[$symbol]($style)` reads back as one piece carrying the reference.
+    const piece = osRow.locator('[data-option="format"] [data-format-row]').first();
+    await activate(piece.getByRole("button", { name: /style of/i }).first());
+    await expect(piece).toContainText("Painted by the module");
+
+    // Setting a colour here used to write it over the reference, leaving the
+    // module's option spending nothing. It sets the option instead.
+    await activate(piece.getByRole("button", { name: "Foreground: red" }).first());
+    const toml = page.getByLabel("starship.toml");
+    await expect(toml).toHaveValue(/\[os\][\s\S]*style = "[^"]*red"/);
+    await expect(toml).not.toHaveValue(/format = "\[\$symbol\]\(red\)"/);
+  });
+
+  test("a format that has stopped spending $style can be put back", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await openToml(page);
+    const toml = page.getByLabel("starship.toml");
+    await toml.fill(
+      'format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol](red)"\nstyle = "bold green"\n',
+    );
+    const osRow = page
+      .locator("li")
+      .filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) })
+      .first();
+
+    await activate(osRow.getByRole("button", { name: "Change the style of $os" }));
+    await expect(osRow).toContainText("no longer uses");
+
+    // The edit that fixes it, made in the open rather than behind the reader.
+    await activate(osRow.getByRole("button", { name: "Put $style back" }));
+    await expect(osRow).not.toContainText("no longer uses");
+    await expect(toml).not.toHaveValue(/\(red\)/);
+    // and the value it was holding all along is untouched
+    await expect(toml).toHaveValue(/style = "bold green"/);
+  });
+
   test("modules carry a collapse indicator", async ({ page }) => {
     await page.goto("./");
     const chevron = page
