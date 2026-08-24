@@ -76,6 +76,28 @@ test.describe("discoverability", () => {
     expect(size.width / size.height).toBeCloseTo(1200 / 630, 2);
   });
 
+  test("the licences page credits every project whose work is redistributed", async ({
+    page,
+  }) => {
+    await page.goto("./licences");
+    const main = page.locator("main");
+    // The fonts were always here; the vendored themes are the ones that were
+    // being redistributed without a notice on this page.
+    await expect(main).toContainText("Presets and palettes");
+    for (const credit of [
+      "catppuccin/starship",
+      "© 2021 Catppuccin",
+      "dracula/starship",
+      "© 2022 Dracula Theme",
+      "rose-pine/starship",
+      "© Rosé Pine",
+    ]) {
+      await expect(main).toContainText(credit);
+    }
+    // Named against the presets they are, so the two lists cannot drift apart.
+    await expect(main).toContainText("Rosé Pine, Rosé Pine Moon, Rosé Pine Dawn");
+  });
+
   test("robots.txt and the sitemap are served", async ({ request }, info) => {
     test.skip(info.project.name === "mobile", "one platform is enough");
 

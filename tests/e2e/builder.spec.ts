@@ -1167,6 +1167,23 @@ test.describe("builder", () => {
     await expect(panel.getByRole("button", { name: "Rosé Pine Dawn", exact: true })).toBeVisible();
   });
 
+  test("the palette panel credits whose palettes they are", async ({ page }) => {
+    await page.goto("./");
+    const palettes = page.locator("[data-section='palettes']");
+    await activate(palettes.locator("summary").first());
+
+    // The colours are the part of a theme its authors are known for, so the
+    // panel handing them out says whose they are — and links the notices.
+    await expect(palettes).toContainText("Palettes belong to their projects");
+    await expect(palettes).toContainText("catppuccin/starship");
+    await expect(palettes.getByRole("link", { name: "Full notices" })).toBeVisible();
+
+    // And each entry names its project, not just the preset it came from.
+    await expect(palettes.getByLabel("Curated palettes")).toContainText(
+      "from Rosé Pine (rose-pine/starship)",
+    );
+  });
+
   test("a community preset loads like any other", async ({ page }) => {
     await page.goto("./");
     await openToml(page);

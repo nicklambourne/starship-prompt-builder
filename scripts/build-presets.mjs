@@ -31,6 +31,8 @@ const STARSHIP = {
   project: "starship",
   url: "https://starship.rs/presets/",
   licence: "ISC",
+  copyright: "© the Starship contributors",
+  licenceUrl: "https://github.com/starship/starship/blob/master/LICENSE",
 };
 
 /** Ordered as starship's presets index orders them. */
@@ -118,6 +120,8 @@ const COMMUNITY = [
       project: "catppuccin/starship",
       url: "https://github.com/catppuccin/starship",
       licence: "MIT",
+      copyright: "© 2021 Catppuccin",
+      licenceUrl: "https://github.com/catppuccin/starship/blob/main/LICENSE",
     },
   },
   {
@@ -129,6 +133,8 @@ const COMMUNITY = [
       project: "dracula/starship",
       url: "https://github.com/dracula/starship",
       licence: "MIT",
+      copyright: "© 2022 Dracula Theme",
+      licenceUrl: "https://github.com/dracula/starship/blob/master/LICENSE",
     },
   },
   {
@@ -140,6 +146,8 @@ const COMMUNITY = [
       project: "rose-pine/starship",
       url: "https://github.com/rose-pine/starship",
       licence: "MIT",
+      copyright: "© Rosé Pine",
+      licenceUrl: "https://github.com/rose-pine/starship/blob/main/LICENSE",
     },
   },
   {
@@ -150,6 +158,8 @@ const COMMUNITY = [
       project: "rose-pine/starship",
       url: "https://github.com/rose-pine/starship",
       licence: "MIT",
+      copyright: "© Rosé Pine",
+      licenceUrl: "https://github.com/rose-pine/starship/blob/main/LICENSE",
     },
   },
   {
@@ -161,6 +171,8 @@ const COMMUNITY = [
       project: "rose-pine/starship",
       url: "https://github.com/rose-pine/starship",
       licence: "MIT",
+      copyright: "© Rosé Pine",
+      licenceUrl: "https://github.com/rose-pine/starship/blob/main/LICENSE",
     },
   },
 ];

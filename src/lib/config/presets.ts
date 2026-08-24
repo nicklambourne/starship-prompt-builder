@@ -19,8 +19,14 @@ export interface Preset {
   id: string;
   label: string;
   description: string;
-  /** Who publishes it, shown for the ones starship does not. */
-  source: { project: string; url: string; licence: string };
+  /** Who publishes it, credited in the picker and on the licences page. */
+  source: {
+    project: string;
+    url: string;
+    licence: string;
+    copyright: string;
+    licenceUrl: string;
+  };
   /** The preset's TOML, verbatim. */
   toml: string;
 }
