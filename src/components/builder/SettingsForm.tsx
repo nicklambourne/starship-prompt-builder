@@ -18,6 +18,8 @@ import { StyleStringBuilder } from "./StyleStringBuilder";
 import { MapEditor } from "@/components/ui/MapEditor";
 import { SymbolInput } from "@/components/ui/SymbolInput";
 import { Toggle } from "@/components/ui/Toggle";
+import { StyleSwatch } from "@/components/ui/StyleSwatch";
+import type { StyleFallback, StyleRules } from "@/lib/config/styleOptions";
 import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
 
@@ -27,6 +29,8 @@ export interface OptionDescriptor {
   description?: string;
   enumValues?: string[];
   defaultValue: unknown;
+  styleFallback?: StyleFallback;
+  styleRules?: StyleRules;
 }
 
 interface SettingsFormProps {
@@ -78,6 +82,8 @@ function isStringMap(value: unknown): value is Record<string, string> {
 /** The row's controls, sized like every other icon button in the builder. */
 const OPTION_BUTTON =
   "grid size-7 shrink-0 place-items-center rounded border border-white/15 text-neutral-400 transition hover:border-accent-400 hover:text-accent-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400";
+const STYLE_BUTTON_OPEN =
+  "grid size-7 shrink-0 place-items-center rounded border border-accent-400 bg-accent-400/15 text-accent-200 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400";
 
 function Row({
   label,
@@ -87,6 +93,7 @@ function Row({
   onReset,
   open,
   onToggle,
+  stylePreview,
   children,
 }: {
   label: string;
@@ -101,6 +108,7 @@ function Row({
   onReset(): void;
   open: boolean;
   onToggle(): void;
+  stylePreview?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const regionId = useId();
@@ -124,10 +132,10 @@ function Row({
           onClick={onToggle}
           className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
         >
-          <span className="shrink-0 font-mono text-sm text-neutral-200">{label}</span>
+          <span className={`${stylePreview ? "min-w-0 break-all" : "shrink-0"} font-mono text-sm text-neutral-200`}>{label}</span>
           {description ? (
             <span
-              className={`min-w-0 flex-1 text-xs leading-relaxed text-neutral-500 ${
+              className={`min-w-0 flex-1 text-xs leading-relaxed text-neutral-400 ${
                 open ? "" : "truncate"
               }`}
             >
@@ -161,12 +169,13 @@ function Row({
           type="button"
           aria-expanded={open}
           aria-controls={regionId}
-          aria-label={`${open ? "Collapse" : "Expand"} ${label}`}
-          title={open ? "Hide this option" : "Show this option"}
+          aria-label={stylePreview ? `Change the style of ${label}` : `${open ? "Collapse" : "Expand"} ${label}`}
+          title={stylePreview ? (open ? "Close style editor" : "Edit this style") : (open ? "Hide this option" : "Show this option")}
+          data-open={stylePreview && open ? "" : undefined}
           onClick={onToggle}
-          className={OPTION_BUTTON}
+          className={stylePreview && open ? STYLE_BUTTON_OPEN : OPTION_BUTTON}
         >
-          <ChevronIcon className={`transition-transform ${open ? "rotate-90" : ""}`} />
+          {stylePreview ?? <ChevronIcon className={`transition-transform ${open ? "rotate-90" : ""}`} />}
         </button>
       </div>
       {open ? (
@@ -225,6 +234,11 @@ export function SettingsForm({
         const isOverridden = Object.hasOwn(values, option.key);
         const value = isOverridden ? values[option.key] : option.defaultValue;
         const controlId = `${formId}-${option.key}`;
+        const fallback = option.styleFallback ?? {
+          value: typeof option.defaultValue === "string" ? option.defaultValue : "",
+          source: `Starship default for ${option.key}`,
+        };
+        const styleValue = isOverridden && typeof value === "string" ? value : fallback.value;
 
         return (
           <Row
@@ -245,6 +259,9 @@ export function SettingsForm({
             }
             isOverridden={isOverridden}
             onReset={() => onReset(option.key)}
+            stylePreview={option.kind === "style" ? (
+              <StyleSwatch style={styleValue} palette={palette} theme={theme} />
+            ) : undefined}
           >
             {option.kind === "boolean" ? (
               <Toggle
@@ -268,12 +285,71 @@ export function SettingsForm({
               />
             ) : option.kind === "style" ? (
               <StyleStringBuilder
-                value={typeof value === "string" ? value : ""}
+                value={styleValue}
                 onChange={(next) => onChange(option.key, next)}
+                inheritance={{
+                  inherited: !isOverridden,
+                  source: fallback.source,
+                  onChange: (inherit) => inherit
+                    ? onReset(option.key)
+                    : onChange(option.key, fallback.value),
+                }}
                 palette={palette}
                 paletteNames={paletteNames}
+                inUseColors={inUseColors}
                 theme={theme}
               />
+            ) : option.styleRules ? (
+              <>
+                {Array.isArray(value) ? value.map((entry, index) => {
+                  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+                  const rule = entry as Record<string, unknown>;
+                  const rules = option.styleRules!;
+                  const label = rules.labelKey === "threshold"
+                    ? `Battery at or below ${rule.threshold ?? 10}%`
+                    : `Context: ${rule.context_pattern ?? "not set"}`;
+                  const setStyle = (style: unknown) => {
+                    const nextRule = { ...rule };
+                    if (style === undefined) delete nextRule.style;
+                    else nextRule.style = style;
+                    onChange(option.key, value.map((current, i) => i === index ? nextRule : current));
+                  };
+                  return (
+                    <fieldset key={index} aria-label={`Style rule ${index + 1}`} className="min-w-0 rounded border border-white/10 p-2">
+                      <legend className="max-w-full break-words px-1 text-xs text-neutral-400">{label}</legend>
+                      <SettingsForm
+                        options={[{ key: "style", kind: "style", defaultValue: undefined, styleFallback: rules.fallback }]}
+                        values={isOverridden ? rule : {}}
+                        onChange={(_key, next) => setStyle(next)}
+                        onReset={() => setStyle(undefined)}
+                        palette={palette}
+                        paletteNames={paletteNames}
+                        inUseColors={inUseColors}
+                        theme={theme}
+                        fontStack={fontStack}
+                      />
+                    </fieldset>
+                  );
+                }) : null}
+                <details className="text-xs text-neutral-400">
+                  <summary className="cursor-pointer py-2">Edit {option.key} rules as JSON</summary>
+                  <textarea
+                    aria-label={`${option.key} rules JSON`}
+                    value={JSON.stringify(value ?? [], null, 2)}
+                    rows={6}
+                    spellCheck={false}
+                    onChange={(e) => {
+                      try {
+                        const next = JSON.parse(e.target.value);
+                        if (Array.isArray(next)) onChange(option.key, next);
+                      } catch {
+                        // Commit a rule array only once the JSON parses.
+                      }
+                    }}
+                    className="w-full rounded border border-white/10 bg-neutral-950 p-2 font-mono text-base text-neutral-100"
+                  />
+                </details>
+              </>
             ) : option.kind === "number" ? (
               <input
                 id={controlId}

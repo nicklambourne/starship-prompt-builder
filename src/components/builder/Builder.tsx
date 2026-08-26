@@ -43,6 +43,7 @@ import { collectVariables, tryParseFormatString } from "@/lib/engine/formatStrin
 import { resolvePalette } from "@/lib/engine/styleString";
 import { expandAll, structuredFormatString } from "@/lib/config/defaultFormat";
 import { colorsInUse } from "@/lib/config/colorsInUse";
+import { styleOptionFallback, styleRulesFor } from "@/lib/config/styleOptions";
 import { withStyleVariable } from "@/lib/config/formatItems";
 import { inactiveReason } from "@/lib/config/inactiveReason";
 import { describeOption } from "@/lib/config/options";
@@ -371,8 +372,17 @@ export function Builder() {
         kind: optionKind(name, key, defaultValue, meta),
         defaultValue,
         description: describeOption(name, key),
+        styleFallback: styleOptionFallback(
+          definition.defaults,
+          (config[name] as Record<string, unknown>) ?? {},
+          key,
+        ),
+        styleRules: styleRulesFor(
+          name, key, definition.defaults,
+          (config[name] as Record<string, unknown>) ?? {},
+        ),
       }));
-  }, [rowOwnsStyle]);
+  }, [rowOwnsStyle, config]);
 
   /** Variables a module's own format strings may reference. */
   const variablesFor = useCallback(
@@ -578,6 +588,7 @@ export function Builder() {
       resetModuleOption,
       palette,
       paletteNames,
+      inUseTokens,
       theme,
       font.stack,
     ],

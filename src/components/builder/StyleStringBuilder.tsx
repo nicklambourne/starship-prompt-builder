@@ -33,10 +33,12 @@ interface StyleStringBuilderProps {
   paletteNames?: string[];
   /** Needed to resolve palette entries that name an ANSI colour. */
   theme: TerminalTheme;
-  /** Format items can follow the module or use an independent style. */
+  /** Follow a native fallback or use an independent style. */
   inheritance?: {
     inherited: boolean;
     onChange(inherited: boolean): void;
+    /** The native fallback: another option or a Starship default. */
+    source?: string;
   };
 }
 
@@ -192,7 +194,7 @@ function ColorPicker({
       */}
       {inUseColors.length > 0 ? (
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-neutral-500">In the prompt now</span>
+          <span className="text-xs text-neutral-400">In the prompt now</span>
           <div className="flex flex-wrap items-center gap-1.5">
             {inUseColors.map((token) => (
               <button
@@ -215,7 +217,7 @@ function ColorPicker({
       ) : null}
 
       <div className="flex items-center gap-2">
-        <label htmlFor={id} className="text-xs text-neutral-500">
+        <label htmlFor={id} className="text-xs text-neutral-400">
           Custom
         </label>
         <input
@@ -295,7 +297,7 @@ export function StyleStringBuilder({
                 key={String(inherit)}
                 type="button"
                 aria-pressed={inherited === inherit}
-                title={inherit ? "Use the module's style" : "Set a style for just this item"}
+                title={inherit ? `Use ${inheritance.source ?? "the module's style"}` : "Set a custom style"}
                 onClick={() => {
                   if (inherited !== inherit) inheritance.onChange(inherit);
                 }}
@@ -311,6 +313,12 @@ export function StyleStringBuilder({
           </div>
         ) : null}
       </div>
+
+      {inheritance?.source ? (
+        <p className="text-xs text-neutral-400">
+          {inherited ? "Inherits" : "Inherit restores"}: {inheritance.source}
+        </p>
+      ) : null}
 
       <fieldset
         disabled={inherited}
@@ -366,7 +374,7 @@ export function StyleStringBuilder({
             className="w-full rounded border border-white/10 bg-neutral-950 px-2 py-1.5 font-mono text-base text-neutral-100 focus:border-accent-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="bold fg:#af8700 bg:blue"
           />
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-neutral-400">
             Supports modifiers, named colours, 0–255 indices, #rrggbb, palette
             names, and prev_fg / prev_bg.
           </p>

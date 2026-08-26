@@ -98,6 +98,12 @@ export function colorsInUse(
       const value = values[option];
       if (typeof value === "string") add(value);
     }
+    const rules = module === "battery" ? values.display : module === "kubernetes" ? values.contexts : undefined;
+    if (Array.isArray(rules)) {
+      for (const rule of rules) {
+        if (rule && typeof rule === "object" && typeof rule.style === "string") add(rule.style);
+      }
+    }
     for (const option of meta.formatOptions) {
       const value = values[option];
       if (typeof value === "string") for (const style of stylesInFormat(value)) add(style);
