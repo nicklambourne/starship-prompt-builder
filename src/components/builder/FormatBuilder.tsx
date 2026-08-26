@@ -501,7 +501,7 @@ export function FormatBuilder({
       }
     },
     groupLabel: (group) =>
-      `${!modules ? (group.conditional && group.style === undefined ? "Optional section" : "Group") : groupName(group, categoryOf)} (${group.items.length})`,
+      `${modules ? groupName(group, categoryOf) : "Group"} (${group.items.length})`,
     renderModuleSettings: (name) => modules?.renderSettings(name) ?? null,
     renderStyleEditor: (path, item) => {
       const own = item.kind === "module" ? (modules?.styleOption(item.name) ?? null) : null;

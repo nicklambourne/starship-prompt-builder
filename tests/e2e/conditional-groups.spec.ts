@@ -55,6 +55,22 @@ test("a partial conditional reacts to the environment and keeps hidden contents 
   await expect(preview).toContainText("read-only");
 });
 
+test("conditional groups keep the Group label when their style changes", async ({ page }) => {
+  const format = await loadModule(page, "nodejs", 'format = "$nodejs"\n[nodejs]\nformat = "[ $symbol( $version) ](green)"\n');
+  const group = format.locator('[data-format-row="0.2"]');
+  const styleButton = group.getByRole("button", { name: "Change the style of Group (2)", exact: true });
+  await expect(styleButton).toBeVisible();
+  await expect(format).not.toContainText("Optional section");
+  await styleButton.press("Enter");
+  await group.getByRole("button", { name: "Override", exact: true }).press("Enter");
+  await expect(styleButton).toBeVisible();
+  await group.getByRole("button", { name: "Inherit", exact: true }).press("Enter");
+  await expect(styleButton).toBeVisible();
+  await expect(format).not.toContainText("Optional section");
+  await expect(group.getByRole("checkbox", { name: /^Hide when all variables are empty/ })).toBeChecked();
+  await expect(page.getByLabel("starship.toml")).toHaveValue(/\[ \$symbol\( \$version\) \]\(green\)/);
+});
+
 test("a compact conditional moves with its preserved style wrappers and stops at list boundaries", async ({ page }) => {
   const format = await loadModule(page, "git_status", gitConfig);
   const handle = format.getByRole("button", { name: /^Reorder Group \(3\)/ });
