@@ -345,7 +345,7 @@ export function FormatNode({
                  * reference has vanished from the format it is written in.
                  */
                 <span
-                  title="Painted by the module's style option. The swatch on this row sets it."
+                  title="Inherits the module's style. Open the swatch and choose Override to style only this item."
                   className="inline-flex shrink-0 items-center rounded-full border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400"
                 >
                   $style

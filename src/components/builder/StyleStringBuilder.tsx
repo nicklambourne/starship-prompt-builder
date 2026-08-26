@@ -33,6 +33,11 @@ interface StyleStringBuilderProps {
   paletteNames?: string[];
   /** Needed to resolve palette entries that name an ANSI colour. */
   theme: TerminalTheme;
+  /** Format items can follow the module or use an independent style. */
+  inheritance?: {
+    inherited: boolean;
+    onChange(inherited: boolean): void;
+  };
 }
 
 function colorToken(color: Color | undefined): string {
@@ -232,19 +237,27 @@ export function StyleStringBuilder({
   paletteNames,
   inUseColors,
   theme,
+  inheritance,
 }: StyleStringBuilderProps) {
   const [showRaw, setShowRaw] = useState(false);
   const parts = useMemo(() => decompose(value), [value]);
   const parsed = useMemo(() => parseStyleString(value, palette), [value, palette]);
   const rawId = useId();
+  const inherited = inheritance?.inherited ?? false;
 
   const update = (next: Partial<typeof parts>) => {
-    onChange(compose({ ...parts, ...next }));
+    // A new colour/modifier replaces an explicit reset, otherwise `none`
+    // would silently cancel the user's first edit after choosing Override.
+    onChange(compose({
+      ...parts,
+      ...next,
+      extra: parts.extra.filter((token) => token !== "none"),
+    }));
   };
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-neutral-900/60 p-3">
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         {STYLE_MODIFIERS.map((modifier) => {
           const active = parts.modifiers.has(modifier);
           return (
@@ -252,6 +265,7 @@ export function StyleStringBuilder({
               key={modifier}
               type="button"
               aria-pressed={active}
+              disabled={inherited}
               onClick={() => {
                 const next = new Set(parts.modifiers);
                 if (active) next.delete(modifier);
@@ -260,7 +274,7 @@ export function StyleStringBuilder({
               }}
               aria-label={modifier}
               title={modifier}
-              className={`grid size-7 place-items-center rounded border transition ${
+              className={`grid size-7 place-items-center rounded border transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 active
                   ? "border-accent-400 bg-accent-400/15 text-accent-200"
                   : "border-white/10 text-neutral-400 hover:border-white/25 hover:text-neutral-200"
@@ -270,9 +284,39 @@ export function StyleStringBuilder({
             </button>
           );
         })}
+        {inheritance ? (
+          <div
+            role="group"
+            aria-label="Style source"
+            className="ml-auto flex shrink-0 rounded border border-white/15 p-0.5"
+          >
+            {[true, false].map((inherit) => (
+              <button
+                key={String(inherit)}
+                type="button"
+                aria-pressed={inherited === inherit}
+                title={inherit ? "Use the module's style" : "Set a style for just this item"}
+                onClick={() => {
+                  if (inherited !== inherit) inheritance.onChange(inherit);
+                }}
+                className={`rounded px-2 py-1 text-xs transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400 ${
+                  inherited === inherit
+                    ? "bg-accent-400/15 text-accent-200"
+                    : "text-neutral-400 hover:bg-white/5 hover:text-neutral-200"
+                }`}
+              >
+                {inherit ? "Inherit" : "Override"}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <fieldset
+        disabled={inherited}
+        aria-label="Style colours"
+        className="grid min-w-0 gap-3 disabled:opacity-50 sm:grid-cols-2"
+      >
         <ColorPicker
           label="Foreground"
           value={parts.fg}
@@ -291,7 +335,7 @@ export function StyleStringBuilder({
           palette={palette}
           theme={theme}
         />
-      </div>
+      </fieldset>
 
       <div className="flex items-center justify-between gap-3">
         <button
@@ -316,9 +360,10 @@ export function StyleStringBuilder({
           <input
             id={rawId}
             value={value}
+            disabled={inherited}
             onChange={(e) => onChange(e.target.value)}
             spellCheck={false}
-            className="w-full rounded border border-white/10 bg-neutral-950 px-2 py-1.5 font-mono text-base text-neutral-100 focus:border-accent-400 focus:outline-none"
+            className="w-full rounded border border-white/10 bg-neutral-950 px-2 py-1.5 font-mono text-base text-neutral-100 focus:border-accent-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="bold fg:#af8700 bg:blue"
           />
           <p className="text-xs text-neutral-500">

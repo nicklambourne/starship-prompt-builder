@@ -90,9 +90,8 @@ interface FormatBuilderProps {
   };
   /**
    * The `style` option of the module whose format this is, when this editor is
-   * a module's own format. A piece painted with `$style` is painted by that
-   * option, so its swatch edits the option rather than writing a literal over
-   * the reference — which would leave the option paying for nothing.
+   * a module's own format. Items can inherit this option through `$style`
+   * or explicitly detach from it to edit their own style.
    */
   ownerStyle?: {
     value: string;
@@ -117,8 +116,7 @@ const SMALL_BUTTON_OPEN =
   `${SMALL_BUTTON_SHAPE} border-accent-400 bg-accent-400/15 text-accent-200`;
 
 /**
- * The panel behind a swatch that edits a module's `style` option — from the
- * module's row, or from a piece its own format paints with `$style`.
+ * The panel behind the module row's swatch, editing its shared `style` option.
  */
 function ModuleStyleEditor({
   own,
@@ -433,7 +431,7 @@ export function FormatBuilder({
       if (ownerStyle && item.style && isStyleVariable(item.style)) {
         return {
           value: ownerStyle.value,
-          ownTitle: "Painted by the module's style option — this sets that",
+          ownTitle: "Inherits the module's style — choose Override to style only this item",
           paintedByStyle: true,
         };
       }
@@ -458,26 +456,25 @@ export function FormatBuilder({
     renderModuleSettings: (name) => modules?.renderSettings(name) ?? null,
     renderStyleEditor: (path, item) => {
       const own = item.kind === "module" ? (modules?.styleOption(item.name) ?? null) : null;
-      /*
-        Inside a module's own format, a piece painted with `$style` is painted
-        by the same option the row above edits — so the same panel opens here,
-        rather than a control whose first click writes a literal over the
-        reference and leaves the option spending nothing.
-      */
-      if (!own && ownerStyle && item.kind !== "raw" && item.style && isStyleVariable(item.style)) {
+      if (!own && ownerStyle && item.kind !== "raw") {
+        const inherited = isStyleVariable(item.style ?? "");
+        const setItemStyle = (style: string) => {
+          const next = updateAt(items, path, (target) =>
+            target.kind === "raw" ? target : { ...target, style },
+          );
+          // Preserve the arrangement and the open editor while changing mode.
+          setArrangement(next);
+          onChange(fromItems(next));
+        };
         return (
-          <ModuleStyleEditor
-            own={{ ...ownerStyle, spent: true }}
-            set={ownerStyle.set}
-            note={
-              <>
-                Painted by the module&rsquo;s{" "}
-                <code className="text-neutral-400">style</code> option, which this
-                sets. To paint it with something else, replace{" "}
-                <code className="text-neutral-400">$style</code> in the raw style
-                string.
-              </>
-            }
+          <StyleStringBuilder
+            value={inherited ? ownerStyle.value : (item.style ?? "")}
+            onChange={(style) => setItemStyle(style.trim() ? style : "none")}
+            inheritance={{
+              inherited,
+              onChange: (inherit) =>
+                setItemStyle(inherit ? "$style" : (ownerStyle.value.trim() || "none")),
+            }}
             palette={palette}
             paletteNames={paletteNames}
             inUseColors={inUseColors}
