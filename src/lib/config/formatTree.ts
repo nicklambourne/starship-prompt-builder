@@ -141,10 +141,22 @@ export function moveTo(
   if (isSamePath(from, to) || isAncestor(from, to)) return items;
 
   const dragged = getAt(items, from);
-  if (!dragged) return items;
+  if (!dragged || !getAt(items, to)) return items;
+
+  // Removing the last child also removes its empty ancestors. Account for
+  // that whole branch when locating the destination, or a one-variable
+  // conditional can be dropped from the format instead of moved.
+  let removedPath = from;
+  while (removedPath.length > 1) {
+    const parentPath = removedPath.slice(0, -1);
+    const parent = getAt(items, parentPath);
+    if (parent?.kind !== "group" || parent.items.length !== 1) break;
+    removedPath = parentPath;
+  }
+  if (isSamePath(to, removedPath) || isAncestor(removedPath, to)) return items;
 
   const without = removeAt(items, from);
-  const destination = adjustAfterRemoval(to, from);
+  const destination = adjustAfterRemoval(to, removedPath);
 
   if (position === "into") {
     return appendInto(without, destination, dragged);

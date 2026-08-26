@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { decodeShare } from "../../src/lib/config/share";
 
 /**
  * End-to-end coverage of flows that span the whole stack: a setting change
@@ -907,14 +908,10 @@ test.describe("builder", () => {
     const variable = page.getByRole("button", {
       name: /^\$\{branch\} — nothing to open/,
     });
-    await expect(variable).toBeDisabled();
-    // Marked as such, the way an inert style button is.
-    expect(await variable.evaluate((el) => getComputedStyle(el).opacity)).toBe("0.45");
-    expect(
-      await variable.evaluate((el) => getComputedStyle(el).cursor),
-    ).toBe("not-allowed");
-    // And it makes no claim about a state it does not have.
-    await expect(variable).not.toHaveAttribute("aria-expanded");
+    // No dead disclosure consuming the narrow variable row; the style
+    // button is the useful control, and the variable's label stays readable.
+    await expect(variable).toHaveCount(0);
+    await expect(format.getByRole("button", { name: "Change the style of ${branch}", exact: true })).toBeEnabled();
   });
 
   test("a text piece can be switched off without losing it", async ({ page }) => {
@@ -1345,14 +1342,14 @@ test.describe("builder", () => {
     ).toBeDisabled();
   });
 
-  test("a piece painted by $style edits the module's style option", async ({
+  test("format item inheritance can be overridden without changing the module style", async ({
     page,
   }) => {
     await page.goto("./");
     await openToml(page);
     await page
       .getByLabel("starship.toml")
-      .fill('format = "$os"\n\n[os]\ndisabled = false\n');
+      .fill('format = "$os"\n\n[os]\ndisabled = false\nstyle = "bold green"\n');
     const osRow = page
       .locator("li")
       .filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) })
@@ -1366,15 +1363,71 @@ test.describe("builder", () => {
     const piece = osRow.locator('[data-option="format"] [data-format-row]').first();
     await expect(piece).toContainText("$style");
     await activate(piece.getByRole("button", { name: /style of/i }).first());
-    await expect(piece).toContainText("Painted by the module");
+    await expect(piece).not.toContainText("Painted by the module");
+    const inherit = piece.getByRole("button", { name: "Inherit", exact: true });
+    const override = piece.getByRole("button", { name: "Override", exact: true });
+    await expect(inherit).toHaveAttribute("aria-pressed", "true");
+    await expect(piece.getByRole("button", { name: "bold", exact: true })).toBeDisabled();
+    await expect(piece.getByRole("button", { name: "Foreground: red", exact: true })).toBeDisabled();
 
-    // Setting a colour here used to write it over the reference, leaving the
-    // module's option spending nothing. It sets the option instead.
+    await activate(override);
+    await expect(override).toHaveAttribute("aria-pressed", "true");
+    await expect(piece.getByRole("button", { name: "bold", exact: true })).toHaveAttribute("aria-pressed", "true");
     await activate(piece.getByRole("button", { name: "Foreground: red" }).first());
     const toml = page.getByLabel("starship.toml");
-    await expect(toml).toHaveValue(/\[os\][\s\S]*style = "[^"]*red"/);
-    await expect(toml).not.toHaveValue(/format = "\[\$symbol\]\(red\)"/);
+    await expect(toml).toHaveValue(/format = "\[\$symbol\]\(bold red\)"/);
+    await expect(toml).toHaveValue(/style = "bold green"/);
+
+    await activate(inherit);
+    await expect(inherit).toHaveAttribute("aria-pressed", "true");
+    await expect(toml).not.toHaveValue(/\(bold red\)/);
+    await expect(toml).toHaveValue(/style = "bold green"/);
+    await activate(page.getByRole("button", { name: /^Undo/ }));
+    await expect(override).toHaveAttribute("aria-pressed", "true");
+    await expect(toml).toHaveValue(/\(bold red\)/);
+    await activate(page.getByRole("button", { name: /^Redo/ }));
+    await expect(inherit).toHaveAttribute("aria-pressed", "true");
   });
+
+  for (const target of ["variable", "text", "group"] as const) {
+    test(`format item inheritance restores the surrounding group after a ${target} override`, async ({ page }) => {
+      await page.goto("./");
+      await openToml(page);
+      const toml = page.getByLabel("starship.toml");
+      const inner = target === "variable" ? "$symbol" : target === "text" ? "hello" : "$symbol hello";
+      await toml.fill(`format = "$os"\n[os]\ndisabled = false\nstyle = "none"\nformat = "[[${inner}](\${style}) tail](blue)"\n`);
+      await activate(page.getByRole("button", { name: "Expand $os", exact: true }));
+      const option = page.locator('[data-option="format"]');
+      await openOption(page.locator("li").filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) }).first(), "format");
+      const piece = option.locator('[data-format-row="0.0"]');
+      await activate(piece.getByRole("button", { name: /^Change the style of/ }).first());
+      await expect(piece.getByRole("button", { name: "Inherit", exact: true })).toHaveAttribute("aria-pressed", "true");
+      await activate(piece.getByRole("button", { name: "Override", exact: true }));
+      await activate(piece.getByRole("button", { name: "Edit raw style string", exact: true }));
+      // An empty override must stay explicit, not silently become inheritance.
+      await piece.getByRole("textbox", { name: "Raw style string" }).fill("");
+      await expect(toml).toHaveValue(/\]\(none\) tail\]\(blue\)/);
+      await expect(piece.getByRole("button", { name: "Override", exact: true })).toHaveAttribute("aria-pressed", "true");
+      await activate(piece.getByRole("button", { name: "Foreground: red", exact: true }));
+      await expect(toml).toHaveValue(/\]\(red\) tail\]\(blue\)/);
+      await expect(toml).toHaveValue(/style = "none"/);
+
+      await expect.poll(() => decodeShare(new URL(page.url()).hash)?.os)
+        .toMatchObject({ format: `[[${inner}](red) tail](blue)` });
+      await page.reload();
+      await activate(page.getByRole("button", { name: "Expand $os", exact: true }));
+      await openOption(page.locator("li").filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) }).first(), "format");
+      await activate(piece.getByRole("button", { name: /^Change the style of/ }).first());
+      await expect(piece.getByRole("button", { name: "Override", exact: true })).toHaveAttribute("aria-pressed", "true");
+      await expect(piece.getByRole("button", { name: "Foreground: red", exact: true })).toHaveAttribute("aria-pressed", "true");
+      await activate(piece.getByRole("button", { name: "Inherit", exact: true }));
+      await openToml(page);
+      // Inherit removes this item's override, allowing the nearest group
+      // to paint it. It must not bypass that group by reintroducing $style.
+      await expect.poll(() => toml.inputValue()).toContain(`format = "[${inner} tail](blue)"`);
+      await expect(toml).toHaveValue(/style = "none"/);
+    });
+  }
 
   test("a format that has stopped spending $style can be put back", async ({
     page,

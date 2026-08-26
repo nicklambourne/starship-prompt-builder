@@ -1,16 +1,14 @@
 /**
- * A flat, editable view of a format string.
+ * An editable tree of a format string.
  *
  * The format grammar is a tree, but the thing people actually want to
  * manipulate is a sequence: this module goes here, that literal sits between
  * them, this part is purple. `toItems` flattens the top level of a parsed
  * format into that sequence and `fromItems` puts it back.
  *
- * Constructs the flat view cannot represent faithfully (conditionals, groups
- * mixing variables and text, anything nested) become `raw` items. They are
- * preserved verbatim and can be moved or deleted, just not restructured —
- * which keeps the visual editor lossless for configs it does not fully
- * understand, rather than silently rewriting them.
+ * Style and conditional wrappers remain in the tree even when the UI folds
+ * them together. Editing the visual representation must not discard syntax
+ * or turn a visibility-only wrapper into a style reset.
  */
 
 import {
@@ -34,7 +32,17 @@ export type FormatItem =
    * of related modules — every VCS module, say — share one style, so it is a
    * real construct here rather than a UI-only convenience.
    */
-  | { kind: "group"; items: FormatItem[]; style?: string }
+  | {
+      kind: "group";
+      items: FormatItem[];
+      style?: string;
+      /**
+       * `(contents)`, optionally inside a style wrapper. When present without
+       * a style, this group is transparent to styling. `false` retains that
+       * transparency while the user switches conditional visibility off.
+       */
+      conditional?: boolean;
+    }
   | { kind: "raw"; source: string };
 
 /** Renders a text group's style elements back to a style string. */
@@ -56,6 +64,11 @@ function elementToItem(element: FormatElement): FormatItem {
   if (element.type === "textGroup") {
     const style = styleToString(element.style);
     const inner = element.format;
+    // One styled conditional is one editable group with a visibility setting.
+    // Keep the order: `[($a)](red)` is not the same syntax as `([$a](red))`.
+    if (inner.length === 1 && inner[0].type === "conditional") {
+      return { kind: "group", items: inner[0].format.map(elementToItem), style, conditional: true };
+    }
     /*
      * A group wrapping exactly one variable is how a styled module is
      * written, so it reads back as one — but only when it carries a style.
@@ -75,9 +88,7 @@ function elementToItem(element: FormatElement): FormatItem {
       };
     }
     // Anything else is a genuine group; recurse so its members stay editable.
-    if (inner.length > 0 && !inner.some((el) => el.type === "conditional")) {
-      return { kind: "group", items: inner.map(elementToItem), style };
-    }
+    return { kind: "group", items: inner.map(elementToItem), style };
   }
   if (element.type === "conditional") {
     const inner = element.format;
@@ -85,7 +96,7 @@ function elementToItem(element: FormatElement): FormatItem {
     // conversion what the inside is rather than only matching bare text.
     if (inner.length === 1) {
       const only = elementToItem(inner[0]);
-      if (only.kind === "text") return { ...only, disabled: true };
+      if (only.kind === "text" && !only.disabled) return { ...only, disabled: true };
     }
     // Only a run of pure literal: a conditional with a variable in it is a
     // real conditional, and its author meant it.
@@ -96,6 +107,7 @@ function elementToItem(element: FormatElement): FormatItem {
         disabled: true,
       };
     }
+    return { kind: "group", items: inner.map(elementToItem), conditional: true };
   }
   return { kind: "raw", source: printFormat([element]) };
 }
@@ -112,33 +124,24 @@ export function itemToSource(item: FormatItem): string {
   if (item.kind === "raw") return item.source;
 
   if (item.kind === "group") {
-    /*
-     * `[$a](bold)` is both "a group of one, styled bold" and "a bold module":
-     * the format string cannot tell them apart, so a group of one can only
-     * survive unstyled. When one is left holding a style — usually because a
-     * group was emptied down to a single member — the style moves onto that
-     * member, which renders the same and keeps it visible in the UI. A member
-     * with its own style already overrides the group's, so it just keeps it.
-     */
-    if (item.items.length === 1 && item.style) {
-      const only = item.items[0];
-      if (only.kind !== "raw" && !only.style) {
-        return itemToSource({ ...only, style: item.style });
-      }
-      return itemToSource(only);
-    }
-    return `[${item.items.map(itemToSource).join("")}](${item.style ?? ""})`;
+    const contents = item.items.map(itemToSource).join("");
+    const visible = item.conditional ? `(${contents})` : contents;
+    // Never optimise away a wrapper on export: even an empty style resets
+    // inheritance, and a hidden outer wrapper remains editable in raw view.
+    return item.conditional !== undefined && item.style === undefined
+      ? visible
+      : `[${visible}](${item.style ?? ""})`;
   }
 
   if (item.kind === "module") {
     const variable = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(item.name)
       ? `$${item.name}`
       : `\${${item.name}}`;
-    return item.style ? `[${variable}](${item.style})` : variable;
+    return item.style !== undefined ? `[${variable}](${item.style})` : variable;
   }
 
   const escaped = item.value.replace(/[[\]()\\$]/g, (ch) => `\\${ch}`);
-  const styled = item.style ? `[${escaped}](${item.style})` : escaped;
+  const styled = item.style !== undefined ? `[${escaped}](${item.style})` : escaped;
   /*
    * Switched off: wrapped in a conditional holding no variables, which
    * starship renders as nothing — checked against the binary, not just
@@ -150,6 +153,13 @@ export function itemToSource(item: FormatItem): string {
 
 export function fromItems(items: FormatItem[]): string {
   return items.map(itemToSource).join("");
+}
+
+/** Safe to hide in the normal view, but never remove from the saved format. */
+export function isRedundantStyleWrapper(item: FormatItem): boolean {
+  if (item.kind !== "group" || item.conditional || item.items.length !== 1) return false;
+  const child = item.items[0];
+  return child.kind === "group" && child.style !== undefined;
 }
 
 /** Moves an item, returning a new array. Out-of-range moves are no-ops. */

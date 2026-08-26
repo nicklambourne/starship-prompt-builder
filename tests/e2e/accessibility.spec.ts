@@ -30,6 +30,25 @@ async function openEverything(page: import("@playwright/test").Page) {
 }
 
 for (const scheme of ["dark", "light"] as const) {
+  test(`format item inheritance is accessible in the ${scheme} theme`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("./");
+    await page.getByRole("button", { name: "Expand $os", exact: true }).press("Enter");
+    await page.getByRole("button", { name: "Expand format", exact: true }).press("Enter");
+    await page.getByRole("button", { name: "Change the style of ${symbol}", exact: true }).press("Enter");
+
+    for (const mode of ["Inherit", "Override"]) {
+      const toggle = page.getByRole("button", { name: mode, exact: true });
+      await toggle.press("Enter");
+      await expect(toggle).toHaveAttribute("aria-pressed", "true");
+      const { violations } = await new AxeBuilder({ page })
+        .include('[data-option="format"]')
+        .withTags(TAGS)
+        .analyze();
+      expect(violations).toEqual([]);
+    }
+  });
+
   test(`the ${scheme} theme has no accessibility violations`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
     await openEverything(page);

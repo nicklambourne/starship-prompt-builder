@@ -8,9 +8,8 @@
  * can be dragged, grouped and recoloured. Groups nest, and their children get
  * exactly the same affordances as the top level.
  *
- * Pieces the flat model cannot represent (conditionals in particular) are kept
- * verbatim as read-only rows — movable and removable, but edited in the raw
- * field — so no config is silently rewritten.
+ * Conditional sections share the same editing controls as styled groups.
+ * Redundant style wrappers are hidden by default, not removed from the config.
  */
 
 import { useMemo, useRef, useState } from "react";
@@ -25,6 +24,7 @@ import {
   gatherCategory,
   groupName,
   groupableCategories,
+  isRedundantStyleWrapper,
   toItems,
   ungroup,
 } from "@/lib/config/formatItems";
@@ -40,6 +40,9 @@ import {
 } from "@/lib/config/formatTree";
 import { describeModule } from "@/lib/config/descriptions";
 import { isStyleVariable } from "@/lib/config/styleReach";
+import { formatItemStyle, formatItemStyleSource, type FormatStyleVariables } from "@/lib/config/formatStyles";
+import { groupVisibility } from "@/lib/config/formatVisibility";
+import type { VariableMap } from "@/lib/engine/render";
 import { MODULE_META } from "@/lib/config/meta";
 import { tryParseFormatString } from "@/lib/engine/formatString";
 import type { Palette } from "@/lib/engine/styleString";
@@ -59,6 +62,8 @@ interface FormatBuilderProps {
   paletteNames?: string[];
   /** Colours the prompt already uses, for the style editors' own row. */
   inUseColors?: string[];
+  styleVariables?: FormatStyleVariables;
+  variables?: VariableMap;
   noun?: string;
   allowCategoryGrouping?: boolean;
   scope?: string;
@@ -90,9 +95,8 @@ interface FormatBuilderProps {
   };
   /**
    * The `style` option of the module whose format this is, when this editor is
-   * a module's own format. A piece painted with `$style` is painted by that
-   * option, so its swatch edits the option rather than writing a literal over
-   * the reference — which would leave the option paying for nothing.
+   * a module's own format. Items can inherit this option through `$style`
+   * or explicitly detach from it to edit their own style.
    */
   ownerStyle?: {
     value: string;
@@ -117,8 +121,7 @@ const SMALL_BUTTON_OPEN =
   `${SMALL_BUTTON_SHAPE} border-accent-400 bg-accent-400/15 text-accent-200`;
 
 /**
- * The panel behind a swatch that edits a module's `style` option — from the
- * module's row, or from a piece its own format paints with `$style`.
+ * The panel behind the module row's swatch, editing its shared `style` option.
  */
 function ModuleStyleEditor({
   own,
@@ -219,9 +222,14 @@ export function FormatBuilder({
   fontStack,
   modules,
   ownerStyle,
+  styleVariables,
+  variables,
   searchable = false,
 }: FormatBuilderProps) {
+  const formatStyles = styleVariables ?? { style: ownerStyle?.value };
+  const moduleStyle = formatStyles.style;
   const [showRaw, setShowRaw] = useState(false);
+  const [showAllStyleWrappers, setShowAllStyleWrappers] = useState(false);
   const [styling, setStyling] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   /** Groups the reader has closed, where the default is open. */
@@ -280,6 +288,19 @@ export function FormatBuilder({
   const itemsRef = useRef(items ?? []);
   itemsRef.current = items ?? [];
 
+  // A compact row moves with its hidden wrappers. Styling and dropping INTO
+  // it still address the visible child, so edits reach the intended group.
+  const movePath = (path: Path): Path => {
+    let target = path;
+    while (!showAllStyleWrappers && target.length > 1) {
+      const parentPath = target.slice(0, -1);
+      const parent = getAt(itemsRef.current, parentPath);
+      if (!parent || !isRedundantStyleWrapper(parent)) break;
+      target = parentPath;
+    }
+    return target;
+  };
+
   /*
    * One drag implementation for mouse, pen and touch. The native HTML5 API
    * this replaced never fired on a phone, which left the handles inert there
@@ -294,7 +315,7 @@ export function FormatBuilder({
     onDrop: (from, to, position) => {
       // Read through a ref for the same reason `from` is passed in: this
       // closure is as old as the drag.
-      commit(moveTo(itemsRef.current, from, to, position));
+      commit(moveTo(itemsRef.current, movePath(from), position === "into" ? to : movePath(to), position));
       setDragging(null);
       setDropTarget(null);
     },
@@ -348,8 +369,33 @@ export function FormatBuilder({
     theme,
     fontStack,
     palette,
+    managesModules: Boolean(modules),
+    showAllStyleWrappers,
+    groupVisibility: (path) => groupVisibility(items, path, variables),
+    onConditionalChange: (path, conditional) => commit(updateAt(items, path, (item) =>
+      item.kind === "group" ? { ...item, conditional, style: item.style ?? (item.conditional === undefined ? "" : undefined) } : item,
+    )),
+    renderGroupAdditions: (path) => {
+      const append = (child: FormatItem) => commit(updateAt(items, path, (item) =>
+        item.kind === "group" ? { ...item, items: [...item.items, child] } : item,
+      ));
+      return (
+        <div className="flex min-w-0 flex-wrap items-center gap-2 px-2 py-1.5">
+          <select
+            aria-label={`Add ${noun} to group`}
+            value=""
+            onChange={(event) => { if (event.target.value) append({ kind: "module", name: event.target.value }); }}
+            className="min-w-0 max-w-full rounded border border-white/15 bg-neutral-950 px-2 py-1 text-xs text-neutral-200"
+          >
+            <option value="">+ Add {noun}…</option>
+            {vocabulary.map(name => <option key={name} value={name}>${name}</option>)}
+          </select>
+          <button type="button" className={SMALL_BUTTON} onClick={() => append({ kind: "text", value: " " })}>+ Add text</button>
+        </div>
+      );
+    },
     onHandlePointerDown: startPointerDrag,
-    onNudge: (path, direction) => commit(nudge(items, path, direction)),
+    onNudge: (path, direction) => commit(nudge(items, movePath(path), direction)),
     onGroup: (path) =>
       commit(
         updateAt(items, path, (item) =>
@@ -424,20 +470,21 @@ export function FormatBuilder({
     isModuleEnabled: (name) => modules?.isEnabled(name) ?? true,
     inactiveNote: (name) => modules?.inactiveNote(name) ?? null,
     styleReaches: (name) => modules?.styleReaches(name) ?? true,
-    rowStyle: (item) => {
+    rowStyle: (item, path) => {
       if (item.kind === "raw") return {};
       if (item.kind === "module") {
         const own = modules?.styleOption(item.name) ?? null;
         if (own) return { value: own.value, ownTitle: `Set $${item.name}'s own style` };
       }
-      if (ownerStyle && item.style && isStyleVariable(item.style)) {
+      const value = formatItemStyle(items, path, formatStyles);
+      if (moduleStyle !== undefined && isStyleVariable(formatItemStyleSource(items, path) ?? "")) {
         return {
-          value: ownerStyle.value,
-          ownTitle: "Painted by the module's style option — this sets that",
+          value,
+          ownTitle: "Inherits the module's style — choose Override to style only this item",
           paintedByStyle: true,
         };
       }
-      return { value: item.style };
+      return { value };
     },
     onToggleModule: (name, enabled) => modules?.setEnabled(name, enabled),
     onToggleText: (path, enabled) =>
@@ -454,30 +501,39 @@ export function FormatBuilder({
       }
     },
     groupLabel: (group) =>
-      `${groupName(group, categoryOf)} (${group.items.length})`,
+      `${modules ? groupName(group, categoryOf) : "Group"} (${group.items.length})`,
     renderModuleSettings: (name) => modules?.renderSettings(name) ?? null,
     renderStyleEditor: (path, item) => {
       const own = item.kind === "module" ? (modules?.styleOption(item.name) ?? null) : null;
-      /*
-        Inside a module's own format, a piece painted with `$style` is painted
-        by the same option the row above edits — so the same panel opens here,
-        rather than a control whose first click writes a literal over the
-        reference and leaves the option spending nothing.
-      */
-      if (!own && ownerStyle && item.kind !== "raw" && item.style && isStyleVariable(item.style)) {
+      if (!own && !modules && item.kind !== "raw") {
+        const parentStyle = formatItemStyleSource(items, path.slice(0, -1));
+        const transparent = item.style === undefined && (item.kind !== "group" || item.conditional !== undefined);
+        const inherited = transparent || isStyleVariable(item.style ?? "");
+        const effective = formatItemStyle(items, path, formatStyles) ?? "";
+        const setItemStyle = (style: string | undefined) => {
+          const next = updateAt(items, path, (target) =>
+            target.kind === "raw" ? target : target.kind === "group" && style === undefined
+              ? { ...target, style, conditional: target.conditional ?? false }
+              : { ...target, style },
+          );
+          // Preserve the arrangement and the open editor while changing mode.
+          setArrangement(next);
+          onChange(fromItems(next));
+        };
         return (
-          <ModuleStyleEditor
-            own={{ ...ownerStyle, spent: true }}
-            set={ownerStyle.set}
-            note={
-              <>
-                Painted by the module&rsquo;s{" "}
-                <code className="text-neutral-400">style</code> option, which this
-                sets. To paint it with something else, replace{" "}
-                <code className="text-neutral-400">$style</code> in the raw style
-                string.
-              </>
-            }
+          <StyleStringBuilder
+            value={inherited ? effective : (item.style ?? "")}
+            onChange={(style) => setItemStyle(style.trim() ? style : "none")}
+            inheritance={{
+              inherited,
+              source: isStyleVariable(item.style ?? "") ? "Module style" : parentStyle !== undefined ? "Surrounding group" : "Terminal default",
+              onChange: (inherit) => {
+                if (inherit === inherited) return;
+                setItemStyle(inherit
+                  ? (parentStyle !== undefined || moduleStyle === undefined ? undefined : "$style")
+                  : (effective.trim() || "none"));
+              },
+            }}
             palette={palette}
             paletteNames={paletteNames}
             inUseColors={inUseColors}
@@ -584,6 +640,9 @@ export function FormatBuilder({
         matches({ kind: "module", name }),
       ).length
     : collectModuleNames(items).length;
+  const hasRedundantWrappers = (list: FormatItem[]): boolean => list.some(item =>
+    isRedundantStyleWrapper(item) || (item.kind === "group" && hasRedundantWrappers(item.items)),
+  );
 
   return (
     <div className="flex flex-col gap-2" data-format-scope={scope}>
@@ -647,6 +706,13 @@ export function FormatBuilder({
         >
           + Add text
         </button>
+        <button
+          type="button"
+          onClick={() => commit([...items, { kind: "group", items: [], conditional: true }])}
+          className={SMALL_BUTTON}
+        >
+          + Add conditional group
+        </button>
         {categories.map((category) => (
           <button
             key={category}
@@ -666,6 +732,13 @@ export function FormatBuilder({
           {showRaw ? "Hide" : "Edit"} raw format string
         </button>
       </div>
+
+      {hasRedundantWrappers(items) ? (
+        <label className="flex items-start gap-2 text-xs text-neutral-400">
+          <input type="checkbox" checked={showAllStyleWrappers} onChange={event => setShowAllStyleWrappers(event.target.checked)} className="mt-0.5 accent-accent-500" />
+          Show all style wrappers (advanced)
+        </label>
+      ) : null}
 
       {adding ? (
         <div className="flex flex-col gap-2 rounded border border-white/10 bg-neutral-900/60 p-2">

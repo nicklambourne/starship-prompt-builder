@@ -43,6 +43,9 @@ import { collectVariables, tryParseFormatString } from "@/lib/engine/formatStrin
 import { resolvePalette } from "@/lib/engine/styleString";
 import { expandAll, structuredFormatString } from "@/lib/config/defaultFormat";
 import { colorsInUse } from "@/lib/config/colorsInUse";
+import { styleOptionFallback, styleRulesFor } from "@/lib/config/styleOptions";
+import { moduleFormatStyles } from "@/lib/config/formatStyles";
+import { moduleFormatVariables } from "@/lib/config/formatVisibility";
 import { withStyleVariable } from "@/lib/config/formatItems";
 import { inactiveReason } from "@/lib/config/inactiveReason";
 import { describeOption } from "@/lib/config/options";
@@ -371,8 +374,17 @@ export function Builder() {
         kind: optionKind(name, key, defaultValue, meta),
         defaultValue,
         description: describeOption(name, key),
+        styleFallback: styleOptionFallback(
+          definition.defaults,
+          (config[name] as Record<string, unknown>) ?? {},
+          key,
+        ),
+        styleRules: styleRulesFor(
+          name, key, definition.defaults,
+          (config[name] as Record<string, unknown>) ?? {},
+        ),
       }));
-  }, [rowOwnsStyle]);
+  }, [rowOwnsStyle, config]);
 
   /** Variables a module's own format strings may reference. */
   const variablesFor = useCallback(
@@ -545,7 +557,8 @@ export function Builder() {
    */
   const renderSettings = useCallback(
     (name: string) => {
-      if (optionsFor(name).length === 0) return null;
+      const definition = MODULES_BY_NAME.get(name);
+      if (!definition || optionsFor(name).length === 0) return null;
       return (
       <SettingsForm
         options={optionsFor(name)}
@@ -558,6 +571,8 @@ export function Builder() {
         paletteNames={paletteNames}
         inUseColors={inUseTokens}
         ownStyle={ownStyleFor(name) ?? undefined}
+        styleVariables={moduleFormatStyles(definition, config, scenario)}
+        variables={moduleFormatVariables(definition, config, scenario)}
         reveal={
           revealed?.module === name
             ? { key: revealed.key, nonce: revealed.nonce }
@@ -572,12 +587,14 @@ export function Builder() {
       config,
       optionsFor,
       ownStyleFor,
+      scenario,
       revealed,
       variablesFor,
       updateModuleOption,
       resetModuleOption,
       palette,
       paletteNames,
+      inUseTokens,
       theme,
       font.stack,
     ],

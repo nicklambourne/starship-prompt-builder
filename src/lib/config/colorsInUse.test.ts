@@ -19,6 +19,15 @@ describe("colours in use", () => {
     expect(found.map((c) => c.token)).toEqual(["red", "yellow"]);
   });
 
+  it("includes the styles in battery and Kubernetes rules", () => {
+    const config = {
+      battery: { display: [{ threshold: 100, style: "bold #123456" }] },
+      kubernetes: { contexts: [{ context_pattern: "prod", style: "bg:peach" }] },
+    };
+    expect(colorsInUse(config).map((c) => c.token)).toEqual(["#123456", "peach"]);
+    expect(colorsInUse(config, { renders: () => false })).toEqual([]);
+  });
+
   it("keeps modifiers and positions out of it", () => {
     const found = colorsInUse({ format: "[$a](bold italic none prev_fg fg:blue)" });
     expect(found.map((c) => c.token)).toEqual(["blue"]);

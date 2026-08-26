@@ -23,6 +23,7 @@ import {
   type DropPosition,
   type FormatItem,
   itemLabel,
+  isRedundantStyleWrapper,
 } from "@/lib/config/formatItems";
 import { type Path, pathKey } from "@/lib/config/formatTree";
 import type { Palette } from "@/lib/engine/styleString";
@@ -64,6 +65,11 @@ function inertStyleReason(label: string): string {
 const DANGER_BUTTON = `${ROW_BUTTON} hover:border-red-400 hover:bg-red-400/10 hover:text-red-300`;
 
 export interface FormatNodeCallbacks {
+  managesModules: boolean;
+  showAllStyleWrappers: boolean;
+  groupVisibility(path: Path): boolean | undefined;
+  onConditionalChange(path: Path, conditional: boolean): void;
+  renderGroupAdditions(path: Path): ReactNode;
   /** Begins a drag from a row's handle; pointer events cover touch too. */
   onHandlePointerDown(event: PointerEvent<HTMLElement>, path: Path): void;
   onNudge(path: Path, direction: -1 | 1): void;
@@ -92,7 +98,7 @@ export interface FormatNodeCallbacks {
    * `style` option — its swatch on the root format, or a piece its format
    * paints with `$style` — it is the option's value, and `ownTitle` says so.
    */
-  rowStyle(item: FormatItem): {
+  rowStyle(item: FormatItem, path: Path): {
     value?: string;
     ownTitle?: string;
     /** Set where the piece's style is the module's `$style`, not a literal. */
@@ -155,6 +161,9 @@ export function FormatNode({
   callbacks: FormatNodeCallbacks;
 }) {
   if (cb.isFiltered(item, path)) return null;
+  if (!cb.showAllStyleWrappers && isRedundantStyleWrapper(item) && item.kind === "group") {
+    return <FormatNode item={item.items[0]} path={[...path, 0]} callbacks={cb} />;
+  }
 
   const key = pathKey(path);
   const expanded = cb.isExpanded(path);
@@ -208,7 +217,7 @@ export function FormatNode({
     ? cb.renderModuleSettings((item as Extract<FormatItem, { kind: "module" }>).name)
     : null;
   const hasContent = isText
-    || (isGroup && (item as Extract<FormatItem, { kind: "group" }>).items.length > 0)
+    || isGroup
     || (isModule && settings !== null);
   // Text carries a setting of its own — the literal it prints — so it opens
   // like a module rather than editing in the row, where the field crowded the
@@ -226,7 +235,7 @@ export function FormatNode({
    * `style` option of its own the row's control edits that instead — and the
    * swatch shows it, since that is the colour the module prints.
    */
-  const rowStyle = cb.rowStyle(item);
+  const rowStyle = cb.rowStyle(item, path);
   const moduleNote = isModule
     ? cb.inactiveNote((item as Extract<FormatItem, { kind: "module" }>).name)
     : null;
@@ -278,7 +287,7 @@ export function FormatNode({
           </svg>
         </button>
 
-        {isModule || isGroup || isText ? (
+        {(isModule && !isVariable) || (isGroup && cb.managesModules) || isText ? (
           <Toggle
             size="sm"
             label={
@@ -338,15 +347,15 @@ export function FormatNode({
                   Not visible
                 </span>
               ) : null}
-              {rowStyle.paintedByStyle ? (
+              {rowStyle.paintedByStyle && !isGroup ? (
                 /*
                  * `[$symbol]($style)` reads back as this one piece, so without
                  * saying it the row is the only thing on screen and the
                  * reference has vanished from the format it is written in.
                  */
                 <span
-                  title="Painted by the module's style option. The swatch on this row sets it."
-                  className="inline-flex shrink-0 items-center rounded-full border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400"
+                  title="Inherits the module's style. Open the swatch and choose Override to style only this item."
+                  className="hidden shrink-0 items-center rounded-full border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 sm:inline-flex"
                 >
                   $style
                 </span>
@@ -393,12 +402,7 @@ export function FormatNode({
           </button>
         )}
 
-        {/*
-          * A group of one cannot carry a style — the format string writes it
-          * exactly like a styled module — so the member's own style button
-          * does that job instead.
-          */}
-        {item.kind !== "raw" && !(isGroup && item.items.length === 1) ? (
+        {item.kind !== "raw" ? (
           /*
            * The reason sits on a wrapper, not the button: a disabled button
            * takes no pointer events, so its own `title` may never appear —
@@ -478,7 +482,7 @@ export function FormatNode({
           <TrashIcon />
         </button>
 
-        {canExpand ? (
+        {canExpand && !isVariable ? (
           <button
             type="button"
             aria-label={
@@ -511,6 +515,14 @@ export function FormatNode({
         ) : null}
       </div>
 
+      {isGroup && item.conditional ? (
+        <div className="px-2 pb-1.5 text-xs text-neutral-400" data-conditional-status>
+          Conditional · {cb.groupVisibility(path) === false
+            ? "Hidden in this preview"
+            : cb.groupVisibility(path) === true ? "Visible in this preview" : "Hide when empty"}
+        </div>
+      ) : null}
+
       {styling && item.kind !== "raw" ? (
         <div className="border-t border-white/10 p-2">{cb.renderStyleEditor(path, item)}</div>
       ) : null}
@@ -535,18 +547,33 @@ export function FormatNode({
       ) : null}
 
       {expanded && isGroup ? (
-        <ul className="ml-4 flex flex-col gap-1 border-l border-white/10 py-1 pl-2 pr-1.5">
-          {(item as Extract<FormatItem, { kind: "group" }>).items.map(
-            (child, childIndex) => (
-              <FormatNode
-                key={`${key}.${childIndex}`}
-                item={child}
-                path={[...path, childIndex]}
-                callbacks={cb}
-              />
-            ),
-          )}
-        </ul>
+        <>
+          <label className="flex items-start gap-2 border-t border-white/10 px-2 py-2 text-xs text-neutral-300">
+            <input
+              type="checkbox"
+              checked={Boolean(item.conditional)}
+              onChange={event => cb.onConditionalChange(path, event.target.checked)}
+              className="mt-0.5 shrink-0 accent-accent-500"
+            />
+            <span>
+              Hide when all variables are empty
+              <span className="mt-0.5 block text-neutral-500">Includes this group&rsquo;s text and spaces. Its contents stay editable here.</span>
+            </span>
+          </label>
+          <ul className="ml-1 flex flex-col gap-1 border-l border-white/10 py-1 pl-1 pr-1 sm:ml-4 sm:pl-2 sm:pr-1.5">
+            {(item as Extract<FormatItem, { kind: "group" }>).items.map(
+              (child, childIndex) => (
+                <FormatNode
+                  key={`${key}.${childIndex}`}
+                  item={child}
+                  path={[...path, childIndex]}
+                  callbacks={cb}
+                />
+              ),
+            )}
+          </ul>
+          {cb.renderGroupAdditions(path)}
+        </>
       ) : null}
     </li>
   );
