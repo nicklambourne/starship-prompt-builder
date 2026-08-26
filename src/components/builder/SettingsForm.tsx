@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useId, useState } from "react";
+import type { VariableMap } from "@/lib/engine/render";
 
 import { FormatBuilder } from "./FormatBuilder";
 import { ChevronIcon, RestoreIcon } from "@/components/ui/icons";
@@ -50,6 +51,7 @@ interface SettingsFormProps {
   inUseColors?: string[];
   /** Resolved in the current scenario, just as in the terminal preview. */
   styleVariables?: FormatStyleVariables;
+  variables?: VariableMap;
   /**
    * This module's `style` option, for the format editors below: a piece the
    * format paints with `$style` is painted by it, and its swatch says so.
@@ -210,6 +212,7 @@ export function SettingsForm({
   paletteNames,
   inUseColors,
   styleVariables,
+  variables,
   ownStyle,
   reveal,
   theme,
@@ -285,6 +288,7 @@ export function SettingsForm({
                 noun="variable"
                 ownerStyle={ownStyle}
                 styleVariables={styleVariables}
+                variables={option.key === "format" ? variables : undefined}
                 theme={theme}
                 fontStack={fontStack}
               />

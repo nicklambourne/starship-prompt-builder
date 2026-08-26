@@ -908,14 +908,10 @@ test.describe("builder", () => {
     const variable = page.getByRole("button", {
       name: /^\$\{branch\} — nothing to open/,
     });
-    await expect(variable).toBeDisabled();
-    // Marked as such, the way an inert style button is.
-    expect(await variable.evaluate((el) => getComputedStyle(el).opacity)).toBe("0.45");
-    expect(
-      await variable.evaluate((el) => getComputedStyle(el).cursor),
-    ).toBe("not-allowed");
-    // And it makes no claim about a state it does not have.
-    await expect(variable).not.toHaveAttribute("aria-expanded");
+    // No dead disclosure consuming the narrow variable row; the style
+    // button is the useful control, and the variable's label stays readable.
+    await expect(variable).toHaveCount(0);
+    await expect(format.getByRole("button", { name: "Change the style of ${branch}", exact: true })).toBeEnabled();
   });
 
   test("a text piece can be switched off without losing it", async ({ page }) => {
@@ -1394,7 +1390,7 @@ test.describe("builder", () => {
   });
 
   for (const target of ["variable", "text", "group"] as const) {
-    test(`format item inheritance round-trips a ${target} override`, async ({ page }) => {
+    test(`format item inheritance restores the surrounding group after a ${target} override`, async ({ page }) => {
       await page.goto("./");
       await openToml(page);
       const toml = page.getByLabel("starship.toml");
@@ -1426,7 +1422,9 @@ test.describe("builder", () => {
       await expect(piece.getByRole("button", { name: "Foreground: red", exact: true })).toHaveAttribute("aria-pressed", "true");
       await activate(piece.getByRole("button", { name: "Inherit", exact: true }));
       await openToml(page);
-      await expect(toml).toHaveValue(/\]\(\$style\) tail\]\(blue\)/);
+      // Inherit removes this item's override, allowing the nearest group
+      // to paint it. It must not bypass that group by reintroducing $style.
+      await expect.poll(() => toml.inputValue()).toContain(`format = "[${inner} tail](blue)"`);
       await expect(toml).toHaveValue(/style = "none"/);
     });
   }

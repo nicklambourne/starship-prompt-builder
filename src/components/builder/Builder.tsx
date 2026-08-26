@@ -45,6 +45,7 @@ import { expandAll, structuredFormatString } from "@/lib/config/defaultFormat";
 import { colorsInUse } from "@/lib/config/colorsInUse";
 import { styleOptionFallback, styleRulesFor } from "@/lib/config/styleOptions";
 import { moduleFormatStyles } from "@/lib/config/formatStyles";
+import { moduleFormatVariables } from "@/lib/config/formatVisibility";
 import { withStyleVariable } from "@/lib/config/formatItems";
 import { inactiveReason } from "@/lib/config/inactiveReason";
 import { describeOption } from "@/lib/config/options";
@@ -571,6 +572,7 @@ export function Builder() {
         inUseColors={inUseTokens}
         ownStyle={ownStyleFor(name) ?? undefined}
         styleVariables={moduleFormatStyles(definition, config, scenario)}
+        variables={moduleFormatVariables(definition, config, scenario)}
         reveal={
           revealed?.module === name
             ? { key: revealed.key, nonce: revealed.nonce }

@@ -42,9 +42,9 @@ export function formatItemStyleSource(
     const item = children[index];
     if (!item || item.kind === "raw") return undefined;
     if (item.kind === "group") {
-      source = item.style ?? "";
+      if (item.style !== undefined || item.conditional === undefined) source = item.style ?? "";
       children = item.items;
-    } else if (item.style) {
+    } else if (item.style !== undefined) {
       source = item.style;
     }
   }

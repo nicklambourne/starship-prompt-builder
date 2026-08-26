@@ -38,10 +38,10 @@ describe("toItems", () => {
     ]);
   });
 
-  it("keeps a conditional verbatim as a raw piece", () => {
+  it("makes a conditional an editable optional group", () => {
     const items = toItems("($a via $b)");
     expect(items).toHaveLength(1);
-    expect(items?.[0].kind).toBe("raw");
+    expect(items?.[0]).toMatchObject({ kind: "group", conditional: true });
   });
 
   it("turns a group mixing text and variables into an editable group", () => {
@@ -58,9 +58,10 @@ describe("toItems", () => {
     ]);
   });
 
-  it("still keeps a group containing a conditional as raw", () => {
-    // Conditionals have no flat representation, so the group stays verbatim.
-    expect(toItems("[a($b)](red)")?.[0].kind).toBe("raw");
+  it("keeps a partial conditional editable inside its style group", () => {
+    expect(toItems("[a($b)](red)")?.[0]).toMatchObject({ kind: "group", items: [
+      { kind: "text", value: "a" }, { kind: "group", conditional: true },
+    ] });
   });
 
   it("returns null for an unparseable format", () => {
@@ -79,7 +80,7 @@ describe("fromItems", () => {
     expect(fromItems(toItems(format)!)).toBe(format);
   });
 
-  it("preserves raw pieces it cannot model", () => {
+  it("preserves conditionals while editing around them", () => {
     // The conditional must survive editing around it untouched.
     const format = "$directory(via $nodejs)$character";
     const items = toItems(format)!;
@@ -298,7 +299,7 @@ describe("a group left with one member", () => {
       style: "bold",
       items: [{ kind: "module", name: "a", style: "red" }],
     };
-    expect(fromItems([group])).toBe("[$a](red)");
+    expect(fromItems([group])).toBe("[[$a](red)](bold)");
   });
 });
 
@@ -353,6 +354,8 @@ describe("a switched-off text piece", () => {
   it("leaves a real conditional alone", () => {
     // One with a variable in it is a conditional its author meant, not a
     // piece of text somebody switched off.
-    expect(toItems("($a b)")).toEqual([{ kind: "raw", source: "($a b)" }]);
+    expect(toItems("($a b)")).toEqual([{ kind: "group", conditional: true, items: [
+      { kind: "module", name: "a" }, { kind: "text", value: " b" },
+    ] }]);
   });
 });
