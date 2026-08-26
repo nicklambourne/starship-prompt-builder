@@ -20,6 +20,7 @@ import { SymbolInput } from "@/components/ui/SymbolInput";
 import { Toggle } from "@/components/ui/Toggle";
 import { StyleSwatch } from "@/components/ui/StyleSwatch";
 import type { StyleFallback, StyleRules } from "@/lib/config/styleOptions";
+import type { FormatStyleVariables } from "@/lib/config/formatStyles";
 import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
 
@@ -47,6 +48,8 @@ interface SettingsFormProps {
   paletteNames?: string[];
   /** Colours the prompt already uses, for the style editors' own row. */
   inUseColors?: string[];
+  /** Resolved in the current scenario, just as in the terminal preview. */
+  styleVariables?: FormatStyleVariables;
   /**
    * This module's `style` option, for the format editors below: a piece the
    * format paints with `$style` is painted by it, and its swatch says so.
@@ -206,6 +209,7 @@ export function SettingsForm({
   palette,
   paletteNames,
   inUseColors,
+  styleVariables,
   ownStyle,
   reveal,
   theme,
@@ -280,6 +284,7 @@ export function SettingsForm({
                 inUseColors={inUseColors}
                 noun="variable"
                 ownerStyle={ownStyle}
+                styleVariables={styleVariables}
                 theme={theme}
                 fontStack={fontStack}
               />

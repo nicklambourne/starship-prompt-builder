@@ -44,6 +44,7 @@ import { resolvePalette } from "@/lib/engine/styleString";
 import { expandAll, structuredFormatString } from "@/lib/config/defaultFormat";
 import { colorsInUse } from "@/lib/config/colorsInUse";
 import { styleOptionFallback, styleRulesFor } from "@/lib/config/styleOptions";
+import { moduleFormatStyles } from "@/lib/config/formatStyles";
 import { withStyleVariable } from "@/lib/config/formatItems";
 import { inactiveReason } from "@/lib/config/inactiveReason";
 import { describeOption } from "@/lib/config/options";
@@ -555,7 +556,8 @@ export function Builder() {
    */
   const renderSettings = useCallback(
     (name: string) => {
-      if (optionsFor(name).length === 0) return null;
+      const definition = MODULES_BY_NAME.get(name);
+      if (!definition || optionsFor(name).length === 0) return null;
       return (
       <SettingsForm
         options={optionsFor(name)}
@@ -568,6 +570,7 @@ export function Builder() {
         paletteNames={paletteNames}
         inUseColors={inUseTokens}
         ownStyle={ownStyleFor(name) ?? undefined}
+        styleVariables={moduleFormatStyles(definition, config, scenario)}
         reveal={
           revealed?.module === name
             ? { key: revealed.key, nonce: revealed.nonce }
@@ -582,6 +585,7 @@ export function Builder() {
       config,
       optionsFor,
       ownStyleFor,
+      scenario,
       revealed,
       variablesFor,
       updateModuleOption,

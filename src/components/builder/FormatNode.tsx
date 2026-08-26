@@ -92,7 +92,7 @@ export interface FormatNodeCallbacks {
    * `style` option — its swatch on the root format, or a piece its format
    * paints with `$style` — it is the option's value, and `ownTitle` says so.
    */
-  rowStyle(item: FormatItem): {
+  rowStyle(item: FormatItem, path: Path): {
     value?: string;
     ownTitle?: string;
     /** Set where the piece's style is the module's `$style`, not a literal. */
@@ -226,7 +226,7 @@ export function FormatNode({
    * `style` option of its own the row's control edits that instead — and the
    * swatch shows it, since that is the colour the module prints.
    */
-  const rowStyle = cb.rowStyle(item);
+  const rowStyle = cb.rowStyle(item, path);
   const moduleNote = isModule
     ? cb.inactiveNote((item as Extract<FormatItem, { kind: "module" }>).name)
     : null;
@@ -346,7 +346,7 @@ export function FormatNode({
                  */
                 <span
                   title="Inherits the module's style. Open the swatch and choose Override to style only this item."
-                  className="inline-flex shrink-0 items-center rounded-full border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400"
+                  className="hidden shrink-0 items-center rounded-full border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 sm:inline-flex"
                 >
                   $style
                 </span>

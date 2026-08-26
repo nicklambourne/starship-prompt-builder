@@ -40,6 +40,7 @@ import {
 } from "@/lib/config/formatTree";
 import { describeModule } from "@/lib/config/descriptions";
 import { isStyleVariable } from "@/lib/config/styleReach";
+import { formatItemStyle, formatItemStyleSource, type FormatStyleVariables } from "@/lib/config/formatStyles";
 import { MODULE_META } from "@/lib/config/meta";
 import { tryParseFormatString } from "@/lib/engine/formatString";
 import type { Palette } from "@/lib/engine/styleString";
@@ -59,6 +60,7 @@ interface FormatBuilderProps {
   paletteNames?: string[];
   /** Colours the prompt already uses, for the style editors' own row. */
   inUseColors?: string[];
+  styleVariables?: FormatStyleVariables;
   noun?: string;
   allowCategoryGrouping?: boolean;
   scope?: string;
@@ -217,8 +219,11 @@ export function FormatBuilder({
   fontStack,
   modules,
   ownerStyle,
+  styleVariables,
   searchable = false,
 }: FormatBuilderProps) {
+  const formatStyles = styleVariables ?? { style: ownerStyle?.value };
+  const moduleStyle = formatStyles.style;
   const [showRaw, setShowRaw] = useState(false);
   const [styling, setStyling] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -422,20 +427,21 @@ export function FormatBuilder({
     isModuleEnabled: (name) => modules?.isEnabled(name) ?? true,
     inactiveNote: (name) => modules?.inactiveNote(name) ?? null,
     styleReaches: (name) => modules?.styleReaches(name) ?? true,
-    rowStyle: (item) => {
+    rowStyle: (item, path) => {
       if (item.kind === "raw") return {};
       if (item.kind === "module") {
         const own = modules?.styleOption(item.name) ?? null;
         if (own) return { value: own.value, ownTitle: `Set $${item.name}'s own style` };
       }
-      if (ownerStyle && item.style && isStyleVariable(item.style)) {
+      const value = formatItemStyle(items, path, formatStyles);
+      if (moduleStyle !== undefined && isStyleVariable(formatItemStyleSource(items, path) ?? "")) {
         return {
-          value: ownerStyle.value,
+          value,
           ownTitle: "Inherits the module's style — choose Override to style only this item",
           paintedByStyle: true,
         };
       }
-      return { value: item.style };
+      return { value };
     },
     onToggleModule: (name, enabled) => modules?.setEnabled(name, enabled),
     onToggleText: (path, enabled) =>
@@ -456,8 +462,8 @@ export function FormatBuilder({
     renderModuleSettings: (name) => modules?.renderSettings(name) ?? null,
     renderStyleEditor: (path, item) => {
       const own = item.kind === "module" ? (modules?.styleOption(item.name) ?? null) : null;
-      if (!own && ownerStyle && item.kind !== "raw") {
-        const inherited = isStyleVariable(item.style ?? "");
+      if (!own && moduleStyle !== undefined && item.kind !== "raw") {
+        const inherited = isStyleVariable(formatItemStyleSource(items, path) ?? "");
         const setItemStyle = (style: string) => {
           const next = updateAt(items, path, (target) =>
             target.kind === "raw" ? target : { ...target, style },
@@ -468,12 +474,12 @@ export function FormatBuilder({
         };
         return (
           <StyleStringBuilder
-            value={inherited ? ownerStyle.value : (item.style ?? "")}
+            value={inherited ? moduleStyle : (item.style ?? "")}
             onChange={(style) => setItemStyle(style.trim() ? style : "none")}
             inheritance={{
               inherited,
               onChange: (inherit) =>
-                setItemStyle(inherit ? "$style" : (ownerStyle.value.trim() || "none")),
+                setItemStyle(inherit ? "$style" : (moduleStyle.trim() || "none")),
             }}
             palette={palette}
             paletteNames={paletteNames}
