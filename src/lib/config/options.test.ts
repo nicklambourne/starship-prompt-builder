@@ -3,6 +3,9 @@ import { describeOption, optionDoc } from "./options";
 import generated from "../../../data/options.generated.json";
 import { ALL_MODULES } from "@/lib/engine/modules";
 import { getModuleSchema } from "./schema";
+import type { Documentation } from "./documentation";
+
+const DOCUMENTED_OPTIONS = generated as Record<string, Record<string, Documentation>>;
 
 /**
  * Options the builder shows that starship does not accept.
@@ -51,9 +54,9 @@ describe("option documentation", () => {
   });
 
   it("preserves every linked option reference found in the upstream tables", () => {
-    const linked = Object.entries(generated).flatMap(([anchor, options]) =>
+    const linked = Object.entries(DOCUMENTED_OPTIONS).flatMap(([anchor, options]) =>
       Object.entries(options).flatMap(([option, doc]) =>
-        "links" in doc ? doc.links.map((link) => `${anchor}.${option}: ${link.url}`) : [],
+        doc.links?.map((link) => `${anchor}.${option}: ${link.url}`) ?? [],
       ),
     );
     expect(linked).toEqual([
