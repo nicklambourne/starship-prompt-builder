@@ -19,6 +19,7 @@ import { StyleSwatch } from "@/components/ui/StyleSwatch";
 import { Toggle } from "@/components/ui/Toggle";
 import { SymbolInput } from "@/components/ui/SymbolInput";
 import { ChevronIcon, EyeOffIcon, GroupIcon, TrashIcon } from "@/components/ui/icons";
+import { DocumentationText } from "@/components/ui/DocumentationText";
 import {
   type DropPosition,
   type FormatItem,
@@ -29,6 +30,7 @@ import { type Path, pathKey } from "@/lib/config/formatTree";
 import { namedModuleIdentity } from "@/lib/engine/modules";
 import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
+import type { DocumentationLink } from "@/lib/config/documentation";
 
 /**
  * Every control on a row is the same size. They sit in a line, so one of them
@@ -88,6 +90,7 @@ export interface FormatNodeCallbacks {
    * built the tree rather than from the module dictionary.
    */
   describe(name: string): string | undefined;
+  describeLinks(name: string): DocumentationLink[] | undefined;
   /** Modules are switched on and off via their own `disabled` option. */
   isModuleEnabled(name: string): boolean;
   /** Enabled, but rendering nothing right now — and why. */
@@ -317,15 +320,16 @@ export function FormatNode({
         ) : null}
 
         {canExpand ? (
-          <button
-            type="button"
-            onClick={() => cb.onExpandToggle(path)}
-            aria-expanded={hasContent ? expanded : undefined}
-            disabled={!hasContent}
-            className={`flex min-w-0 flex-1 flex-col text-left ${
-              hasContent ? "" : "cursor-default"
-            }`}
-          >
+          <span className="flex min-w-0 flex-1 flex-col">
+            <button
+              type="button"
+              onClick={() => cb.onExpandToggle(path)}
+              aria-expanded={hasContent ? expanded : undefined}
+              disabled={!hasContent}
+              className={`flex min-w-0 text-left ${
+                hasContent ? "" : "cursor-default"
+              }`}
+            >
             <span className="flex min-w-0 items-center gap-1.5">
               <span
                 className={`truncate font-mono text-sm ${
@@ -363,16 +367,20 @@ export function FormatNode({
                 </span>
               ) : null}
             </span>
+            </button>
             {isModule ? (
               <span
                 className={`truncate text-xs ${
                   enabled ? "text-neutral-500" : "text-neutral-400"
                 }`}
               >
-                {cb.describe((item as Extract<FormatItem, { kind: "module" }>).name)}
+                <DocumentationText
+                  text={cb.describe((item as Extract<FormatItem, { kind: "module" }>).name) ?? ""}
+                  links={cb.describeLinks((item as Extract<FormatItem, { kind: "module" }>).name)}
+                />
               </span>
             ) : null}
-          </button>
+          </span>
         ) : (
           // Only raw fragments are left: nothing to open, nothing to edit.
           <span className="flex min-w-0 flex-1 flex-col">

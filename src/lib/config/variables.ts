@@ -13,10 +13,12 @@
 import generated from "../../../data/variables.generated.json";
 import { DEFAULT_SYMBOLS } from "@/lib/engine/modules/os";
 import { docsAnchor } from "./meta";
+import type { DocumentationLink } from "./documentation";
 
-interface VariableDoc {
+export interface VariableDoc {
   description: string;
   example?: string;
+  links?: DocumentationLink[];
 }
 
 const BY_ANCHOR = generated as Record<string, Record<string, VariableDoc>>;

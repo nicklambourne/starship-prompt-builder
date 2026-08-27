@@ -49,6 +49,7 @@ import { isValidNamedModuleInstance } from "@/lib/config/namedModules";
 import { namedModuleIdentity, type NamedModuleKind } from "@/lib/engine/modules";
 import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
+import type { DocumentationLink } from "@/lib/config/documentation";
 
 interface FormatBuilderProps {
   value: string;
@@ -60,6 +61,8 @@ interface FormatBuilderProps {
    * holds variables instead, and describes them from starship's docs.
    */
   describe?(name: string): string | undefined;
+  /** References preserved from an entry's documentation. */
+  describeLinks?(name: string): DocumentationLink[] | undefined;
   palette?: Palette;
   paletteNames?: string[];
   /** Colours the prompt already uses, for the style editors' own row. */
@@ -218,6 +221,7 @@ export function FormatBuilder({
   onChange,
   vocabulary,
   describe = describeModule,
+  describeLinks = () => undefined,
   palette,
   paletteNames,
   inUseColors,
@@ -547,6 +551,7 @@ export function FormatBuilder({
         ),
       ),
     describe,
+    describeLinks,
     // The root format is the only one holding modules; every other instance of
     // this editor is a module's own format, and holds that module's variables.
     nameKind: () => (modules ? "module" : "variable"),

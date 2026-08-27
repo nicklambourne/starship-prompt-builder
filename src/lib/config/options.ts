@@ -14,8 +14,9 @@
 
 import generated from "../../../data/options.generated.json";
 import { docsAnchor } from "./meta";
+import type { Documentation } from "./documentation";
 
-const BY_ANCHOR = generated as Record<string, Record<string, { description: string }>>;
+const BY_ANCHOR = generated as Record<string, Record<string, Documentation>>;
 
 /**
  * Options upstream documents on dozens of modules but omits from one.
@@ -36,11 +37,34 @@ const BORROWED: Record<string, Record<string, string>> = {
   },
 };
 
+const CUSTOM_OS_DOCUMENTATION: Documentation = {
+  description:
+    "Only show this custom module on the selected operating system. Supported Rust OS values.",
+  links: [
+    {
+      label: "Supported Rust OS values",
+      url: "https://doc.rust-lang.org/std/env/consts/constant.OS.html",
+    },
+  ],
+};
+
+export function optionDoc(
+  moduleName: string,
+  option: string,
+): Documentation | undefined {
+  if ((moduleName === "custom" || moduleName.startsWith("custom.")) && option === "os") {
+    return CUSTOM_OS_DOCUMENTATION;
+  }
+  const anchor = docsAnchor(moduleName);
+  const documented = anchor ? BY_ANCHOR[anchor]?.[option] : undefined;
+  if (documented) return documented;
+  const borrowed = BORROWED[moduleName]?.[option];
+  return borrowed ? { description: borrowed } : undefined;
+}
+
 export function describeOption(
   moduleName: string,
   option: string,
 ): string | undefined {
-  const anchor = docsAnchor(moduleName);
-  const documented = anchor ? BY_ANCHOR[anchor]?.[option]?.description : undefined;
-  return documented ?? BORROWED[moduleName]?.[option];
+  return optionDoc(moduleName, option)?.description;
 }

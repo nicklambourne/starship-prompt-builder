@@ -273,7 +273,13 @@
       "description": "The symbol used before the environment name."
     },
     "truncation_length": {
-      "description": "The number of directories the environment path should be truncated to, if the environment was created via conda create -p [path]. 0 means no truncation. Also see the directory module."
+      "description": "The number of directories the environment path should be truncated to, if the environment was created via conda create -p [path]. 0 means no truncation. Also see the directory module.",
+      "links": [
+        {
+          "label": "directory",
+          "url": "https://starship.rs/config/#directory"
+        }
+      ]
     }
   },
   "container": {
@@ -371,13 +377,25 @@
       "description": "Ignore global command_timeout setting and keep running external commands, no matter how long they take."
     },
     "os": {
-      "description": "Operating System name on which the module will be shown (unix, linux, macos, windows, ... ) See possible values."
+      "description": "Operating System name on which the module will be shown (unix, linux, macos, windows, ... ) See possible values.",
+      "links": [
+        {
+          "label": "See possible values",
+          "url": "https://doc.rust-lang.org/std/env/consts/constant.OS.html"
+        }
+      ]
     },
     "require_repo": {
       "description": "If true, the module will only be shown in paths containing a (git) repository. This option alone is not sufficient display condition in absence of other options."
     },
     "shell": {
-      "description": "See below"
+      "description": "See below",
+      "links": [
+        {
+          "label": "See below",
+          "url": "https://starship.rs/config/#custom-command-shell"
+        }
+      ]
     },
     "style": {
       "description": "The style for the module."
@@ -1966,10 +1984,22 @@
       "description": "Sets which color palette from palettes to use."
     },
     "palettes": {
-      "description": "Collection of color palettes that assign colors to user-defined names. Note that color palettes cannot reference their own color definitions."
+      "description": "Collection of color palettes that assign colors to user-defined names. Note that color palettes cannot reference their own color definitions.",
+      "links": [
+        {
+          "label": "colors",
+          "url": "https://starship.rs/advanced-config/#style-strings"
+        }
+      ]
     },
     "right_format": {
-      "description": "See Enable Right Prompt"
+      "description": "See Enable Right Prompt",
+      "links": [
+        {
+          "label": "Enable Right Prompt",
+          "url": "https://starship.rs/advanced-config/#enable-right-prompt"
+        }
+      ]
     },
     "scan_timeout": {
       "description": "Timeout for starship to scan files (in milliseconds)."
@@ -2371,7 +2401,13 @@
       "description": "The symbol used before the environment name."
     },
     "truncation_length": {
-      "description": "The number of directories the environment path should be truncated to. 0 means no truncation. Also see the directory module."
+      "description": "The number of directories the environment path should be truncated to. 0 means no truncation. Also see the directory module.",
+      "links": [
+        {
+          "label": "directory",
+          "url": "https://starship.rs/config/#directory"
+        }
+      ]
     }
   },
   "status": {
@@ -2513,7 +2549,13 @@
       "description": "The style for the module time"
     },
     "time_format": {
-      "description": "The jiff format string used to format the time."
+      "description": "The jiff format string used to format the time.",
+      "links": [
+        {
+          "label": "jiff format string",
+          "url": "https://docs.rs/jiff/latest/jiff/fmt/strtime/index.html"
+        }
+      ]
     },
     "time_range": {
       "description": "Sets the time range during which the module will be shown. Times must be specified in 24-hours format"

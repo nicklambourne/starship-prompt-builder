@@ -125,4 +125,41 @@ test.describe("user-named modules", () => {
     await expect(row.getByLabel("Custom command instance name")).toHaveValue("project");
     await expect(row.locator('[data-option="command"]')).toBeVisible();
   });
+
+  test("edits a custom module's OS with documented choices", async ({ page }) => {
+    await page.goto("./");
+    await openToml(page);
+    const toml = page.getByLabel("starship.toml");
+    await toml.fill(
+      [
+        'format = "${custom.project}"',
+        "",
+        "[custom.project]",
+        "when = true",
+        "",
+      ].join("\n"),
+    );
+
+    const format = page.locator("[data-format-scope='root-format']");
+    const row = format.locator("[data-format-row]").filter({ hasText: "$custom.project" });
+    await activate(row.getByRole("button", { name: "Expand $custom.project" }));
+    await openOption(row, "os");
+
+    const option = row.locator('[data-option="os"]');
+    const select = option.getByRole("combobox", { name: "os" });
+    await expect(select).toContainText("Any operating system");
+    await expect(select).toContainText("unix — any Unix target");
+    await expect(select).toContainText("linux");
+    await expect(select).toContainText("windows");
+    await expect(select).toContainText("macos");
+    await expect(select).toContainText("xous");
+    await expect(
+      option.getByRole("link", { name: "Supported Rust OS values" }),
+    ).toHaveAttribute("href", "https://doc.rust-lang.org/std/env/consts/constant.OS.html");
+
+    await select.selectOption("windows");
+    await expect(toml).toHaveValue(/os = "windows"/);
+    await select.selectOption("");
+    await expect(toml).not.toHaveValue(/^os\s*=/m);
+  });
 });

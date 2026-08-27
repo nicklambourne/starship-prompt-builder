@@ -60,8 +60,9 @@ import {
   removeNamedModule as removeNamedModuleConfig,
   renameNamedModule,
 } from "@/lib/config/namedModules";
-import { describeOption } from "@/lib/config/options";
-import { describeVariable } from "@/lib/config/variables";
+import { optionDoc } from "@/lib/config/options";
+import { describeVariable, variableDoc } from "@/lib/config/variables";
+import { optionEnum } from "@/lib/config/optionEnums";
 import { moduleStyleReaches, rowStyleReaches } from "@/lib/config/styleReach";
 import { MODULE_META, moduleMeta, optionKind } from "@/lib/config/meta";
 import { PRESETS } from "@/lib/config/presets";
@@ -387,21 +388,28 @@ export function Builder() {
       // `disabled` is the switch on the row, and `style` is usually the swatch
       // beside it: both are settings, but the row is where people look.
       .filter(([key]) => key !== "disabled" && !(key === "style" && rowOwnsStyle(name)))
-      .map(([key, defaultValue]) => ({
-        key,
-        kind: optionKind(name, key, defaultValue, meta),
-        defaultValue,
-        description: describeOption(name, key),
-        styleFallback: styleOptionFallback(
-          definition.defaults,
-          values,
+      .map(([key, defaultValue]) => {
+        const documentation = optionDoc(name, key);
+        const enumeration = optionEnum(name, key);
+        return {
           key,
-        ),
-        styleRules: styleRulesFor(
-          name, key, definition.defaults,
-          values,
-        ),
-      }));
+          kind: enumeration ? "enum" : optionKind(name, key, defaultValue, meta),
+          defaultValue,
+          description: documentation?.description,
+          descriptionLinks: documentation?.links,
+          enumValues: enumeration?.choices,
+          enumUnsetLabel: enumeration?.unsetLabel,
+          styleFallback: styleOptionFallback(
+            definition.defaults,
+            values,
+            key,
+          ),
+          styleRules: styleRulesFor(
+            name, key, definition.defaults,
+            values,
+          ),
+        };
+      });
   }, [rowOwnsStyle, config, modulesByName]);
 
   /** Variables a module's own format strings may reference. */
@@ -610,6 +618,7 @@ export function Builder() {
             onReset={(key) => resetModuleOption(name, key)}
             formatVariables={variablesFor(name)}
             describeVariable={(variable) => describeVariable(name, variable)}
+            describeVariableLinks={(variable) => variableDoc(name, variable)?.links}
             palette={palette}
             paletteNames={paletteNames}
             inUseColors={inUseTokens}

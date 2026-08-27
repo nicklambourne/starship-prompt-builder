@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { describeOption } from "./options";
+import { describeOption, optionDoc } from "./options";
+import generated from "../../../data/options.generated.json";
 import { ALL_MODULES } from "@/lib/engine/modules";
 import { getModuleSchema } from "./schema";
 
@@ -47,6 +48,36 @@ describe("option documentation", () => {
     expect(describeOption("git_branch", "format")).not.toBe(
       describeOption("username", "format"),
     );
+  });
+
+  it("preserves every linked option reference found in the upstream tables", () => {
+    const linked = Object.entries(generated).flatMap(([anchor, options]) =>
+      Object.entries(options).flatMap(([option, doc]) =>
+        "links" in doc ? doc.links.map((link) => `${anchor}.${option}: ${link.url}`) : [],
+      ),
+    );
+    expect(linked).toEqual([
+      "conda.truncation_length: https://starship.rs/config/#directory",
+      "custom-commands.os: https://doc.rust-lang.org/std/env/consts/constant.OS.html",
+      "custom-commands.shell: https://starship.rs/config/#custom-command-shell",
+      "prompt.palettes: https://starship.rs/advanced-config/#style-strings",
+      "prompt.right_format: https://starship.rs/advanced-config/#enable-right-prompt",
+      "spack.truncation_length: https://starship.rs/config/#directory",
+      "time.time_format: https://docs.rs/jiff/latest/jiff/fmt/strtime/index.html",
+    ]);
+  });
+
+  it("turns the custom OS cross-reference into self-contained control copy", () => {
+    expect(optionDoc("custom.project", "os")).toEqual({
+      description:
+        "Only show this custom module on the selected operating system. Supported Rust OS values.",
+      links: [
+        {
+          label: "Supported Rust OS values",
+          url: "https://doc.rust-lang.org/std/env/consts/constant.OS.html",
+        },
+      ],
+    });
   });
 
   it("has nothing to say about a key that is not an option", () => {
