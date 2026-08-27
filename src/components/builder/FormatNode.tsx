@@ -26,6 +26,7 @@ import {
   isRedundantStyleWrapper,
 } from "@/lib/config/formatItems";
 import { type Path, pathKey } from "@/lib/config/formatTree";
+import { namedModuleIdentity } from "@/lib/engine/modules";
 import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
 
@@ -76,6 +77,7 @@ export interface FormatNodeCallbacks {
   onGroup(path: Path): void;
   onUngroup(path: Path): void;
   onRemove(path: Path): void;
+  renderRemoveConfirmation(path: Path, item: FormatItem): ReactNode;
   onStyleToggle(path: Path): void;
   onExpandToggle(path: Path): void;
   onTextChange(path: Path, value: string): void;
@@ -470,9 +472,15 @@ export function FormatNode({
 
         <button
           type="button"
-          aria-label={`Remove ${label} from the prompt`}
+          aria-label={
+            isModule && cb.managesModules && namedModuleIdentity(item.name)
+              ? `Remove ${label}`
+              : `Remove ${label} from the prompt`
+          }
           title={
-            isModule
+            isModule && cb.managesModules && namedModuleIdentity(item.name)
+              ? "Remove this named module"
+              : isModule
               ? "Remove from the prompt. To keep it but hide it, use the switch."
               : "Remove from the prompt"
           }
@@ -514,6 +522,8 @@ export function FormatNode({
           </button>
         ) : null}
       </div>
+
+      {cb.renderRemoveConfirmation(path, item)}
 
       {isGroup && item.conditional ? (
         <div className="px-2 pb-1.5 text-xs text-neutral-400" data-conditional-status>

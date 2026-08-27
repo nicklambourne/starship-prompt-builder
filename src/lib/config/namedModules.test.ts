@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addNamedModule,
+  namedModuleReferenceCount,
   removeNamedModule,
   renameNamedModule,
 } from "./namedModules";
@@ -59,5 +60,17 @@ describe("named module config edits", () => {
       right_format: "",
       vcs: { git_modules: "$git_branch" },
     });
+  });
+
+  it("counts direct and aggregate references across prompt formats", () => {
+    const config = {
+      format: "${env_var.SHELL}$env_var",
+      right_format: "[${env_var.SHELL}](blue)",
+      env_var: { SHELL: { default: "zsh" } },
+      vcs: { git_modules: "$git_branch${env_var.SHELL}" },
+    };
+
+    expect(namedModuleReferenceCount(config, "env_var.SHELL")).toBe(4);
+    expect(namedModuleReferenceCount(config, "directory")).toBe(0);
   });
 });

@@ -46,7 +46,7 @@ import type { VariableMap } from "@/lib/engine/render";
 import { moduleMeta } from "@/lib/config/meta";
 import { tryParseFormatString } from "@/lib/engine/formatString";
 import { isValidNamedModuleInstance } from "@/lib/config/namedModules";
-import type { NamedModuleKind } from "@/lib/engine/modules";
+import { namedModuleIdentity, type NamedModuleKind } from "@/lib/engine/modules";
 import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
 
@@ -94,6 +94,8 @@ interface FormatBuilderProps {
     restoreStyleVariable(name: string): void;
     setEnabled(name: string, enabled: boolean): void;
     renderSettings(name: string): React.ReactNode;
+    namedModuleReferences(name: string): number;
+    removeNamedModule(name: string): void;
   };
   /** Root-format creation for Starship's user-named module families. */
   createNamedModule?(kind: NamedModuleKind, instance: string): void;
@@ -243,6 +245,11 @@ export function FormatBuilder({
   const [addSearch, setAddSearch] = useState("");
   const [namedKind, setNamedKind] = useState<NamedModuleKind>("env_var");
   const [namedInstance, setNamedInstance] = useState("");
+  const [removingNamed, setRemovingNamed] = useState<{
+    path: string;
+    name: string;
+    references: number;
+  } | null>(null);
   const [filter, setFilter] = useState("");
   const [dragging, setDragging] = useState<Path | null>(null);
   const [dropTarget, setDropTarget] = useState<
@@ -267,6 +274,7 @@ export function FormatBuilder({
 
   const commit = (next: FormatItem[]) => {
     setStyling(null);
+    setRemovingNamed(null);
     setArrangement(next);
     onChange(fromItems(next));
   };
@@ -430,7 +438,70 @@ export function FormatBuilder({
         ),
       );
     },
-    onRemove: (path) => commit(removeAt(items, path)),
+    onRemove: (path) => {
+      const item = getAt(items, path);
+      if (item?.kind === "module" && modules && namedModuleIdentity(item.name)) {
+        const references = modules.namedModuleReferences(item.name);
+        if (references <= 1) {
+          setRemovingNamed(null);
+          modules.removeNamedModule(item.name);
+          return;
+        }
+        setRemovingNamed({ path: pathKey(path), name: item.name, references });
+        return;
+      }
+      commit(removeAt(items, path));
+    },
+    renderRemoveConfirmation: (path, item) => {
+      if (
+        item.kind !== "module" ||
+        !removingNamed ||
+        removingNamed.path !== pathKey(path) ||
+        removingNamed.name !== item.name
+      ) {
+        return null;
+      }
+      const label = `$${item.name}`;
+      return (
+        <div
+          role="alertdialog"
+          aria-label={`Remove ${label}`}
+          className="mx-2 mb-2 flex flex-col gap-2 rounded border border-red-400/40 bg-red-500/5 p-2 text-xs text-neutral-300"
+        >
+          <p>
+            {label} has {removingNamed.references} prompt references. Remove only
+            this occurrence, or delete the named module and all of its explicit
+            occurrences?
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => commit(removeAt(items, path))}
+              className={SMALL_BUTTON}
+            >
+              Remove this occurrence
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRemovingNamed(null);
+                modules?.removeNamedModule(item.name);
+              }}
+              className="rounded border border-red-400/70 px-2 py-1 text-xs text-red-300 transition hover:bg-red-500/10"
+            >
+              Delete named module everywhere
+            </button>
+            <button
+              type="button"
+              onClick={() => setRemovingNamed(null)}
+              className={SMALL_BUTTON}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      );
+    },
     onStyleToggle: (path) =>
       setStyling(styling === pathKey(path) ? null : pathKey(path)),
     onExpandToggle: (path) => {

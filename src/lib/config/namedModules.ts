@@ -65,6 +65,40 @@ function rewritePromptReferences(
   return next;
 }
 
+function countReferences(items: FormatItem[], names: Set<string>): number {
+  let count = 0;
+  for (const item of items) {
+    if (item.kind === "module" && names.has(item.name)) count += 1;
+    if (item.kind === "group") count += countReferences(item.items, names);
+  }
+  return count;
+}
+
+function countFormatReferences(source: unknown, names: Set<string>): number {
+  if (typeof source !== "string") return 0;
+  const items = toItems(source);
+  return items ? countReferences(items, names) : 0;
+}
+
+/** Counts explicit uses of an instance, including its family aggregate. */
+export function namedModuleReferenceCount(
+  config: StarshipConfig,
+  name: string,
+): number {
+  const identity = namedModuleIdentity(name);
+  if (!identity) return 0;
+  const names = new Set([name, identity.kind]);
+  let count = countFormatReferences(config.format, names);
+  count += countFormatReferences(config.right_format, names);
+
+  if (isTable(config.vcs)) {
+    for (const key of VCS_FORMAT_OPTIONS) {
+      count += countFormatReferences(config.vcs[key], names);
+    }
+  }
+  return count;
+}
+
 /** Adds the table and its explicit prompt row as one undoable config edit. */
 export function addNamedModule(
   config: StarshipConfig,

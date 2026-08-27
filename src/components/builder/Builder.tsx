@@ -56,7 +56,8 @@ import { withStyleVariable } from "@/lib/config/formatItems";
 import { inactiveReason } from "@/lib/config/inactiveReason";
 import {
   addNamedModule,
-  removeNamedModule,
+  namedModuleReferenceCount,
+  removeNamedModule as removeNamedModuleConfig,
   renameNamedModule,
 } from "@/lib/config/namedModules";
 import { describeOption } from "@/lib/config/options";
@@ -551,6 +552,12 @@ export function Builder() {
       renderSettings(name: string) {
         return renderSettings(name);
       },
+      namedModuleReferences(name: string) {
+        return namedModuleReferenceCount(config, name);
+      },
+      removeNamedModule(name: string) {
+        setConfig(removeNamedModuleConfig(config, name));
+      },
     }),
     // renderSettings is redefined whenever the config changes, which is also
     // exactly when enablement can change.
@@ -594,7 +601,6 @@ export function Builder() {
               onRename={(nextInstance) =>
                 setConfig(renameNamedModule(config, name, nextInstance))
               }
-              onRemove={() => setConfig(removeNamedModule(config, name))}
             />
           ) : null}
           <SettingsForm

@@ -13,16 +13,13 @@ export function NamedModuleActions({
   instance,
   existing,
   onRename,
-  onRemove,
 }: {
   kind: NamedModuleKind;
   instance: string;
   existing: string[];
   onRename(nextInstance: string): void;
-  onRemove(): void;
 }) {
   const [nextInstance, setNextInstance] = useState(instance);
-  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   useEffect(() => setNextInstance(instance), [instance]);
 
@@ -64,29 +61,6 @@ export function NamedModuleActions({
         </p>
       )}
 
-      {confirmingRemove ? (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
-          <span>Remove this instance and its explicit prompt references?</span>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="rounded border border-red-400/70 px-2 py-1 text-red-300 transition hover:bg-red-500/10"
-          >
-            Remove
-          </button>
-          <button type="button" onClick={() => setConfirmingRemove(false)} className={BUTTON}>
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setConfirmingRemove(true)}
-          className="self-start text-xs text-red-300 underline underline-offset-2 hover:text-red-200"
-        >
-          Remove named module
-        </button>
-      )}
     </div>
   );
 }

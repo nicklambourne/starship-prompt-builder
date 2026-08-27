@@ -54,10 +54,45 @@ test.describe("user-named modules", () => {
     await expect(page.getByLabel("starship.toml")).toHaveValue(/\[env_var\.PROMPT_EDITOR\]/);
     await expect(page.getByLabel("starship.toml")).not.toHaveValue(/PROMPT_SHELL/);
 
-    await activate(row.getByRole("button", { name: "Remove named module" }));
-    await activate(row.getByRole("button", { name: "Remove", exact: true }));
+    await expect(row.getByRole("button", { name: "Remove named module" })).toHaveCount(0);
+    await activate(row.getByRole("button", { name: "Remove $env_var.PROMPT_EDITOR", exact: true }));
     await expect(row).toHaveCount(0);
     await expect(page.getByLabel("starship.toml")).not.toHaveValue(/PROMPT_EDITOR/);
+  });
+
+  test("offers occurrence or global deletion when a named module is reused", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await openToml(page);
+    const toml = page.getByLabel("starship.toml");
+    const repeated = [
+      'format = "${env_var.SHELL}${env_var.SHELL}"',
+      "",
+      "[env_var.SHELL]",
+      'default = "zsh"',
+      "",
+    ].join("\n");
+    await toml.fill(repeated);
+
+    const format = page.locator("[data-format-scope='root-format']");
+    const rows = format.locator("[data-format-row]").filter({ hasText: "$env_var.SHELL" });
+    await expect(rows).toHaveCount(2);
+    await activate(rows.first().getByRole("button", { name: "Remove $env_var.SHELL", exact: true }));
+
+    let dialog = page.getByRole("alertdialog", { name: "Remove $env_var.SHELL" });
+    await expect(dialog).toContainText("2 prompt references");
+    await activate(dialog.getByRole("button", { name: "Remove this occurrence" }));
+    await expect(rows).toHaveCount(1);
+    await expect(toml).toHaveValue(/\[env_var\.SHELL\]/);
+
+    await toml.fill(repeated);
+    await expect(rows).toHaveCount(2);
+    await activate(rows.first().getByRole("button", { name: "Remove $env_var.SHELL", exact: true }));
+    dialog = page.getByRole("alertdialog", { name: "Remove $env_var.SHELL" });
+    await activate(dialog.getByRole("button", { name: "Delete named module everywhere" }));
+    await expect(rows).toHaveCount(0);
+    await expect(toml).not.toHaveValue(/env_var\.SHELL/);
   });
 
   test("discovers a named instance imported under its aggregate", async ({ page }) => {
