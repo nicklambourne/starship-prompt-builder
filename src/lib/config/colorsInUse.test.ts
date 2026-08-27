@@ -19,6 +19,17 @@ describe("colours in use", () => {
     expect(found.map((c) => c.token)).toEqual(["red", "yellow"]);
   });
 
+  it("reads styles from user-named module instances", () => {
+    const found = colorsInUse(
+      {
+        custom: { project: { style: "bold cyan" } },
+        env_var: { SHELL: { style: "fg:yellow" } },
+      },
+      { renders: (name) => name === "custom.project" || name === "env_var.SHELL" },
+    );
+    expect(found.map((colour) => colour.token)).toEqual(["yellow", "cyan"]);
+  });
+
   it("includes the styles in battery and Kubernetes rules", () => {
     const config = {
       battery: { display: [{ threshold: 100, style: "bold #123456" }] },

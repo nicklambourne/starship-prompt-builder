@@ -43,8 +43,10 @@ import { isStyleVariable } from "@/lib/config/styleReach";
 import { formatItemStyle, formatItemStyleSource, type FormatStyleVariables } from "@/lib/config/formatStyles";
 import { groupVisibility } from "@/lib/config/formatVisibility";
 import type { VariableMap } from "@/lib/engine/render";
-import { MODULE_META } from "@/lib/config/meta";
+import { moduleMeta } from "@/lib/config/meta";
 import { tryParseFormatString } from "@/lib/engine/formatString";
+import { isValidNamedModuleInstance } from "@/lib/config/namedModules";
+import type { NamedModuleKind } from "@/lib/engine/modules";
 import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
 
@@ -93,6 +95,8 @@ interface FormatBuilderProps {
     setEnabled(name: string, enabled: boolean): void;
     renderSettings(name: string): React.ReactNode;
   };
+  /** Root-format creation for Starship's user-named module families. */
+  createNamedModule?(kind: NamedModuleKind, instance: string): void;
   /**
    * The `style` option of the module whose format this is, when this editor is
    * a module's own format. Items can inherit this option through `$style`
@@ -221,6 +225,7 @@ export function FormatBuilder({
   theme,
   fontStack,
   modules,
+  createNamedModule,
   ownerStyle,
   styleVariables,
   variables,
@@ -236,6 +241,8 @@ export function FormatBuilder({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
   const [addSearch, setAddSearch] = useState("");
+  const [namedKind, setNamedKind] = useState<NamedModuleKind>("env_var");
+  const [namedInstance, setNamedInstance] = useState("");
   const [filter, setFilter] = useState("");
   const [dragging, setDragging] = useState<Path | null>(null);
   const [dropTarget, setDropTarget] = useState<
@@ -264,7 +271,7 @@ export function FormatBuilder({
     onChange(fromItems(next));
   };
 
-  const categoryOf = (name: string) => MODULE_META[name]?.group;
+  const categoryOf = (name: string) => moduleMeta(name)?.group;
 
   const candidates = useMemo(() => {
     const needle = addSearch.trim().toLowerCase();
@@ -272,6 +279,11 @@ export function FormatBuilder({
       .filter((name) => !needle || name.toLowerCase().includes(needle))
       .slice(0, 80);
   }, [vocabulary, addSearch]);
+  const trimmedNamedInstance = namedInstance.trim();
+  const namedModuleName = `${namedKind}.${trimmedNamedInstance}`;
+  const namedDuplicate = vocabulary.includes(namedModuleName);
+  const namedValid =
+    isValidNamedModuleInstance(trimmedNamedInstance) && !namedDuplicate;
 
   const categories = allowCategoryGrouping && items
     ? groupableCategories(items, categoryOf)
@@ -784,6 +796,64 @@ export function FormatBuilder({
               <li className="px-1 py-2 text-xs text-neutral-500">No matches.</li>
             ) : null}
           </ul>
+          {createNamedModule ? (
+            <form
+              className="flex flex-col gap-2 border-t border-white/10 pt-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!namedValid) return;
+                createNamedModule(namedKind, trimmedNamedInstance);
+                setNamedInstance("");
+                setAdding(false);
+                setAddSearch("");
+              }}
+            >
+              <p className="text-xs font-medium text-neutral-300">Create a named module</p>
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="flex flex-col gap-1 text-xs text-neutral-400">
+                  Type
+                  <select
+                    value={namedKind}
+                    onChange={(event) => setNamedKind(event.target.value as NamedModuleKind)}
+                    className="rounded border border-white/10 bg-neutral-950 px-2 py-1.5 text-sm text-neutral-100 focus:border-accent-400 focus:outline-none"
+                  >
+                    <option value="env_var">Environment variable</option>
+                    <option value="custom">Custom command</option>
+                  </select>
+                </label>
+                <label className="flex min-w-40 flex-1 flex-col gap-1 text-xs text-neutral-400">
+                  Instance name
+                  <input
+                    value={namedInstance}
+                    onChange={(event) => setNamedInstance(event.target.value)}
+                    placeholder={namedKind === "env_var" ? "SHELL" : "project"}
+                    spellCheck={false}
+                    className="rounded border border-white/10 bg-neutral-950 px-2 py-1.5 font-mono text-base text-neutral-100 focus:border-accent-400 focus:outline-none"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={!namedValid}
+                  className={`${SMALL_BUTTON} disabled:cursor-not-allowed disabled:opacity-40`}
+                >
+                  Create and add
+                </button>
+              </div>
+              {trimmedNamedInstance && !isValidNamedModuleInstance(trimmedNamedInstance) ? (
+                <p className="text-xs text-amber-300">
+                  Start with a letter or underscore; then use letters, numbers, underscores, or hyphens.
+                </p>
+              ) : namedDuplicate ? (
+                <p className="text-xs text-amber-300">
+                  ${namedModuleName} already exists. Select it from the list above.
+                </p>
+              ) : (
+                <p className="text-xs text-neutral-500">
+                  Creates <code>${namedKind}.{trimmedNamedInstance || "name"}</code> and places it in the prompt.
+                </p>
+              )}
+            </form>
+          ) : null}
         </div>
       ) : null}
 

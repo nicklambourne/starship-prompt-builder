@@ -8,6 +8,7 @@
  */
 
 import { parseFormatString } from "./formatString";
+import { moduleOptionsForConfig, NAMED_MODULE_KINDS } from "./modules";
 import { type ModuleDefinition } from "./modules/types";
 import { type RenderContext, type VariableValue, renderFormat } from "./render";
 import { type Palette, parseStyleString, resolvePalette } from "./styleString";
@@ -42,10 +43,7 @@ export interface RenderedPrompt {
 export const DEFAULT_FORMAT = "$all";
 
 function moduleOptions(config: StarshipConfig, name: string): Record<string, unknown> {
-  const raw = config[name];
-  return raw && typeof raw === "object" && !Array.isArray(raw)
-    ? (raw as Record<string, unknown>)
-    : {};
+  return moduleOptionsForConfig(config, name);
 }
 
 export function isModuleDisabled(
@@ -202,19 +200,27 @@ export function renderPrompt({
   const explicit = new Set(collectRootModuleNames(format, warnings));
 
   const segmentCache = new Map<string, Segment[]>();
+  const renderDefinition = (name: string): Segment[] => {
+    const definition = byName.get(name);
+    if (!definition || isModuleDisabled(config, definition)) return [];
+    return renderModule(definition, config, scenario, palette, warnings);
+  };
   const evaluateModule = (name: string): Segment[] => {
     const cached = segmentCache.get(name);
     if (cached) return cached;
-    const definition = byName.get(name);
-    if (!definition) {
-      segmentCache.set(name, []);
-      return [];
+
+    let rendered = renderDefinition(name);
+    if (NAMED_MODULE_KINDS.some((kind) => kind === name)) {
+      const prefix = `${name}.`;
+      rendered = [
+        ...rendered,
+        ...modules
+          .filter((definition) =>
+            definition.name.startsWith(prefix) && !explicit.has(definition.name)
+          )
+          .flatMap((definition) => renderDefinition(definition.name)),
+      ];
     }
-    if (isModuleDisabled(config, definition)) {
-      segmentCache.set(name, []);
-      return [];
-    }
-    const rendered = renderModule(definition, config, scenario, palette, warnings);
     segmentCache.set(name, rendered);
     return rendered;
   };

@@ -15,6 +15,7 @@
 import type { StarshipConfig } from "@/lib/engine/prompt";
 import { STYLE_MODIFIERS } from "@/lib/engine/types";
 import { MODULE_META } from "./meta";
+import { NAMED_MODULE_KINDS } from "@/lib/engine/modules";
 import { toItems, type FormatItem } from "./formatItems";
 
 const MODIFIERS = new Set<string>(STYLE_MODIFIERS);
@@ -89,10 +90,13 @@ export function colorsInUse(
     if (typeof value === "string") for (const style of stylesInFormat(value)) add(style);
   }
 
-  for (const [module, meta] of Object.entries(MODULE_META)) {
-    if (!options.renders(module)) continue;
-    const table = config[module];
-    if (typeof table !== "object" || table === null) continue;
+  const addModule = (
+    module: string,
+    meta: (typeof MODULE_META)[string],
+    table: unknown,
+  ) => {
+    if (!options.renders(module)) return;
+    if (typeof table !== "object" || table === null) return;
     const values = table as Record<string, unknown>;
     for (const option of meta.styleOptions) {
       const value = values[option];
@@ -107,6 +111,18 @@ export function colorsInUse(
     for (const option of meta.formatOptions) {
       const value = values[option];
       if (typeof value === "string") for (const style of stylesInFormat(value)) add(style);
+    }
+  };
+
+  for (const [module, meta] of Object.entries(MODULE_META)) {
+    addModule(module, meta, config[module]);
+  }
+
+  for (const kind of NAMED_MODULE_KINDS) {
+    const family = config[kind];
+    if (typeof family !== "object" || family === null || Array.isArray(family)) continue;
+    for (const [instance, table] of Object.entries(family)) {
+      addModule(`${kind}.${instance}`, MODULE_META[kind], table);
     }
   }
 

@@ -15,6 +15,7 @@ import { EnvironmentPanel } from "./EnvironmentPanel";
 import { Explainer } from "./Explainer";
 import { PaletteEditor } from "./PaletteEditor";
 import { FormatBuilder } from "./FormatBuilder";
+import { NamedModuleActions } from "./NamedModuleActions";
 import { PresetPicker } from "./PresetPicker";
 import { PreviewPane } from "./PreviewPane";
 import { SiteFooter } from "./SiteFooter";
@@ -36,7 +37,12 @@ import {
   ShareIcon,
   UndoIcon,
 } from "@/components/ui/icons";
-import { ALL_MODULES, MODULES_BY_NAME } from "@/lib/engine/modules";
+import {
+  moduleDefinitionsForConfig,
+  moduleOptionsForConfig,
+  namedModuleIdentity,
+  type NamedModuleKind,
+} from "@/lib/engine/modules";
 import { PROMPT_ORDER } from "@/lib/engine/promptOrder";
 import { DEFAULT_FORMAT, isModuleDisabled, renderPrompt } from "@/lib/engine/prompt";
 import { collectVariables, tryParseFormatString } from "@/lib/engine/formatString";
@@ -48,10 +54,15 @@ import { moduleFormatStyles } from "@/lib/config/formatStyles";
 import { moduleFormatVariables } from "@/lib/config/formatVisibility";
 import { withStyleVariable } from "@/lib/config/formatItems";
 import { inactiveReason } from "@/lib/config/inactiveReason";
+import {
+  addNamedModule,
+  removeNamedModule,
+  renameNamedModule,
+} from "@/lib/config/namedModules";
 import { describeOption } from "@/lib/config/options";
 import { describeVariable } from "@/lib/config/variables";
 import { moduleStyleReaches, rowStyleReaches } from "@/lib/config/styleReach";
-import { MODULE_META, optionKind } from "@/lib/config/meta";
+import { MODULE_META, moduleMeta, optionKind } from "@/lib/config/meta";
 import { PRESETS } from "@/lib/config/presets";
 import { decodeShare, encodeShare } from "@/lib/config/share";
 import { loadSession, saveSession } from "@/lib/config/session";
@@ -268,6 +279,11 @@ export function Builder() {
     () => Object.keys(config.palettes?.[config.palette ?? ""] ?? {}),
     [config.palettes, config.palette],
   );
+  const moduleDefinitions = useMemo(() => moduleDefinitionsForConfig(config), [config]);
+  const modulesByName = useMemo(
+    () => new Map(moduleDefinitions.map((definition) => [definition.name, definition])),
+    [moduleDefinitions],
+  );
 
   /**
    * The format the editor works on.
@@ -294,10 +310,10 @@ export function Builder() {
       renderPrompt({
         config: { ...config, format },
         scenario,
-        modules: ALL_MODULES,
+        modules: moduleDefinitions,
         defaultOrder: PROMPT_ORDER,
       }),
-    [config, format, scenario],
+    [config, format, scenario, moduleDefinitions],
   );
 
 
@@ -306,8 +322,8 @@ export function Builder() {
 
   /** Module names available to the root format. */
   const moduleVocabulary = useMemo(
-    () => ["all", ...ALL_MODULES.map((m) => m.name)],
-    [],
+    () => ["all", ...moduleDefinitions.map((m) => m.name)],
+    [moduleDefinitions],
   );
 
   /**
@@ -317,8 +333,8 @@ export function Builder() {
    * whatever the module's format happens to spend.
    */
   const rowOwnsStyle = useCallback(
-    (name: string) => typeof MODULES_BY_NAME.get(name)?.defaults.style === "string",
-    [],
+    (name: string) => typeof modulesByName.get(name)?.defaults.style === "string",
+    [modulesByName],
   );
 
   /**
@@ -329,9 +345,9 @@ export function Builder() {
    */
   const ownStyleFor = useCallback(
     (name: string) => {
-      const definition = MODULES_BY_NAME.get(name);
+      const definition = modulesByName.get(name);
       if (!definition || typeof definition.defaults.style !== "string") return null;
-      const options = (config[name] as Record<string, unknown>) ?? {};
+      const options = moduleOptionsForConfig(config, name);
       const set = typeof options.style === "string" ? options.style : null;
       const format = options.format ?? definition.defaults.format;
       const spent = typeof format === "string" ? moduleStyleReaches(format) : true;
@@ -351,7 +367,7 @@ export function Builder() {
         },
       };
     },
-    [config, resetModuleOption, updateModuleOption],
+    [config, modulesByName, resetModuleOption, updateModuleOption],
   );
 
   /** An option an edit elsewhere has just written, for its row to open on. */
@@ -362,9 +378,10 @@ export function Builder() {
   } | null>(null);
 
   const optionsFor = useCallback((name: string): OptionDescriptor[] => {
-    const definition = MODULES_BY_NAME.get(name);
+    const definition = modulesByName.get(name);
     if (!definition) return [];
-    const meta = MODULE_META[name];
+    const meta = moduleMeta(name);
+    const values = moduleOptionsForConfig(config, name);
     return Object.entries(definition.defaults)
       // `disabled` is the switch on the row, and `style` is usually the swatch
       // beside it: both are settings, but the row is where people look.
@@ -376,20 +393,20 @@ export function Builder() {
         description: describeOption(name, key),
         styleFallback: styleOptionFallback(
           definition.defaults,
-          (config[name] as Record<string, unknown>) ?? {},
+          values,
           key,
         ),
         styleRules: styleRulesFor(
           name, key, definition.defaults,
-          (config[name] as Record<string, unknown>) ?? {},
+          values,
         ),
       }));
-  }, [rowOwnsStyle, config]);
+  }, [rowOwnsStyle, config, modulesByName]);
 
   /** Variables a module's own format strings may reference. */
   const variablesFor = useCallback(
     (name: string) => {
-      const definition = MODULES_BY_NAME.get(name);
+      const definition = modulesByName.get(name);
       if (!definition) return [];
       let fromEvaluate: string[] = [];
       try {
@@ -405,7 +422,7 @@ export function Builder() {
       const fromFormat = parsed.ok ? collectVariables(parsed.elements) : [];
       return [...new Set([...fromEvaluate, ...fromFormat])].sort();
     },
-    [scenario, config],
+    [scenario, config, modulesByName],
   );
 
   /**
@@ -417,10 +434,10 @@ export function Builder() {
    */
   const inactiveNotes = useMemo(() => {
     const notes = new Map<string, string>();
-    for (const definition of ALL_MODULES) {
+    for (const definition of moduleDefinitions) {
       const options = {
         ...definition.defaults,
-        ...((config[definition.name] as Record<string, unknown>) ?? {}),
+        ...moduleOptionsForConfig(config, definition.name),
       };
       let produces = false;
       try {
@@ -433,7 +450,7 @@ export function Builder() {
       }
     }
     return notes;
-  }, [config, scenario]);
+  }, [config, scenario, moduleDefinitions]);
 
   /**
    * What the prompt on screen is painted with.
@@ -447,13 +464,14 @@ export function Builder() {
     const inFormat = new Set(parsedRoot.ok ? collectVariables(parsedRoot.elements) : []);
     return colorsInUse(config, {
       renders: (name) => {
-        if (!inFormat.has(name)) return false;
-        const definition = MODULES_BY_NAME.get(name);
+        const identity = namedModuleIdentity(name);
+        if (!inFormat.has(name) && !(identity && inFormat.has(identity.kind))) return false;
+        const definition = modulesByName.get(name);
         if (!definition || isModuleDisabled(config, definition)) return false;
         return !inactiveNotes.has(name);
       },
     });
-  }, [config, format, inactiveNotes]);
+  }, [config, format, inactiveNotes, modulesByName]);
 
   /** Just the tokens, for the style pickers' own row. */
   const inUseTokens = useMemo(() => inUse.map((colour) => colour.token), [inUse]);
@@ -461,11 +479,11 @@ export function Builder() {
   const moduleControls = useMemo(
     () => ({
       isEnabled(name: string) {
-        const options = (config[name] as Record<string, unknown>) ?? {};
+        const options = moduleOptionsForConfig(config, name);
         const disabled =
           typeof options.disabled === "boolean"
             ? options.disabled
-            : (MODULES_BY_NAME.get(name)?.defaults.disabled ?? false);
+            : (modulesByName.get(name)?.defaults.disabled ?? false);
         return !disabled;
       },
       inactiveNote(name: string) {
@@ -487,8 +505,8 @@ export function Builder() {
          * swatch is still a style written around the module in the format.
          */
         if (rowOwnsStyle(name)) return true;
-        const options = (config[name] as Record<string, unknown>) ?? {};
-        const format = options.format ?? MODULES_BY_NAME.get(name)?.defaults.format;
+        const options = moduleOptionsForConfig(config, name);
+        const format = options.format ?? modulesByName.get(name)?.defaults.format;
         return typeof format === "string" ? rowStyleReaches(format) : true;
       },
       /*
@@ -510,8 +528,8 @@ export function Builder() {
        * put back behind the reader's back.
        */
       restoreStyleVariable(name: string) {
-        const definition = MODULES_BY_NAME.get(name);
-        const options = (config[name] as Record<string, unknown>) ?? {};
+        const definition = modulesByName.get(name);
+        const options = moduleOptionsForConfig(config, name);
         const format = options.format ?? definition?.defaults.format;
         if (typeof format !== "string") return;
         const next = withStyleVariable(format);
@@ -540,6 +558,7 @@ export function Builder() {
     [
       config,
       inactiveNotes,
+      modulesByName,
       setModuleDisabled,
       rowOwnsStyle,
       ownStyleFor,
@@ -557,34 +576,54 @@ export function Builder() {
    */
   const renderSettings = useCallback(
     (name: string) => {
-      const definition = MODULES_BY_NAME.get(name);
+      const definition = modulesByName.get(name);
       if (!definition || optionsFor(name).length === 0) return null;
+      const identity = namedModuleIdentity(name);
+      const family = identity ? config[identity.kind] : undefined;
+      const existing =
+        family && typeof family === "object" && !Array.isArray(family)
+          ? Object.keys(family)
+          : [];
       return (
-      <SettingsForm
-        options={optionsFor(name)}
-        values={(config[name] as Record<string, unknown>) ?? {}}
-        onChange={(key, value) => updateModuleOption(name, key, value)}
-        onReset={(key) => resetModuleOption(name, key)}
-        formatVariables={variablesFor(name)}
-        describeVariable={(variable) => describeVariable(name, variable)}
-        palette={palette}
-        paletteNames={paletteNames}
-        inUseColors={inUseTokens}
-        ownStyle={ownStyleFor(name) ?? undefined}
-        styleVariables={moduleFormatStyles(definition, config, scenario)}
-        variables={moduleFormatVariables(definition, config, scenario)}
-        reveal={
-          revealed?.module === name
-            ? { key: revealed.key, nonce: revealed.nonce }
-            : undefined
-        }
-        theme={theme}
-        fontStack={font.stack}
-      />
+        <>
+          {identity ? (
+            <NamedModuleActions
+              kind={identity.kind}
+              instance={identity.instance}
+              existing={existing}
+              onRename={(nextInstance) =>
+                setConfig(renameNamedModule(config, name, nextInstance))
+              }
+              onRemove={() => setConfig(removeNamedModule(config, name))}
+            />
+          ) : null}
+          <SettingsForm
+            options={optionsFor(name)}
+            values={moduleOptionsForConfig(config, name)}
+            onChange={(key, value) => updateModuleOption(name, key, value)}
+            onReset={(key) => resetModuleOption(name, key)}
+            formatVariables={variablesFor(name)}
+            describeVariable={(variable) => describeVariable(name, variable)}
+            palette={palette}
+            paletteNames={paletteNames}
+            inUseColors={inUseTokens}
+            ownStyle={ownStyleFor(name) ?? undefined}
+            styleVariables={moduleFormatStyles(definition, config, scenario)}
+            variables={moduleFormatVariables(definition, config, scenario)}
+            reveal={
+              revealed?.module === name
+                ? { key: revealed.key, nonce: revealed.nonce }
+                : undefined
+            }
+            theme={theme}
+            fontStack={font.stack}
+          />
+        </>
       );
     },
     [
       config,
+      modulesByName,
       optionsFor,
       ownStyleFor,
       scenario,
@@ -597,7 +636,15 @@ export function Builder() {
       inUseTokens,
       theme,
       font.stack,
+      setConfig,
     ],
+  );
+
+  const createNamedModule = useCallback(
+    (kind: NamedModuleKind, instance: string) => {
+      setConfig(addNamedModule(config, kind, instance, format));
+    },
+    [config, format, setConfig],
   );
 
   // Shared with the error boundary, which needs the same map to hand back a
@@ -850,12 +897,13 @@ export function Builder() {
               vocabulary={moduleVocabulary}
               palette={palette}
               paletteNames={paletteNames}
-        inUseColors={inUseTokens}
+              inUseColors={inUseTokens}
               allowCategoryGrouping
               scope="root-format"
               theme={theme}
               fontStack={font.stack}
               modules={moduleControls}
+              createNamedModule={createNamedModule}
               searchable
             />
 

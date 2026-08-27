@@ -181,6 +181,18 @@ describe("round trips", () => {
     expect(reparse(config)).toEqual(config);
   });
 
+  it("preserves a newly created named instance before any option is changed", () => {
+    const config = {
+      format: "${env_var.SHELL}${custom.project}",
+      env_var: { SHELL: {} },
+      custom: { project: {} },
+    };
+    const toml = serialiseConfig(config, { header: false });
+    expect(toml).toContain("[env_var.SHELL]");
+    expect(toml).toContain("[custom.project]");
+    expect(parseConfig(toml)).toEqual({ ok: true, config });
+  });
+
   it("preserves arrays of tables", () => {
     const config = { battery: { display: [{ threshold: 20, style: "bold yellow" }] } };
     expect(reparse(config)).toEqual(config);
