@@ -56,6 +56,19 @@ function plain(cell) {
     .trim();
 }
 
+/**
+ * Plain prose plus the links that gave phrases such as "See below" meaning.
+ * Relative targets are authored from Starship's configuration reference.
+ */
+function documentation(cell) {
+  const links = [...cell.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)].map((match) => ({
+    label: plain(match[1]),
+    url: new URL(match[2], "https://starship.rs/config/").href,
+  }));
+  const description = plain(cell);
+  return links.length > 0 ? { description, links } : { description };
+}
+
 function splitRow(line) {
   return line
     .replace(/^\s*\|/, "")
@@ -94,10 +107,10 @@ function tablesUnder(start) {
       // `style\*` marks "usable only inside a style string", which the builder
       // shows in its own way; the name is what has to match the format string.
       const name = plain(cells[shape.name] ?? "").replace(/\*+$/, "").trim();
-      const description = plain(cells[shape.description] ?? "");
-      if (!name || !description) continue;
+      const documented = documentation(cells[shape.description] ?? "");
+      if (!name || !documented.description) continue;
       const example = shape.example >= 0 ? plain(cells[shape.example] ?? "") : "";
-      table[name] ??= example ? { description, example } : { description };
+      table[name] ??= example ? { ...documented, example } : documented;
     }
   }
   return table;

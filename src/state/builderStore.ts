@@ -16,6 +16,7 @@ import type { Scenario } from "@/lib/scenarios/types";
 import { DEFAULT_SCENARIO_ID, getScenario } from "@/lib/scenarios";
 import { DEFAULT_PRESET_ID, getPreset } from "@/lib/config/presets";
 import { parseConfig } from "@/lib/config/toml";
+import { namedModuleIdentity } from "@/lib/engine/modules";
 import { DEFAULT_FONT_SIZE, TERMINAL_FONTS, clampFontSize } from "@/lib/fonts";
 import { DEFAULT_THEME_ID } from "@/lib/terminalThemes";
 
@@ -121,6 +122,18 @@ function withModuleOption(
   key: string,
   value: unknown,
 ): StarshipConfig {
+  const identity = namedModuleIdentity(module);
+  if (identity) {
+    const family = (config[identity.kind] as Record<string, unknown> | undefined) ?? {};
+    const existing = (family[identity.instance] as Record<string, unknown> | undefined) ?? {};
+    return {
+      ...config,
+      [identity.kind]: {
+        ...family,
+        [identity.instance]: { ...existing, [key]: value },
+      },
+    };
+  }
   const existing = (config[module] as Record<string, unknown> | undefined) ?? {};
   return { ...config, [module]: { ...existing, [key]: value } };
 }
@@ -130,6 +143,19 @@ function withoutModuleOption(
   module: string,
   key: string,
 ): StarshipConfig {
+  const identity = namedModuleIdentity(module);
+  if (identity) {
+    const family = config[identity.kind] as Record<string, unknown> | undefined;
+    const existing = family?.[identity.instance] as Record<string, unknown> | undefined;
+    if (!family || !existing) return config;
+    const next = { ...existing };
+    delete next[key];
+    // An empty named table still declares an instance whose defaults matter.
+    return {
+      ...config,
+      [identity.kind]: { ...family, [identity.instance]: next },
+    };
+  }
   const existing = config[module] as Record<string, unknown> | undefined;
   if (!existing) return config;
   const next = { ...existing };

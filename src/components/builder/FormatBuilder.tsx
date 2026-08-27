@@ -43,10 +43,13 @@ import { isStyleVariable } from "@/lib/config/styleReach";
 import { formatItemStyle, formatItemStyleSource, type FormatStyleVariables } from "@/lib/config/formatStyles";
 import { groupVisibility } from "@/lib/config/formatVisibility";
 import type { VariableMap } from "@/lib/engine/render";
-import { MODULE_META } from "@/lib/config/meta";
+import { moduleMeta } from "@/lib/config/meta";
 import { tryParseFormatString } from "@/lib/engine/formatString";
+import { isValidNamedModuleInstance } from "@/lib/config/namedModules";
+import { namedModuleIdentity, type NamedModuleKind } from "@/lib/engine/modules";
 import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
+import type { DocumentationLink } from "@/lib/config/documentation";
 
 interface FormatBuilderProps {
   value: string;
@@ -58,6 +61,8 @@ interface FormatBuilderProps {
    * holds variables instead, and describes them from starship's docs.
    */
   describe?(name: string): string | undefined;
+  /** References preserved from an entry's documentation. */
+  describeLinks?(name: string): DocumentationLink[] | undefined;
   palette?: Palette;
   paletteNames?: string[];
   /** Colours the prompt already uses, for the style editors' own row. */
@@ -92,7 +97,11 @@ interface FormatBuilderProps {
     restoreStyleVariable(name: string): void;
     setEnabled(name: string, enabled: boolean): void;
     renderSettings(name: string): React.ReactNode;
+    namedModuleReferences(name: string): number;
+    removeNamedModule(name: string): void;
   };
+  /** Root-format creation for Starship's user-named module families. */
+  createNamedModule?(kind: NamedModuleKind, instance: string): void;
   /**
    * The `style` option of the module whose format this is, when this editor is
    * a module's own format. Items can inherit this option through `$style`
@@ -212,6 +221,7 @@ export function FormatBuilder({
   onChange,
   vocabulary,
   describe = describeModule,
+  describeLinks = () => undefined,
   palette,
   paletteNames,
   inUseColors,
@@ -221,6 +231,7 @@ export function FormatBuilder({
   theme,
   fontStack,
   modules,
+  createNamedModule,
   ownerStyle,
   styleVariables,
   variables,
@@ -236,6 +247,13 @@ export function FormatBuilder({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
   const [addSearch, setAddSearch] = useState("");
+  const [namedKind, setNamedKind] = useState<NamedModuleKind>("env_var");
+  const [namedInstance, setNamedInstance] = useState("");
+  const [removingNamed, setRemovingNamed] = useState<{
+    path: string;
+    name: string;
+    references: number;
+  } | null>(null);
   const [filter, setFilter] = useState("");
   const [dragging, setDragging] = useState<Path | null>(null);
   const [dropTarget, setDropTarget] = useState<
@@ -260,11 +278,12 @@ export function FormatBuilder({
 
   const commit = (next: FormatItem[]) => {
     setStyling(null);
+    setRemovingNamed(null);
     setArrangement(next);
     onChange(fromItems(next));
   };
 
-  const categoryOf = (name: string) => MODULE_META[name]?.group;
+  const categoryOf = (name: string) => moduleMeta(name)?.group;
 
   const candidates = useMemo(() => {
     const needle = addSearch.trim().toLowerCase();
@@ -272,6 +291,11 @@ export function FormatBuilder({
       .filter((name) => !needle || name.toLowerCase().includes(needle))
       .slice(0, 80);
   }, [vocabulary, addSearch]);
+  const trimmedNamedInstance = namedInstance.trim();
+  const namedModuleName = `${namedKind}.${trimmedNamedInstance}`;
+  const namedDuplicate = vocabulary.includes(namedModuleName);
+  const namedValid =
+    isValidNamedModuleInstance(trimmedNamedInstance) && !namedDuplicate;
 
   const categories = allowCategoryGrouping && items
     ? groupableCategories(items, categoryOf)
@@ -418,7 +442,70 @@ export function FormatBuilder({
         ),
       );
     },
-    onRemove: (path) => commit(removeAt(items, path)),
+    onRemove: (path) => {
+      const item = getAt(items, path);
+      if (item?.kind === "module" && modules && namedModuleIdentity(item.name)) {
+        const references = modules.namedModuleReferences(item.name);
+        if (references <= 1) {
+          setRemovingNamed(null);
+          modules.removeNamedModule(item.name);
+          return;
+        }
+        setRemovingNamed({ path: pathKey(path), name: item.name, references });
+        return;
+      }
+      commit(removeAt(items, path));
+    },
+    renderRemoveConfirmation: (path, item) => {
+      if (
+        item.kind !== "module" ||
+        !removingNamed ||
+        removingNamed.path !== pathKey(path) ||
+        removingNamed.name !== item.name
+      ) {
+        return null;
+      }
+      const label = `$${item.name}`;
+      return (
+        <div
+          role="alertdialog"
+          aria-label={`Remove ${label}`}
+          className="mx-2 mb-2 flex flex-col gap-2 rounded border border-red-400/40 bg-red-500/5 p-2 text-xs text-neutral-300"
+        >
+          <p>
+            {label} has {removingNamed.references} prompt references. Remove only
+            this occurrence, or delete the named module and all of its explicit
+            occurrences?
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => commit(removeAt(items, path))}
+              className={SMALL_BUTTON}
+            >
+              Remove this occurrence
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRemovingNamed(null);
+                modules?.removeNamedModule(item.name);
+              }}
+              className="rounded border border-red-400/70 px-2 py-1 text-xs text-red-300 transition hover:bg-red-500/10"
+            >
+              Delete named module everywhere
+            </button>
+            <button
+              type="button"
+              onClick={() => setRemovingNamed(null)}
+              className={SMALL_BUTTON}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      );
+    },
     onStyleToggle: (path) =>
       setStyling(styling === pathKey(path) ? null : pathKey(path)),
     onExpandToggle: (path) => {
@@ -464,6 +551,7 @@ export function FormatBuilder({
         ),
       ),
     describe,
+    describeLinks,
     // The root format is the only one holding modules; every other instance of
     // this editor is a module's own format, and holds that module's variables.
     nameKind: () => (modules ? "module" : "variable"),
@@ -784,6 +872,64 @@ export function FormatBuilder({
               <li className="px-1 py-2 text-xs text-neutral-500">No matches.</li>
             ) : null}
           </ul>
+          {createNamedModule ? (
+            <form
+              className="flex flex-col gap-2 border-t border-white/10 pt-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!namedValid) return;
+                createNamedModule(namedKind, trimmedNamedInstance);
+                setNamedInstance("");
+                setAdding(false);
+                setAddSearch("");
+              }}
+            >
+              <p className="text-xs font-medium text-neutral-300">Create a named module</p>
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="flex flex-col gap-1 text-xs text-neutral-400">
+                  Type
+                  <select
+                    value={namedKind}
+                    onChange={(event) => setNamedKind(event.target.value as NamedModuleKind)}
+                    className="rounded border border-white/10 bg-neutral-950 px-2 py-1.5 text-sm text-neutral-100 focus:border-accent-400 focus:outline-none"
+                  >
+                    <option value="env_var">Environment variable</option>
+                    <option value="custom">Custom command</option>
+                  </select>
+                </label>
+                <label className="flex min-w-40 flex-1 flex-col gap-1 text-xs text-neutral-400">
+                  Instance name
+                  <input
+                    value={namedInstance}
+                    onChange={(event) => setNamedInstance(event.target.value)}
+                    placeholder={namedKind === "env_var" ? "SHELL" : "project"}
+                    spellCheck={false}
+                    className="rounded border border-white/10 bg-neutral-950 px-2 py-1.5 font-mono text-base text-neutral-100 focus:border-accent-400 focus:outline-none"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={!namedValid}
+                  className={`${SMALL_BUTTON} disabled:cursor-not-allowed disabled:opacity-40`}
+                >
+                  Create and add
+                </button>
+              </div>
+              {trimmedNamedInstance && !isValidNamedModuleInstance(trimmedNamedInstance) ? (
+                <p className="text-xs text-amber-300">
+                  Start with a letter or underscore; then use letters, numbers, underscores, or hyphens.
+                </p>
+              ) : namedDuplicate ? (
+                <p className="text-xs text-amber-300">
+                  ${namedModuleName} already exists. Select it from the list above.
+                </p>
+              ) : (
+                <p className="text-xs text-neutral-500">
+                  Creates <code>${namedKind}.{trimmedNamedInstance || "name"}</code> and places it in the prompt.
+                </p>
+              )}
+            </form>
+          ) : null}
         </div>
       ) : null}
 

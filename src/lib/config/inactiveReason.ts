@@ -118,7 +118,12 @@ export function inactiveReason(
       break;
   }
 
-  const waiting = WAITING_FOR[moduleName];
+  const template = moduleName.startsWith("env_var.")
+    ? "env_var"
+    : moduleName.startsWith("custom.")
+      ? "custom"
+      : moduleName;
+  const waiting = WAITING_FOR[template];
   if (waiting) return waiting;
 
   // Language and toolchain modules need two things, and which one is missing

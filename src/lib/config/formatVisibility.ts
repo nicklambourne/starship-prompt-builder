@@ -3,6 +3,7 @@ import type { ModuleDefinition } from "@/lib/engine/modules/types";
 import type { StarshipConfig } from "@/lib/engine/prompt";
 import { renderFormat, type VariableMap } from "@/lib/engine/render";
 import type { Scenario } from "@/lib/scenarios/types";
+import { moduleOptionsForConfig } from "@/lib/engine/modules";
 import { fromItems, type FormatItem } from "./formatItems";
 import { getAt, type Path } from "./formatTree";
 
@@ -12,7 +13,7 @@ export function moduleFormatVariables(
   config: StarshipConfig,
   scenario: Scenario,
 ): VariableMap | undefined {
-  const options = { ...definition.defaults, ...(config[definition.name] as Record<string, unknown>) };
+  const options = { ...definition.defaults, ...moduleOptionsForConfig(config, definition.name) };
   try {
     const result = definition.evaluate(options, { scenario, rootConfig: config });
     const variables: VariableMap = new Map();

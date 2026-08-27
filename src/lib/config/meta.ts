@@ -31,6 +31,10 @@
 import { getOptionSchema } from "./schema";
 import type { OptionType } from "./schema";
 
+function templateModuleName(name: string): string {
+  return name.startsWith("env_var.") ? "env_var" : name.startsWith("custom.") ? "custom" : name;
+}
+
 export type ModuleGroup = "Core" | "Git" | "Languages" | "Build Tools"
   | "Cloud & Tools" | "System";
 
@@ -60,7 +64,7 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
  * cannot know module names, only headings, and this map already pairs the two.
  */
 export function docsAnchor(moduleName: string): string | undefined {
-  return MODULE_META[moduleName]?.docs.split("#")[1];
+  return MODULE_META[templateModuleName(moduleName)]?.docs.split("#")[1];
 }
 
 export const MODULE_META: Record<string, ModuleMeta> = {
@@ -740,7 +744,7 @@ const EMPTY: ModuleMeta = {
 
 /** Metadata for a module, falling back to a neutral entry for unknown names. */
 export function moduleMeta(name: string): ModuleMeta {
-  return MODULE_META[name] ?? EMPTY;
+  return MODULE_META[templateModuleName(name)] ?? EMPTY;
 }
 
 export function isFormatOption(moduleName: string, optionKey: string): boolean {
@@ -798,7 +802,7 @@ export function optionKind(
   if (meta.formatOptions.includes(optionKey)) return "format";
   if (meta.styleOptions.includes(optionKey)) return "style";
 
-  const option = getOptionSchema(moduleName, optionKey);
+  const option = getOptionSchema(templateModuleName(moduleName), optionKey);
   if (option) {
     if (option.enum && option.enum.length > 0) return "enum";
     return KIND_BY_SCHEMA_TYPE[option.type];

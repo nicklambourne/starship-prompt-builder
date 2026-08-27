@@ -113,5 +113,11 @@ export const MODULE_DESCRIPTIONS: Record<string, string> = {
 
 export function describeModule(name: string): string | undefined {
   if (name === "all") return "Every module not named elsewhere in this format";
+  if (name.startsWith("env_var.")) {
+    return `Shows the value configured by the “${name.slice("env_var.".length)}” environment-variable instance`;
+  }
+  if (name.startsWith("custom.")) {
+    return `Runs the “${name.slice("custom.".length)}” custom command`;
+  }
   return MODULE_DESCRIPTIONS[name];
 }

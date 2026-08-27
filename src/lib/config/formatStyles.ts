@@ -2,6 +2,7 @@ import { tryParseFormatString } from "@/lib/engine/formatString";
 import type { ModuleDefinition } from "@/lib/engine/modules/types";
 import type { StarshipConfig } from "@/lib/engine/prompt";
 import type { Scenario } from "@/lib/scenarios/types";
+import { moduleOptionsForConfig } from "@/lib/engine/modules";
 import type { FormatItem } from "./formatItems";
 import type { Path } from "./formatTree";
 
@@ -13,7 +14,7 @@ export function moduleFormatStyles(
   config: StarshipConfig,
   scenario: Scenario,
 ): FormatStyleVariables {
-  const options = { ...definition.defaults, ...(config[definition.name] as Record<string, unknown>) };
+  const options = { ...definition.defaults, ...moduleOptionsForConfig(config, definition.name) };
   const base = { style: typeof options.style === "string" ? options.style : undefined };
   try {
     return { ...base, ...definition.evaluate(options, { scenario, rootConfig: config })?.styleVariables };

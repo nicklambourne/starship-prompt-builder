@@ -15,6 +15,7 @@ import type { VariableMap } from "@/lib/engine/render";
 
 import { FormatBuilder } from "./FormatBuilder";
 import { ChevronIcon, RestoreIcon } from "@/components/ui/icons";
+import { DocumentationText } from "@/components/ui/DocumentationText";
 import { StyleStringBuilder } from "./StyleStringBuilder";
 import { MapEditor } from "@/components/ui/MapEditor";
 import { SymbolInput } from "@/components/ui/SymbolInput";
@@ -24,12 +25,16 @@ import type { StyleFallback, StyleRules } from "@/lib/config/styleOptions";
 import type { FormatStyleVariables } from "@/lib/config/formatStyles";
 import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
+import type { DocumentationLink } from "@/lib/config/documentation";
+import type { OptionChoice } from "@/lib/config/optionEnums";
 
 export interface OptionDescriptor {
   key: string;
   kind: "format" | "style" | "boolean" | "number" | "string" | "enum" | "array" | "raw";
   description?: string;
-  enumValues?: string[];
+  descriptionLinks?: DocumentationLink[];
+  enumValues?: OptionChoice[];
+  enumUnsetLabel?: string;
   defaultValue: unknown;
   styleFallback?: StyleFallback;
   styleRules?: StyleRules;
@@ -45,6 +50,8 @@ interface SettingsFormProps {
   formatVariables?: string[];
   /** One line about a variable, shown beside it in the format editor. */
   describeVariable?(name: string): string | undefined;
+  /** References preserved from that variable's documentation. */
+  describeVariableLinks?(name: string): DocumentationLink[] | undefined;
   palette?: Palette;
   paletteNames?: string[];
   /** Colours the prompt already uses, for the style editors' own row. */
@@ -94,6 +101,7 @@ function Row({
   label,
   labelFor,
   description,
+  descriptionLinks,
   isOverridden,
   onReset,
   open,
@@ -109,6 +117,7 @@ function Row({
    */
   labelFor?: string;
   description?: string;
+  descriptionLinks?: DocumentationLink[];
   isOverridden: boolean;
   onReset(): void;
   open: boolean;
@@ -135,19 +144,19 @@ function Row({
           aria-expanded={open}
           aria-controls={regionId}
           onClick={onToggle}
-          className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
+          className="shrink-0 text-left"
         >
           <span className={`${stylePreview ? "min-w-0 break-all" : "shrink-0"} font-mono text-sm text-neutral-200`}>{label}</span>
-          {description ? (
-            <span
-              className={`min-w-0 flex-1 text-xs leading-relaxed text-neutral-400 ${
-                open ? "" : "truncate"
-              }`}
-            >
-              {description}
-            </span>
-          ) : null}
         </button>
+        {description ? (
+          <span
+            className={`min-w-0 flex-1 text-xs leading-relaxed text-neutral-400 ${
+              open ? "" : "truncate"
+            }`}
+          >
+            <DocumentationText text={description} links={descriptionLinks} />
+          </span>
+        ) : <span className="flex-1" />}
         {isOverridden ? (
           /*
             An icon rather than the word, now that the row is a control of its
@@ -208,6 +217,7 @@ export function SettingsForm({
   onReset,
   formatVariables,
   describeVariable,
+  describeVariableLinks,
   palette,
   paletteNames,
   inUseColors,
@@ -255,6 +265,7 @@ export function SettingsForm({
               option.kind === "number" || option.kind === "enum" ? controlId : undefined
             }
             description={option.description}
+            descriptionLinks={option.descriptionLinks}
             open={open.has(option.key)}
             onToggle={() =>
               setOpen((current) => {
@@ -282,6 +293,7 @@ export function SettingsForm({
                 onChange={(next) => onChange(option.key, next)}
                 vocabulary={formatVariables ?? []}
                 describe={describeVariable}
+                describeLinks={describeVariableLinks}
                 palette={palette}
                 paletteNames={paletteNames}
                 inUseColors={inUseColors}
@@ -371,12 +383,24 @@ export function SettingsForm({
               <select
                 id={controlId}
                 value={typeof value === "string" ? value : ""}
-                onChange={(e) => onChange(option.key, e.target.value)}
+                onChange={(e) =>
+                  option.enumUnsetLabel && e.target.value === ""
+                    ? onReset(option.key)
+                    : onChange(option.key, e.target.value)
+                }
                 className="w-full rounded border border-white/10 bg-neutral-950 px-2 py-1.5 text-base text-neutral-100 focus:border-accent-400 focus:outline-none"
               >
-                {(option.enumValues ?? []).map((v) => (
-                  <option key={v} value={v}>
-                    {v}
+                {option.enumUnsetLabel ? (
+                  <option value="">{option.enumUnsetLabel}</option>
+                ) : null}
+                {typeof value === "string"
+                  && value
+                  && !(option.enumValues ?? []).some((choice) => choice.value === value) ? (
+                    <option value={value}>{value} — from imported config</option>
+                  ) : null}
+                {(option.enumValues ?? []).map((choice) => (
+                  <option key={choice.value} value={choice.value}>
+                    {choice.label}
                   </option>
                 ))}
               </select>

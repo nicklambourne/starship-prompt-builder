@@ -878,6 +878,12 @@
   "nix-shell": {
     "level": {
       "description": "The depth level of the nix-shell (Only when using Lix)",
+      "links": [
+        {
+          "label": "Lix",
+          "url": "https://lix.systems/"
+        }
+      ],
       "example": "1"
     },
     "name": {
