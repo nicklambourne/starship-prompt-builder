@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { describeVariable, variableDoc } from "./variables";
+import { describeVariable, variableDoc, type VariableDoc } from "./variables";
 import { ALL_MODULES } from "@/lib/engine/modules";
 import { collectVariables, tryParseFormatString } from "@/lib/engine/formatString";
 import { getScenario } from "@/lib/scenarios";
 import generated from "../../../data/variables.generated.json";
+
+const DOCUMENTED_VARIABLES = generated as Record<string, Record<string, VariableDoc>>;
 
 /**
  * The variables the builder offers for a module: whatever its evaluation
@@ -45,9 +47,9 @@ describe("variable documentation", () => {
   });
 
   it("preserves every linked variable reference found in the upstream tables", () => {
-    const linked = Object.entries(generated).flatMap(([anchor, variables]) =>
+    const linked = Object.entries(DOCUMENTED_VARIABLES).flatMap(([anchor, variables]) =>
       Object.entries(variables).flatMap(([variable, doc]) =>
-        "links" in doc ? doc.links.map((link) => `${anchor}.${variable}: ${link.url}`) : [],
+        doc.links?.map((link) => `${anchor}.${variable}: ${link.url}`) ?? [],
       ),
     );
     expect(linked).toEqual(["nix-shell.level: https://lix.systems/"]);
