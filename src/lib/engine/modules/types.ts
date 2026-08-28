@@ -37,10 +37,10 @@ export interface ModuleDefinition {
   /** Config key and `$variable` name, e.g. `git_branch`. */
   name: string;
   /**
-   * Default option values, exactly as starship defines them. `format` and
-   * `disabled` are required; everything else is module-specific.
+   * Default option values, exactly as starship defines them. `vcs` is a
+   * dispatcher and is the one module without its own `format` option.
    */
-  defaults: ModuleOptions & { format: string; disabled: boolean };
+  defaults: ModuleOptions & { format?: string; disabled: boolean };
   /**
    * Produces the module's variables, or null when the module should not
    * render at all.

@@ -37,9 +37,11 @@ describe("module registry", () => {
     expect(names.length).toBe(new Set(names).size);
   });
 
-  it("gives every module a format string and a disabled default", () => {
+  it("gives every module a disabled default and only known composite modules omit format", () => {
+    const formatless = new Set(["vcs"]);
     for (const definition of ALL_MODULES) {
-      expect(typeof definition.defaults.format, definition.name).toBe("string");
+      if (formatless.has(definition.name)) expect(definition.defaults.format).toBeUndefined();
+      else expect(typeof definition.defaults.format, definition.name).toBe("string");
       expect(typeof definition.defaults.disabled, definition.name).toBe("boolean");
     }
   });

@@ -32,7 +32,8 @@ function render(scenario: Partial<Scenario>, config: Record<string, unknown> = {
     config: { format: "$all", ...config },
     scenario: { ...base, ...scenario },
     modules: CLOUD_MODULES,
-    defaultOrder: CLOUD_MODULES.map((m) => m.name),
+    // `vcs` is registered but deliberately excluded from Starship's `$all`.
+    defaultOrder: CLOUD_MODULES.map((m) => m.name).filter((name) => name !== "vcs"),
   });
   expect(result.warnings).toEqual([]);
   return result.lines.map(segmentsText).join("\n");
@@ -174,7 +175,8 @@ describe("cloud modules", () => {
 
   it("every module's defaults parse as a format string", () => {
     for (const module of CLOUD_MODULES) {
-      expect(typeof module.defaults.format).toBe("string");
+      if (module.name === "vcs") expect(module.defaults.format).toBeUndefined();
+      else expect(typeof module.defaults.format).toBe("string");
       expect(typeof module.defaults.disabled).toBe("boolean");
     }
   });

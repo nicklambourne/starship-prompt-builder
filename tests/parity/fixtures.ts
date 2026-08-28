@@ -162,6 +162,35 @@ add_newline = false
     setup: GIT_INIT,
   },
   {
+    id: "vcs-git-dispatch",
+    config: `
+format = "$vcs"
+add_newline = false
+
+[vcs]
+git_modules = "$git_branch"
+`,
+    scenario: scenario("vcs-git-dispatch", {
+      git: {
+        branch: "main",
+        commit: "0000000",
+        detached: false,
+        ahead: 0,
+        behind: 0,
+        staged: 0,
+        modified: 0,
+        deleted: 0,
+        renamed: 0,
+        untracked: 0,
+        conflicted: 0,
+        stashed: 0,
+        root: "",
+        hasRemote: false,
+      },
+    }),
+    setup: GIT_INIT,
+  },
+  {
     id: "git-status-dirty",
     config: `
 format = "$git_status"
