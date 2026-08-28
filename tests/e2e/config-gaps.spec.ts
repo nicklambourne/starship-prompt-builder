@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { parse } from "smol-toml";
 
 async function activate(locator: Locator) {
   await locator.press("Enter");
@@ -44,4 +45,57 @@ test("prompt-wide symlink scanning and WSL Starship path are editable", async ({
   await openOption(module, "windows_starship");
   await module.getByRole("textbox", { name: "windows_starship" }).fill("C:\\Tools\\starship.exe");
   await expect(toml).toHaveValue(/windows_starship = "C:\\\\Tools\\\\starship.exe"/);
+});
+
+for (const [module, key] of [
+  ["c", "commands"],
+  ["cpp", "commands"],
+  ["fortran", "commands"],
+  ["python", "python_binary"],
+  ["terraform", "commands"],
+] as const) {
+  test(`${module}.${key} keeps commands and arguments nested`, async ({ page }) => {
+    await loadModule(page, module, `format = "$${module}"\n[${module}]\ndisabled = false\n`);
+    const row = page.locator('[data-format-row]').filter({ hasText: `$${module}` });
+    await openOption(row, key);
+    const second = row.getByRole("textbox", { name: "Command 1 argument 2" });
+    if (await second.count()) await second.fill("--long-version");
+    else {
+      await row.getByRole("button", { name: "+ Add argument" }).first().press("Enter");
+      await row.getByRole("textbox", { name: "Command 1 argument 2" }).fill("--long-version");
+    }
+
+    const config = parse(await page.getByLabel("starship.toml").inputValue()) as Record<string, Record<string, unknown>>;
+    const commands = config[module][key] as string[][];
+    expect(commands[0][1]).toBe("--long-version");
+    expect(Array.isArray(commands[0])).toBe(true);
+  });
+}
+
+test("directory substitutions switch between literal and ordered regex forms", async ({ page }) => {
+  await loadModule(
+    page,
+    "directory",
+    'format = "$directory"\n[directory.substitutions]\nDocuments = "docs"\n',
+  );
+  const row = page.locator('[data-format-row]').filter({ hasText: "$directory" });
+  await openOption(row, "substitutions");
+  await expect(row.getByRole("button", { name: "Literal map" })).toHaveAttribute("aria-pressed", "true");
+  await row.getByRole("button", { name: "Ordered / regex rules" }).press("Enter");
+  await row.getByRole("switch", { name: "Regex rule 1" }).press("Enter");
+  const config = parse(await page.getByLabel("starship.toml").inputValue()) as Record<string, Record<string, unknown>>;
+  expect(config.directory.substitutions).toEqual([{ from: "Documents", to: "docs", regex: true }]);
+});
+
+test("custom conditions have explicit boolean and command modes", async ({ page }) => {
+  await loadModule(
+    page,
+    "custom.project",
+    'format = "${custom.project}"\n[custom.project]\ncommand = "echo workspace"\nwhen = "test -d .git"\n',
+  );
+  const row = page.locator('[data-format-row]').filter({ hasText: "$custom.project" });
+  await openOption(row, "when");
+  await expect(row.getByRole("button", { name: "Run condition command" })).toHaveAttribute("aria-pressed", "true");
+  await row.getByRole("button", { name: "Always" }).press("Enter");
+  await expect(page.getByLabel("starship.toml")).toHaveValue(/when = true/);
 });

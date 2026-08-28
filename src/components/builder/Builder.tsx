@@ -71,6 +71,7 @@ import { decodeShare, encodeShare } from "@/lib/config/share";
 import { loadSession, saveSession } from "@/lib/config/session";
 import { parseConfig, serialiseConfig } from "@/lib/config/toml";
 import { MODULE_DEFAULTS } from "@/lib/config/rescue";
+import { structuredEditorFor } from "./structuredOptions";
 import { selectedVcsFormat } from "@/lib/engine/modules/vcs";
 import { TERMINAL_FONTS } from "@/lib/fonts";
 import { NAMED_COLORS } from "@/lib/engine/types";
@@ -416,6 +417,7 @@ export function Builder() {
             name, key, definition.defaults,
             values,
           ),
+          structuredEditor: structuredEditorFor(name, key),
         };
       });
   }, [rowOwnsStyle, config, modulesByName]);
