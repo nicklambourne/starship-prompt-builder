@@ -72,6 +72,7 @@ import { loadSession, saveSession } from "@/lib/config/session";
 import { parseConfig, serialiseConfig } from "@/lib/config/toml";
 import { MODULE_DEFAULTS } from "@/lib/config/rescue";
 import { structuredEditorFor } from "./structuredOptions";
+import { CustomPreviewControls } from "./CustomPreviewControls";
 import { selectedVcsFormat } from "@/lib/engine/modules/vcs";
 import { TERMINAL_FONTS } from "@/lib/fonts";
 import { NAMED_COLORS } from "@/lib/engine/types";
@@ -632,6 +633,16 @@ export function Builder() {
               }
             />
           ) : null}
+          {identity?.kind === "custom" ? (
+            <CustomPreviewControls
+              instance={identity.instance}
+              when={moduleOptionsForConfig(config, name).when ?? definition.defaults.when}
+              value={scenario.custom?.[identity.instance]}
+              onChange={(next) => updateScenario({
+                custom: { ...scenario.custom, [identity.instance]: next },
+              })}
+            />
+          ) : null}
           <SettingsForm
             options={optionsFor(name)}
             values={moduleOptionsForConfig(config, name)}
@@ -673,6 +684,7 @@ export function Builder() {
       theme,
       font.stack,
       setConfig,
+      updateScenario,
     ],
   );
 
