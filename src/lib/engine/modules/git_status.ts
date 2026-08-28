@@ -112,6 +112,7 @@ export const git_status: ModuleDefinition = {
     ignore_submodules: false,
     disabled: false,
     use_git_executable: false,
+    windows_starship: undefined,
   },
   evaluate(options, ctx) {
     const git = ctx.scenario.git;
