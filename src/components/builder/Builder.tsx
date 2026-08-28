@@ -103,6 +103,12 @@ const ROOT_OPTIONS: OptionDescriptor[] = [
     defaultValue: 500,
     description: "Milliseconds starship may spend running a command.",
   },
+  {
+    key: "follow_symlinks",
+    kind: "boolean",
+    defaultValue: true,
+    description: "Follow symbolic links while scanning the current directory.",
+  },
 ];
 
 const CARD = "rounded-xl border border-white/10 bg-neutral-900/40 p-4";
