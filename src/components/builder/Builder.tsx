@@ -62,6 +62,7 @@ import {
 } from "@/lib/config/namedModules";
 import { optionDoc } from "@/lib/config/options";
 import { describeVariable, variableDoc } from "@/lib/config/variables";
+import { describeModule } from "@/lib/config/descriptions";
 import { optionEnum } from "@/lib/config/optionEnums";
 import { moduleStyleReaches, rowStyleReaches } from "@/lib/config/styleReach";
 import { MODULE_META, moduleMeta, optionKind } from "@/lib/config/meta";
@@ -70,6 +71,7 @@ import { decodeShare, encodeShare } from "@/lib/config/share";
 import { loadSession, saveSession } from "@/lib/config/session";
 import { parseConfig, serialiseConfig } from "@/lib/config/toml";
 import { MODULE_DEFAULTS } from "@/lib/config/rescue";
+import { selectedVcsFormat } from "@/lib/engine/modules/vcs";
 import { TERMINAL_FONTS } from "@/lib/fonts";
 import { NAMED_COLORS } from "@/lib/engine/types";
 import { getTheme } from "@/lib/terminalThemes";
@@ -417,6 +419,7 @@ export function Builder() {
     (name: string) => {
       const definition = modulesByName.get(name);
       if (!definition) return [];
+      if (name === "vcs") return moduleVocabulary.filter((module) => module !== "all" && module !== "vcs");
       let fromEvaluate: string[] = [];
       try {
         const result = definition.evaluate(definition.defaults, {
@@ -427,11 +430,13 @@ export function Builder() {
       } catch {
         fromEvaluate = [];
       }
-      const parsed = tryParseFormatString(definition.defaults.format);
+      const parsed = typeof definition.defaults.format === "string"
+        ? tryParseFormatString(definition.defaults.format)
+        : { ok: false as const, error: "This module has no single format option." };
       const fromFormat = parsed.ok ? collectVariables(parsed.elements) : [];
       return [...new Set([...fromEvaluate, ...fromFormat])].sort();
     },
-    [scenario, config, modulesByName],
+    [scenario, config, modulesByName, moduleVocabulary],
   );
 
   /**
@@ -471,6 +476,14 @@ export function Builder() {
   const inUse = useMemo(() => {
     const parsedRoot = tryParseFormatString(expandAll(format, PROMPT_ORDER));
     const inFormat = new Set(parsedRoot.ok ? collectVariables(parsedRoot.elements) : []);
+    if (inFormat.has("vcs")) {
+      const definition = modulesByName.get("vcs");
+      const selected = definition
+        ? selectedVcsFormat({ ...definition.defaults, ...moduleOptionsForConfig(config, "vcs") }, scenario)
+        : undefined;
+      const parsedVcs = selected ? tryParseFormatString(selected) : undefined;
+      if (parsedVcs?.ok) collectVariables(parsedVcs.elements).forEach((name) => inFormat.add(name));
+    }
     return colorsInUse(config, {
       renders: (name) => {
         const identity = namedModuleIdentity(name);
@@ -480,7 +493,7 @@ export function Builder() {
         return !inactiveNotes.has(name);
       },
     });
-  }, [config, format, inactiveNotes, modulesByName]);
+  }, [config, format, inactiveNotes, modulesByName, scenario]);
 
   /** Just the tokens, for the style pickers' own row. */
   const inUseTokens = useMemo(() => inUse.map((colour) => colour.token), [inUse]);
@@ -617,7 +630,7 @@ export function Builder() {
             onChange={(key, value) => updateModuleOption(name, key, value)}
             onReset={(key) => resetModuleOption(name, key)}
             formatVariables={variablesFor(name)}
-            describeVariable={(variable) => describeVariable(name, variable)}
+            describeVariable={(variable) => name === "vcs" ? describeModule(variable) : describeVariable(name, variable)}
             describeVariableLinks={(variable) => variableDoc(name, variable)?.links}
             palette={palette}
             paletteNames={paletteNames}

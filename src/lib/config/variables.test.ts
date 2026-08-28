@@ -23,7 +23,9 @@ function variablesOffered(module: (typeof ALL_MODULES)[number]): string[] {
   } catch {
     bound = [];
   }
-  const parsed = tryParseFormatString(module.defaults.format);
+  const parsed = typeof module.defaults.format === "string"
+    ? tryParseFormatString(module.defaults.format)
+    : { ok: false as const, error: "No format" };
   return [...new Set([...bound, ...(parsed.ok ? collectVariables(parsed.elements) : [])])];
 }
 

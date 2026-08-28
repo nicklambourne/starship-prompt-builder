@@ -16,6 +16,7 @@ export const MODULE_DESCRIPTIONS: Record<string, string> = {
   kubernetes: "Shows the active Kubernetes context and namespace",
   nats: "Shows the selected NATS context",
   directory: "Shows the path to your current directory, truncated to three parent folders",
+  vcs: "Uses the first detected version-control system and renders its configured modules",
   vcsh: "Displays the current active VCSH repository",
   fossil_branch: "Shows the name of the active branch of the check-out in your current directory",
   fossil_metrics: "Will show the number of added and deleted lines in the check-out in your current directory",

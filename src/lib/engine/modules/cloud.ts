@@ -22,6 +22,7 @@ import { spack } from "./spack";
 import { terraform } from "./terraform";
 import type { ModuleDefinition } from "./types";
 import { vcsh } from "./vcsh";
+import { vcs } from "./vcs";
 
 export const CLOUD_MODULES: ModuleDefinition[] = [
   aws,
@@ -38,5 +39,6 @@ export const CLOUD_MODULES: ModuleDefinition[] = [
   singularity,
   spack,
   terraform,
+  vcs,
   vcsh,
 ];

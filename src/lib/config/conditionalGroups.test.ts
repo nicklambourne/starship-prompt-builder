@@ -30,7 +30,7 @@ describe("editable conditional groups", () => {
     "[($a)](red)[x]()",
     "[[x$a]()]($style)",
     "()[]()",
-    getModule("git_status")!.defaults.format,
+    getModule("git_status")!.defaults.format!,
   ])("preserves every wrapper and its ordering in %s", (format) => {
     expect(fromItems(toItems(format)!)).toBe(format);
   });
@@ -83,7 +83,9 @@ describe("editable conditional groups", () => {
 });
 
 describe("existing formats remain lossless", () => {
-  const formats: [string, string][] = ALL_MODULES.map(module => [module.name, module.defaults.format]);
+  const formats: [string, string][] = ALL_MODULES.flatMap(module =>
+    typeof module.defaults.format === "string" ? [[module.name, module.defaults.format]] : [],
+  );
   for (const preset of PRESETS) {
     const config = loadPreset(preset.id)!;
     for (const [key, value] of Object.entries(config)) {

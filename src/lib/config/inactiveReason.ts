@@ -53,6 +53,7 @@ export const WAITING_FOR: Record<string, string> = {
   singularity: "Set SINGULARITY_NAME under Environment variables.",
   spack: "Set SPACK_ENV under Environment variables.",
   vcsh: "Set VCSH_REPO_NAME under Environment variables.",
+  vcs: "No repository kind in the VCS discovery order matches this simulated directory.",
   meson:
     "Set MESON_DEVENV to 1 and MESON_PROJECT_NAME to the project's name under Environment variables.",
 

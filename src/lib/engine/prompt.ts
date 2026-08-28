@@ -7,13 +7,14 @@
  * starship's `print::get_prompt` and `module::ansi_line`.
  */
 
-import { parseFormatString } from "./formatString";
+import { collectVariables, parseFormatString } from "./formatString";
 import { moduleOptionsForConfig, NAMED_MODULE_KINDS } from "./modules";
 import { type ModuleDefinition } from "./modules/types";
 import { type RenderContext, type VariableValue, renderFormat } from "./render";
 import { type Palette, parseStyleString, resolvePalette } from "./styleString";
 import { type Segment, type Style } from "./types";
 import type { Scenario } from "@/lib/scenarios/types";
+import { selectedVcsFormat } from "./modules/vcs";
 
 export interface StarshipConfig {
   format?: string;
@@ -200,6 +201,7 @@ export function renderPrompt({
   const explicit = new Set(collectRootModuleNames(format, warnings));
 
   const segmentCache = new Map<string, Segment[]>();
+  const active = new Set<string>();
   const renderDefinition = (name: string): Segment[] => {
     const definition = byName.get(name);
     if (!definition || isModuleDisabled(config, definition)) return [];
@@ -208,6 +210,52 @@ export function renderPrompt({
   const evaluateModule = (name: string): Segment[] => {
     const cached = segmentCache.get(name);
     if (cached) return cached;
+
+    if (active.has(name)) return [];
+    active.add(name);
+
+    if (name === "vcs") {
+      const definition = byName.get(name);
+      if (!definition || isModuleDisabled(config, definition)) {
+        active.delete(name);
+        return [];
+      }
+      const options = { ...definition.defaults, ...moduleOptions(config, name) };
+      const selected = selectedVcsFormat(options, scenario);
+      if (!selected) {
+        active.delete(name);
+        segmentCache.set(name, []);
+        return [];
+      }
+      try {
+        const elements = parseFormatString(selected);
+        const referenced = collectVariables(elements);
+        if (referenced.includes("vcs")) {
+          warnings.push("Module vcs cannot include $vcs in its module list.");
+          active.delete(name);
+          segmentCache.set(name, []);
+          return [];
+        }
+        const variables: RenderContext["variables"] = new Map();
+        for (const reference of referenced) {
+          const segments = evaluateModule(reference);
+          variables.set(reference, segments.length > 0 ? { type: "styled", segments } : undefined);
+        }
+        const rendered = renderFormat(elements, {
+          variables,
+          styleVariables: new Map(),
+          palette,
+        });
+        segmentCache.set(name, rendered);
+        active.delete(name);
+        return rendered;
+      } catch (err) {
+        warnings.push(`Module vcs has an invalid module list: ${(err as Error).message}`);
+        active.delete(name);
+        segmentCache.set(name, []);
+        return [];
+      }
+    }
 
     let rendered = renderDefinition(name);
     if (NAMED_MODULE_KINDS.some((kind) => kind === name)) {
@@ -222,6 +270,7 @@ export function renderPrompt({
       ];
     }
     segmentCache.set(name, rendered);
+    active.delete(name);
     return rendered;
   };
 
