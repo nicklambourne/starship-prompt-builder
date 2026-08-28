@@ -27,6 +27,8 @@ import type { Palette } from "@/lib/engine/styleString";
 import type { TerminalTheme } from "@/lib/terminalThemes";
 import type { DocumentationLink } from "@/lib/config/documentation";
 import type { OptionChoice } from "@/lib/config/optionEnums";
+import { StructuredOptionEditor } from "./StructuredOptionEditor";
+import type { StructuredEditor } from "./structuredOptions";
 
 export interface OptionDescriptor {
   key: string;
@@ -38,6 +40,7 @@ export interface OptionDescriptor {
   defaultValue: unknown;
   styleFallback?: StyleFallback;
   styleRules?: StyleRules;
+  structuredEditor?: StructuredEditor;
 }
 
 interface SettingsFormProps {
@@ -281,7 +284,21 @@ export function SettingsForm({
               <StyleSwatch style={styleValue} palette={palette} theme={theme} />
             ) : undefined}
           >
-            {option.kind === "boolean" ? (
+            {option.structuredEditor ? (
+              <StructuredOptionEditor
+                editor={option.structuredEditor}
+                value={value}
+                onChange={(next) => onChange(option.key, next)}
+                palette={palette}
+                paletteNames={paletteNames}
+                inUseColors={inUseColors}
+                theme={theme}
+                fontStack={fontStack}
+                label={option.key}
+                isOverridden={isOverridden}
+                styleRules={option.styleRules}
+              />
+            ) : option.kind === "boolean" ? (
               <Toggle
                 label={option.key}
                 checked={Boolean(value)}
