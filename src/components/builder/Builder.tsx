@@ -911,6 +911,8 @@ export function Builder() {
                 active={config.palette ?? null}
                 onChange={(palettes) => setRootOption("palettes", palettes)}
                 onActivate={(name) => setRootOption("palette", name ?? undefined)}
+                config={config}
+                onConfigChange={setConfig}
                 inUse={inUse}
                 theme={theme}
               />
