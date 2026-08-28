@@ -99,3 +99,17 @@ test("custom conditions have explicit boolean and command modes", async ({ page 
   await row.getByRole("button", { name: "Always" }).press("Enter");
   await expect(page.getByLabel("starship.toml")).toHaveValue(/when = true/);
 });
+
+test("custom command output can be simulated without running a shell", async ({ page }) => {
+  await loadModule(
+    page,
+    "custom.project",
+    'format = "${custom.project}"\n[custom.project]\ncommand = "echo workspace"\nwhen = "test -d .git"\n',
+  );
+  const row = page.locator('[data-format-row]').filter({ hasText: "$custom.project" });
+  await row.getByLabel("Simulated output for custom.project").fill("SIMULATED_RESULT");
+  await expect(page.getByLabel("Simulated terminal prompt")).toContainText("SIMULATED_RESULT");
+  await row.getByRole("switch", { name: "Condition command succeeds" }).press("Enter");
+  await expect(page.getByLabel("Simulated terminal prompt")).not.toContainText("SIMULATED_RESULT");
+  await expect(page.getByLabel("starship.toml")).not.toHaveValue(/SIMULATED_RESULT/);
+});

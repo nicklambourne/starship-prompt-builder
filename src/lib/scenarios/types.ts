@@ -102,6 +102,9 @@ export interface Scenario {
   /** Environment variables, for `env_var` and context modules. */
   env: Record<string, string>;
 
+  /** Explicit browser-only results for custom commands the preview cannot run. */
+  custom?: Record<string, { output: string; when: boolean }>;
+
   /** Cloud and orchestration context. */
   aws?: { profile?: string; region?: string; duration?: string };
   gcloud?: { account?: string; project?: string; region?: string };

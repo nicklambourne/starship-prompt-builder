@@ -25,13 +25,12 @@ function matchesOs(required: string, scenario: Scenario): boolean {
  * calls it once per key under `custom` — and the exported `custom` is the
  * template the registry clones.
  *
- * Two behaviours cannot survive the trip into a browser, and are approximated:
+ * Two behaviours cannot survive the trip into a browser, and are simulated:
  *
- *  - `command` never runs, so `$output` is always empty. The module still shows
- *    its symbol and style, which is what there is to configure.
- *  - a `when` *command* likewise cannot run; it is treated as succeeding, so a
- *    module gated only by `when` stays visible in the preview. A boolean `when`
- *    is honoured exactly.
+ *  - `command` never runs; a named module reads explicit output from the
+ *    scenario's Browser preview controls.
+ *  - a `when` command reads the same simulation's success switch. Boolean
+ *    `when` values are still honoured exactly.
  */
 export function createCustomModule(name?: string): ModuleDefinition {
   return {
@@ -56,6 +55,7 @@ export function createCustomModule(name?: string): ModuleDefinition {
     },
     evaluate(options, ctx) {
       const { scenario } = ctx;
+      const preview = name === undefined ? undefined : scenario.custom?.[name];
 
       const requiredOs = optOptionalString(options, "os");
       if (requiredOs !== undefined && !matchesOs(requiredOs, scenario)) return null;
@@ -64,13 +64,13 @@ export function createCustomModule(name?: string): ModuleDefinition {
 
       const isMatch =
         detects(options, scenario) ||
-        (typeof options.when === "string" ? true : optBool(options, "when"));
+        (typeof options.when === "string" ? (preview?.when ?? true) : optBool(options, "when"));
       if (!isMatch) return null;
 
       return {
         variables: {
           symbol: renderMeta(optString(options, "symbol"), ctx),
-          output: undefined,
+          output: preview?.output || undefined,
         },
       };
     },
