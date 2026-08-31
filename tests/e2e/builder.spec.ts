@@ -1191,13 +1191,28 @@ test.describe("builder", () => {
     await expect(page.getByLabel("starship.toml")).toHaveValue(/\[\$directory\]\(\)/);
   });
 
-  test("the preset picker starts the prompt format section", async ({ page }) => {
+  test("the preset picker sits beside the prompt format chevron", async ({ page }) => {
     await page.goto("./");
-    // It sits in the format card, not the preview and not the header.
-    const trigger = page
-      .locator("[data-section='format']")
-      .getByRole("button", { name: "Start from a preset" });
+    const format = page.locator("[data-section='format']");
+    const header = format.locator(":scope > div").first();
+    const disclosure = header.getByRole("button", { name: "Prompt format", exact: true });
+    const trigger = header.getByRole("button", { name: "Start from a preset" });
+
     await expect(trigger).toBeVisible();
+    await expect(header.locator("[data-format-chevron]")).toBeVisible();
+
+    await activate(trigger);
+    await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    await expect(page.locator("[aria-label='Presets']")).toBeVisible();
+
+    await activate(trigger);
+    await activate(disclosure);
+    await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    await expect(trigger).toBeVisible();
+
+    await activate(trigger);
+    await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator("[aria-label='Presets']")).toBeVisible();
   });
 
   test("the preset list says what each preset does, and whose it is", async ({
