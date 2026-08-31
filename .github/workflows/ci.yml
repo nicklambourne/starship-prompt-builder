@@ -15,6 +15,7 @@ jobs:
     # fork is attacker-authored code, and it must never run on a self-hosted
     # runner sitting on a home LAN. See docs/ci-runners.md.
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -28,8 +29,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
       - run: pnpm typecheck
 
       - run: pnpm test
 
-      - run: pnpm build
+      # Playwright builds and serves the production static export itself. This
+      # covers the build as well as the desktop, mobile and axe suites.
+      - run: pnpm test:e2e
