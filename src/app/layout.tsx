@@ -27,6 +27,7 @@ export const metadata: Metadata = {
     template: "%s — Starship Prompt Builder",
   },
   description: DESCRIPTION,
+  referrer: "strict-origin-when-cross-origin",
   applicationName: "Starship Prompt Builder",
   authors: [{ name: "Nicholas Lambourne", url: "https://ndl.au" }],
   creator: "Nicholas Lambourne",
