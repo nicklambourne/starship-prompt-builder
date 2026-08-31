@@ -288,10 +288,11 @@ export default function LicencesPage() {
         <section className="flex flex-col gap-3">
           <h2 className={H2}>Presets and palettes</h2>
           <p className="text-sm text-neutral-400">
-            Five of the presets in the picker are themes their own projects
-            publish for starship, vendored verbatim, and the palettes they carry
-            are offered separately in the palette editor. The colours and the
-            names are their authors&rsquo; work.
+            Five presets are themes their own palette projects publish for
+            starship and are vendored verbatim. Six more are Starship-native
+            recreations of Powerlevel10k&rsquo;s Lean, Classic and Rainbow
+            configure-wizard styles. The palettes, names and source designs are
+            their authors&rsquo; work.
           </p>
           <ul className="flex flex-col gap-3">
             {COMMUNITY_PRESETS.map(({ source, presets }) => (

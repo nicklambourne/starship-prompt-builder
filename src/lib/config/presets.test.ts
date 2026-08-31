@@ -23,7 +23,29 @@ describe("PRESETS", () => {
       "rose-pine",
       "rose-pine-moon",
       "rose-pine-dawn",
+      "powerlevel10k-lean-1-line",
+      "powerlevel10k-lean-2-lines",
+      "powerlevel10k-classic-1-line",
+      "powerlevel10k-classic-2-lines",
+      "powerlevel10k-rainbow-1-line",
+      "powerlevel10k-rainbow-2-lines",
     ]);
+  });
+
+  it("offers one-line and two-line Starship translations of each Powerlevel10k style", () => {
+    for (const style of ["lean", "classic", "rainbow"]) {
+      const oneLine = getPreset(`powerlevel10k-${style}-1-line`);
+      const twoLines = getPreset(`powerlevel10k-${style}-2-lines`);
+      expect(oneLine?.source.project).toBe("romkatv/powerlevel10k");
+      expect(twoLines?.source.project).toBe("romkatv/powerlevel10k");
+
+      const oneLineConfig = loadPreset(`powerlevel10k-${style}-1-line`);
+      const twoLineConfig = loadPreset(`powerlevel10k-${style}-2-lines`);
+      expect(oneLineConfig?.format).not.toContain("$line_break");
+      expect(oneLineConfig?.right_format).toBe("$cmd_duration");
+      expect(twoLineConfig?.format).toContain("$fill");
+      expect(twoLineConfig?.format).toContain("$line_break");
+    }
   });
 
   it("gives every preset a label, a description and non-empty TOML", () => {

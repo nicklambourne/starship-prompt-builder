@@ -1,0 +1,46 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+format = "$directory$git_branch$git_status$character"
+right_format = "$cmd_duration"
+palette = "powerlevel10k"
+
+[directory]
+format = "[$path]($style) "
+style = "bold fg:p10k_directory"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+format = "[$branch]($style) "
+style = "bold fg:p10k_green"
+symbol = ""
+
+[git_status]
+format = "[$all_status$ahead_behind]($style) "
+style = "fg:p10k_modified"
+
+[cmd_duration]
+format = "[$duration]($style)"
+min_time = 3000
+style = "fg:p10k_duration"
+
+[character]
+success_symbol = "[❯](bold fg:p10k_green)"
+error_symbol = "[❯](bold fg:p10k_red)"
+vimcmd_symbol = "[❮](bold fg:p10k_green)"
+
+[palettes.powerlevel10k]
+p10k_directory = "#00afff"
+p10k_green = "#5fd700"
+p10k_red = "#ff0000"
+p10k_modified = "#d7af00"
+p10k_duration = "#87875f"
+p10k_time = "#5f8787"
+p10k_surface = "#444444"
+p10k_separator = "#949494"
+p10k_foreground = "#e4e4e4"
+p10k_outline = "#666666"
+p10k_black = "#080808"
+p10k_blue = "#005faf"
+p10k_yellow = "#d7af00"
+p10k_white = "#d0d0d0"

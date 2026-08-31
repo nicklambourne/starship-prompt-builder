@@ -3,11 +3,11 @@
 /**
  * Picks a starting configuration.
  *
- * A `<select>` can hold seventeen labels but not what any of them does, and
- * the names do not say it: "Jetpack", "No Empty Icons" and "Rosé Pine Dawn"
- * are only meaningful to someone who has already seen them. So the list is a
- * panel, each entry carrying the sentence its own project uses to describe it,
- * and the ones starship does not publish say whose they are.
+ * A `<select>` can hold the labels but not what any of them does, and names
+ * such as "Jetpack", "No Empty Icons" and "Powerlevel10k Lean" are only
+ * meaningful to someone who has already seen them. So the list is a panel,
+ * each entry carrying a description, and the ones starship does not publish
+ * say whose work they come from.
  */
 
 import { useState } from "react";
@@ -23,10 +23,16 @@ interface PresetPickerProps {
 /** Grouped in the order the panel shows them: starship's own first. */
 function group(presets: readonly Preset[]) {
   const official = presets.filter((preset) => preset.source.project === "starship");
-  const community = presets.filter((preset) => preset.source.project !== "starship");
+  const inspired = presets.filter(
+    (preset) => preset.source.project === "romkatv/powerlevel10k",
+  );
+  const community = presets.filter(
+    (preset) => !["starship", "romkatv/powerlevel10k"].includes(preset.source.project),
+  );
   return [
     { key: "starship", heading: "From starship", presets: official },
-    { key: "community", heading: "From the palettes' own projects", presets: community },
+    { key: "community", heading: "From palette projects", presets: community },
+    { key: "inspired", heading: "Inspired by Powerlevel10k", presets: inspired },
   ].filter((section) => section.presets.length > 0);
 }
 

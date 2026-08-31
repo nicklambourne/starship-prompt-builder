@@ -118,6 +118,12 @@ licensed:
 
 The picker names the project and licence beside each of them.
 
+Six presets are original Starship translations of the Lean, Classic and
+Rainbow styles from [romkatv/powerlevel10k](https://github.com/romkatv/powerlevel10k),
+in one-line and two-line layouts. The source designs and configuration templates
+are MIT licensed: © 2009–2014 Robby Russell and contributors; © 2014–2017 Ben
+Hilburn; © 2019 Roman Perepelitsa and contributors.
+
 ## Where the font files live
 
 The `.woff2` files are in `src/assets/fonts/`, not here. Anything under
