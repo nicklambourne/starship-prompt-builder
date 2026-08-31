@@ -1,5 +1,10 @@
+import { HeaderActions } from "./HeaderActions";
 import { SiteHeader } from "./SiteHeader";
 
 export function ReferenceHeader() {
-  return <SiteHeader homeLink />;
+  return (
+    <SiteHeader homeLink>
+      <HeaderActions />
+    </SiteHeader>
+  );
 }

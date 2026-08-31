@@ -9,7 +9,7 @@
  * together, which is the whole point of a live configurator.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { EnvironmentPanel } from "./EnvironmentPanel";
@@ -27,15 +27,14 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Toggle } from "@/components/ui/Toggle";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import {
+  HeaderActions,
+  HEADER_ICON_BUTTON as ICON_BUTTON,
+} from "@/components/site/HeaderActions";
+import {
   ChevronIcon,
-  CheckIcon,
   DownloadIcon,
-  GitHubIcon,
-  MoonIcon,
-  SunIcon,
   RedoIcon,
   ResetIcon,
-  ShareIcon,
   UndoIcon,
 } from "@/components/ui/icons";
 import {
@@ -115,8 +114,6 @@ const ROOT_OPTIONS: OptionDescriptor[] = [
 ];
 
 const CARD = "rounded-xl border border-white/10 bg-neutral-900/40 p-4";
-const ICON_BUTTON =
-  "grid size-9 place-items-center rounded border border-white/10 text-neutral-300 transition enabled:hover:border-accent-400 enabled:hover:text-accent-200 disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400";
 
 export function Builder() {
   const {
@@ -135,8 +132,6 @@ export function Builder() {
     setFont,
     setFontSize,
     appTheme,
-    setAppTheme,
-    adoptSystemTheme,
     loadShared,
     restoreSession,
     appThemeIsExplicit,
@@ -163,21 +158,6 @@ export function Builder() {
     restoreSession,
   });
 
-  /*
-   * Follow the operating system's colour scheme, and keep following it if it
-   * changes — someone on an automatic day/night switch should not have to
-   * work the toggle twice a day. The store stops listening once the toggle is
-   * used.
-   */
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-color-scheme: light)");
-    const sync = () => adoptSystemTheme(query.matches ? "light" : "dark");
-    sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, [adoptSystemTheme]);
-
-  const [shareCopied, setShareCopied] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
 
   const theme = getTheme(themeId);
@@ -609,16 +589,13 @@ export function Builder() {
     URL.revokeObjectURL(url);
   }, [config, format, defaultsByModule]);
 
-  const share = useCallback(async () => {
-    // The fragment is kept current by the effect above, but a share can beat
-    // its debounce, so it is written here too rather than copying a URL that
-    // is a quarter second out of date.
+  const share = useCallback(() => {
+    // A share can beat the session effect's debounce, so the current config is
+    // encoded here rather than returning a URL that is a quarter second old.
     const fragment = encodeShare(config);
     const url = `${window.location.origin}${window.location.pathname}#${fragment}`;
     window.history.replaceState(null, "", `#${fragment}`);
-    await navigator.clipboard.writeText(url);
-    setShareCopied(true);
-    window.setTimeout(() => setShareCopied(false), 1500);
+    return url;
   }, [config]);
 
   const loadPreset = useCallback(
@@ -694,34 +671,7 @@ export function Builder() {
           </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setAppTheme(appTheme === "dark" ? "light" : "dark")}
-            aria-label={`Switch to ${appTheme === "dark" ? "light" : "dark"} theme`}
-            title={`Switch to ${appTheme === "dark" ? "light" : "dark"} theme`}
-            className={ICON_BUTTON}
-          >
-            {appTheme === "dark" ? <SunIcon /> : <MoonIcon />}
-          </button>
-          <a
-            href="https://github.com/nicklambourne/starship-prompt-builder"
-            aria-label="View this project on GitHub"
-            title="View this project on GitHub"
-            className={ICON_BUTTON}
-          >
-            <GitHubIcon />
-          </a>
-          <button
-            type="button"
-            onClick={share}
-            aria-label={shareCopied ? "Share link copied" : "Copy a share link"}
-            title={shareCopied ? "Link copied" : "Copy a share link"}
-            className={`${ICON_BUTTON} ${shareCopied ? "border-emerald-400 text-emerald-300" : ""}`}
-          >
-            {shareCopied ? <CheckIcon /> : <ShareIcon />}
-          </button>
-        </div>
+        <HeaderActions getShareUrl={share} />
       </SiteHeader>
 
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 pt-4">
