@@ -22,10 +22,11 @@
     "build:fonts": "node scripts/build-font-subsets.mjs",
     "build:og": "node scripts/build-og-image.mjs",
     "build:screenshots": "node scripts/build-screenshots.mjs",
-    "build:demo": "node scripts/build-demo.mjs"
+    "build:demo": "node scripts/build-demo.mjs",
+    "lint": "eslint . --max-warnings 0",
+    "deadcode": "knip"
   },
   "dependencies": {
-    "@heroui/react": "^3.2.1",
     "@heroui/styles": "^3.2.1",
     "lz-string": "^1.5.0",
     "next": "16.3.3",
@@ -43,8 +44,10 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.1.10",
-    "axe-core": "^4.13.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.3",
     "fontverter": "2.0.0",
+    "knip": "6.33.0",
     "subset-font": "^2.5.0",
     "tailwindcss": "^4.3.1",
     "typescript": "^5",

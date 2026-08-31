@@ -124,13 +124,11 @@ export function Builder() {
     themeId,
     fontId,
     fontSize,
-    selectedModule,
     setConfig,
     updateModuleOption,
     resetModuleOption,
     setModuleDisabled,
     setRootOption,
-    selectModule,
     updateScenario,
     setTheme,
     setFont,
@@ -153,7 +151,7 @@ export function Builder() {
   const [tomlOpen, setTomlOpen] = useState(false);
 
   // Guards the save effect until the restore has run.
-  const [sessionReady, setSessionReady] = useState(false);
+  const sessionReady = useRef(false);
 
   /*
    * A config arriving in the URL fragment. The share button has always
@@ -175,7 +173,7 @@ export function Builder() {
      */
     const session = loadSession();
     if (session) restoreSession(session, { config: !shared });
-    setSessionReady(true);
+    sessionReady.current = true;
 
     /*
      * Arriving at a different fragment without a reload — pasting a share
@@ -208,14 +206,16 @@ export function Builder() {
     // toggle expects.
     appTheme: appThemeIsExplicit ? appTheme : undefined,
   });
-  sessionSnapshot.current = {
-    config,
-    scenario,
-    themeId,
-    fontId,
-    fontSize,
-    appTheme: appThemeIsExplicit ? appTheme : undefined,
-  };
+  useEffect(() => {
+    sessionSnapshot.current = {
+      config,
+      scenario,
+      themeId,
+      fontId,
+      fontSize,
+      appTheme: appThemeIsExplicit ? appTheme : undefined,
+    };
+  }, [config, scenario, themeId, fontId, fontSize, appTheme, appThemeIsExplicit]);
 
   /*
    * Save on every change, once the restore above has run — writing before it
@@ -224,7 +224,7 @@ export function Builder() {
    * every keystroke.
    */
   useEffect(() => {
-    if (!sessionReady) return;
+    if (!sessionReady.current) return;
     const timer = window.setTimeout(() => {
       saveSession(sessionSnapshot.current);
       /*
@@ -238,11 +238,11 @@ export function Builder() {
     }, 250);
     return () => window.clearTimeout(timer);
   }, [
-    sessionReady,
     config,
     scenario,
     themeId,
     fontId,
+    fontSize,
     appTheme,
     appThemeIsExplicit,
   ]);
@@ -254,7 +254,7 @@ export function Builder() {
    * discarded rather than closed.
    */
   useEffect(() => {
-    if (!sessionReady) return;
+    if (!sessionReady.current) return;
     const flush = () => saveSession(sessionSnapshot.current);
     const onHidden = () => {
       if (document.visibilityState === "hidden") flush();
@@ -265,7 +265,7 @@ export function Builder() {
       window.removeEventListener("pagehide", flush);
       document.removeEventListener("visibilitychange", onHidden);
     };
-  }, [sessionReady]);
+  }, []);
 
   /*
    * Follow the operating system's colour scheme, and keep following it if it
@@ -625,6 +625,7 @@ export function Builder() {
         <>
           {identity ? (
             <NamedModuleActions
+              key={name}
               kind={identity.kind}
               instance={identity.instance}
               existing={existing}

@@ -1681,7 +1681,6 @@ test.describe("builder", () => {
   test("the preview spans the page above the columns", async ({ page }, info) => {
     await page.goto("./");
     const preview = page.locator("[data-section='preview']");
-    const format = page.locator("[data-section='format']");
     const explainer = page.locator("[data-section='explainer']");
 
     const boxes = await page.evaluate(() => {

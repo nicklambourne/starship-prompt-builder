@@ -7,7 +7,7 @@
  * long to read inside a row. Regenerate alongside a schema sync.
  */
 
-export const MODULE_DESCRIPTIONS: Record<string, string> = {
+const MODULE_DESCRIPTIONS: Record<string, string> = {
   username: "Shows active user's username",
   hostname: "Shows the system hostname",
   localip: "Shows the IPv4 address of the primary network interface",

@@ -20,7 +20,7 @@ export function isValidNamedModuleInstance(value: string): boolean {
   return /^[A-Za-z_][A-Za-z0-9_-]*$/.test(value);
 }
 
-export function namedModuleName(kind: NamedModuleKind, instance: string): string {
+function namedModuleName(kind: NamedModuleKind, instance: string): string {
   return `${kind}.${instance}`;
 }
 

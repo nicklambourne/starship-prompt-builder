@@ -24,7 +24,7 @@ export type StyleElement =
   | { type: "text"; value: string }
   | { type: "variable"; name: string };
 
-export class FormatParseError extends Error {
+class FormatParseError extends Error {
   constructor(
     message: string,
     readonly index: number,
@@ -319,7 +319,7 @@ export function collectStyleVariables(elements: FormatElement[]): string[] {
 }
 
 /** Escapes text so it survives a round trip through the parser. */
-export function escapeFormatText(value: string): string {
+function escapeFormatText(value: string): string {
   return value.replace(/[[\]()\\$]/g, (ch) => `\\${ch}`);
 }
 

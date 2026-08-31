@@ -24,7 +24,6 @@ import {
 import { DownloadIcon } from "@/components/ui/icons";
 import { TERMINAL_THEMES, type TerminalTheme } from "@/lib/terminalThemes";
 import type { Segment } from "@/lib/engine/types";
-import type { Scenario } from "@/lib/scenarios/types";
 
 interface PreviewPaneProps {
   lines: Segment[][];

@@ -33,6 +33,8 @@ export function TomlPane({ config, onConfigChange, defaults }: TomlPaneProps) {
   // Drop a stale draft whenever the config changes from elsewhere (a preset
   // load, an undo), so the pane follows the source of truth again.
   useEffect(() => {
+    // External config changes intentionally discard the editor-only draft.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDraft(null);
     setError(null);
   }, [config]);

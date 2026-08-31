@@ -82,7 +82,7 @@ function isEmptyStyle(style: Style | undefined): boolean {
  * Resolves `prev_fg`/`prev_bg` references against the preceding segment's
  * resolved style, in place order.
  */
-export function resolvePrevColors(segments: Segment[]): Segment[] {
+function resolvePrevColors(segments: Segment[]): Segment[] {
   let prev: Style | undefined;
   return segments.map((segment) => {
     if (segment.kind === "lineTerm") return segment;
@@ -195,11 +195,4 @@ export function segmentsToAnsi(segments: Segment[]): string {
 
   reset();
   return out;
-}
-
-/** Plain text of the rendered prompt, with all styling stripped. */
-export function segmentsToPlainText(segments: Segment[]): string {
-  return segments
-    .map((s) => (s.kind === "lineTerm" ? "\n" : s.kind === "text" ? s.value : s.value))
-    .join("");
 }

@@ -9,7 +9,7 @@
 import type { Scenario } from "@/lib/scenarios/types";
 import type { ModuleDefinition, ModuleOptions } from "./types";
 
-export type VcsKind = "git" | "hg" | "pijul" | "fossil";
+type VcsKind = "git" | "hg" | "pijul" | "fossil";
 
 function hasEntry(scenario: Scenario, name: string): boolean {
   return scenario.files.includes(name) || scenario.files.includes(`${name}/`);
@@ -22,7 +22,7 @@ function normaliseKind(value: unknown): VcsKind | undefined {
     : undefined;
 }
 
-export function detectedVcs(options: ModuleOptions, scenario: Scenario): VcsKind | undefined {
+function detectedVcs(options: ModuleOptions, scenario: Scenario): VcsKind | undefined {
   const order = Array.isArray(options.order) ? options.order : [];
   for (const entry of order) {
     const kind = normaliseKind(entry);

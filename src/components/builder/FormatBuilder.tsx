@@ -12,7 +12,7 @@
  * Redundant style wrappers are hidden by default, not removed from the config.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { FormatNode, type FormatNodeCallbacks } from "./FormatNode";
 import { usePointerDrag } from "./usePointerDrag";
@@ -310,7 +310,9 @@ export function FormatBuilder({
   */
   // The list as it stands right now, for handlers that outlive their render.
   const itemsRef = useRef(items ?? []);
-  itemsRef.current = items ?? [];
+  useEffect(() => {
+    itemsRef.current = items ?? [];
+  }, [items]);
 
   // A compact row moves with its hidden wrappers. Styling and dropping INTO
   // it still address the visible child, so edits reach the intended group.

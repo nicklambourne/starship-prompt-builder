@@ -10,7 +10,7 @@
  * and the ones starship does not publish say whose they are.
  */
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { ChevronIcon } from "@/components/ui/icons";
 import { Popover } from "@/components/ui/Popover";
@@ -32,12 +32,12 @@ function group(presets: readonly Preset[]) {
 
 export function PresetPicker({ onPick }: PresetPickerProps) {
   const [open, setOpen] = useState(false);
-  const anchor = useRef<HTMLButtonElement>(null);
+  const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
 
   return (
     <>
       <button
-        ref={anchor}
+        ref={setAnchor}
         type="button"
         aria-expanded={open}
         aria-haspopup="dialog"
@@ -53,7 +53,7 @@ export function PresetPicker({ onPick }: PresetPickerProps) {
       <Popover
         open={open}
         onClose={() => setOpen(false)}
-        anchor={anchor.current}
+        anchor={anchor}
         width={460}
         label="Presets"
       >
