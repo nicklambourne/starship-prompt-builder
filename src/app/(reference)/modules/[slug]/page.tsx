@@ -7,6 +7,7 @@ import {
   CONTENT_LINK,
   ContentShell,
 } from "@/components/site/ContentShell";
+import { ModulePreview } from "@/components/site/ModulePreview";
 import { MODULE_META } from "@/lib/config/meta";
 import { optionDoc } from "@/lib/config/options";
 import { getModuleSchema } from "@/lib/config/schema";
@@ -82,6 +83,8 @@ export default async function ModulePage({
             <h2 className="text-xl font-semibold text-neutral-100">When it appears</h2>
             <p className="mt-3 text-sm leading-7 text-neutral-400">{reference.when}</p>
           </section>
+
+          <ModulePreview reference={reference} />
 
           <section className="flex flex-col gap-4">
             <h2 className="text-xl font-semibold text-neutral-100">Starting configuration</h2>

@@ -5,6 +5,7 @@ import { MODULE_META } from "@/lib/config/meta";
 import { getModuleSchemas, type ModuleSchema } from "@/lib/config/schema";
 import { parseConfig, serialiseConfig } from "@/lib/config/toml";
 import { moduleVariableNames } from "@/lib/config/variables";
+import { getModule } from "@/lib/engine/modules";
 
 export interface ModuleReference {
   slug: string;
@@ -262,10 +263,11 @@ function displayName(moduleName: string): string {
 }
 
 function defaultTable(moduleName: string): Record<string, unknown> {
-  const defaults = DEFAULT_CONFIG[moduleName];
-  return defaults && typeof defaults === "object" && !Array.isArray(defaults)
-    ? (defaults as Record<string, unknown>)
+  const schemaDefaults = DEFAULT_CONFIG[moduleName];
+  const base = schemaDefaults && typeof schemaDefaults === "object" && !Array.isArray(schemaDefaults)
+    ? (schemaDefaults as Record<string, unknown>)
     : {};
+  return { ...base, ...getModule(moduleName)?.defaults };
 }
 
 function genericExample(schema: ModuleSchema): string {

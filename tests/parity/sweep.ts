@@ -164,6 +164,9 @@ const LANGUAGE_SHAPES: { module: string; setup: string[]; files: string[] }[] = 
  * gap stays visible.
  */
 export const UNSWEEPABLE: Record<string, string> = {
+  claude_context: "needs Claude Code status-line JSON on stdin",
+  claude_cost: "needs Claude Code status-line JSON on stdin",
+  claude_model: "needs Claude Code status-line JSON on stdin",
   battery: "reads real hardware",
   memory_usage: "reads real memory, which moves between the two runs",
   localip: "reads a real network interface",

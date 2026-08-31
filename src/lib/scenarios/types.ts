@@ -45,6 +45,31 @@ export interface BatteryState {
   status: "charging" | "discharging" | "full" | "unknown";
 }
 
+/** Claude Code status-line data consumed by Starship's three Claude modules. */
+export interface ClaudeCodeState {
+  model: { id: string; displayName: string };
+  contextWindow: {
+    size: number;
+    totalInputTokens: number;
+    totalOutputTokens: number;
+    usedPercentage: number;
+    currentUsage: {
+      inputTokens: number;
+      outputTokens: number;
+      cacheCreationInputTokens: number;
+      cacheReadInputTokens: number;
+    };
+  };
+  cost?: {
+    totalCostUsd: number;
+    totalDurationMs: number;
+    totalApiDurationMs: number;
+    totalLinesAdded: number;
+    totalLinesRemoved: number;
+  };
+  effort?: string;
+}
+
 export interface Scenario {
   id: string;
   label: string;
@@ -88,6 +113,9 @@ export interface Scenario {
   time: string;
 
   battery?: BatteryState;
+
+  /** Data supplied to Starship by a Claude Code status-line invocation. */
+  claude?: ClaudeCodeState;
 
   /** Terminal width in columns, used by `fill` and right prompts. */
   terminalWidth: number;

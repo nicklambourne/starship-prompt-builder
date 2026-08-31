@@ -1,7 +1,7 @@
 import { type ModuleDefinition, optBool, optNumber } from "./types";
 
 /** Port of starship's `render_time`. */
-function renderTime(rawMillis: number, showMillis: boolean): string {
+export function renderTime(rawMillis: number, showMillis: boolean): string {
   if (rawMillis === 0 && showMillis) return "0ms";
   if (rawMillis < 1000 && !showMillis) return "0s";
 

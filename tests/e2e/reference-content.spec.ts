@@ -191,6 +191,17 @@ test.describe("guide and module reference content", () => {
     await expect(page.getByLabel("Simulated terminal prompt")).toBeVisible();
   });
 
+  test("module pages render their starting configuration through the preview engine", async ({
+    page,
+  }) => {
+    await page.goto("./modules/nodejs/");
+    await expect(page.getByRole("heading", { name: "Preview" })).toBeVisible();
+    await expect(page.getByLabel("Simulated terminal prompt")).toContainText("1.2.3");
+
+    await page.goto("./modules/claude-context/");
+    await expect(page.getByLabel("Simulated terminal prompt")).toContainText("65%");
+  });
+
   test("reference content remains readable without JavaScript", async ({
     browser,
   }, info) => {

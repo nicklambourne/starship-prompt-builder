@@ -56,6 +56,42 @@ const UNDOCUMENTED_UPSTREAM: Record<string, Record<string, VariableDoc>> = {
     percentage: { description: "The current charge", example: "10%" },
     symbol: { description: "The symbol for the current charging state" },
   },
+  claude_context: {
+    symbol: MIRRORS_SYMBOL,
+    gauge: { description: "The context usage gauge" },
+    percentage: { description: "The percentage of the context window used", example: "65%" },
+    input_tokens: { description: "The total input token count" },
+    output_tokens: { description: "The total output token count" },
+    curr_input_tokens: { description: "The current request's input token count" },
+    curr_output_tokens: { description: "The current request's output token count" },
+    curr_cache_creation_tokens: {
+      description: "The current request's cache creation input token count",
+    },
+    curr_cache_read_tokens: {
+      description: "The current request's cache read input token count",
+    },
+    total_tokens: { description: "The context window size" },
+    style: { description: "The style selected by the matching display threshold" },
+  },
+  claude_cost: {
+    symbol: MIRRORS_SYMBOL,
+    cost: { description: "The total Claude Code session cost in US dollars", example: "2.46" },
+    duration: { description: "The total Claude Code session duration", example: "2m3s" },
+    api_duration: {
+      description: "The time spent waiting for Claude API responses",
+      example: "1m18s",
+    },
+    lines_added: { description: "The number of lines added during the session" },
+    lines_removed: { description: "The number of lines removed during the session" },
+    style: { description: "The style selected by the matching display threshold" },
+  },
+  claude_model: {
+    symbol: MIRRORS_SYMBOL,
+    model: { description: "The active Claude model's display name" },
+    model_id: { description: "The active Claude model's identifier" },
+    effort: { description: "The active Claude effort level, when supplied" },
+    style: { description: "Mirrors the value of option style" },
+  },
   directory: {
     read_only: { description: "The symbol indicating the current directory is read only." },
   },

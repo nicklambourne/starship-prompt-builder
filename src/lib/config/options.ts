@@ -37,6 +37,35 @@ const BORROWED: Record<string, Record<string, string>> = {
   },
 };
 
+/** Modules present in the schema before their reference tables reached the docs. */
+const UNDOCUMENTED_UPSTREAM: Record<string, Record<string, Documentation>> = {
+  claude_context: {
+    format: { description: "The format for displaying Claude Code context usage." },
+    symbol: { description: "The symbol shown before the context gauge." },
+    gauge_width: { description: "The number of cells in the context usage gauge." },
+    gauge_full_symbol: { description: "The symbol used for a full gauge cell." },
+    gauge_partial_symbol: { description: "The symbol used for a partially full gauge cell." },
+    gauge_empty_symbol: { description: "The symbol used for an empty gauge cell." },
+    display: { description: "Context usage thresholds that select a style or hide the module." },
+    disabled: { description: "Disables the Claude context module." },
+  },
+  claude_cost: {
+    format: { description: "The format for displaying Claude Code session cost." },
+    symbol: { description: "The symbol shown before the session cost." },
+    display: { description: "Cost thresholds that select a style or hide the module." },
+    disabled: { description: "Disables the Claude cost module." },
+  },
+  claude_model: {
+    format: { description: "The format for displaying the active Claude model." },
+    symbol: { description: "The symbol shown before the model name." },
+    style: { description: "The style used to render the Claude model." },
+    model_aliases: {
+      description: "Aliases keyed by Claude model ID or display name.",
+    },
+    disabled: { description: "Disables the Claude model module." },
+  },
+};
+
 const CUSTOM_OS_DOCUMENTATION: Documentation = {
   description:
     "Only show this custom module on the selected operating system. Supported Rust OS values.",
@@ -58,6 +87,8 @@ export function optionDoc(
   const anchor = docsAnchor(moduleName);
   const documented = anchor ? BY_ANCHOR[anchor]?.[option] : undefined;
   if (documented) return documented;
+  const supplemental = UNDOCUMENTED_UPSTREAM[moduleName]?.[option];
+  if (supplemental) return supplemental;
   const borrowed = BORROWED[moduleName]?.[option];
   return borrowed ? { description: borrowed } : undefined;
 }
