@@ -15,7 +15,7 @@ export function pathKey(path: Path): string {
   return path.join(".");
 }
 
-export function isSamePath(a: Path, b: Path): boolean {
+function isSamePath(a: Path, b: Path): boolean {
   return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 

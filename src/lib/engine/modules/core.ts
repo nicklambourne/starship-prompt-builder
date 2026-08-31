@@ -58,6 +58,3 @@ export const CORE_MODULES: ModuleDefinition[] = [
   line_break,
   character,
 ];
-
-export { createCustomModule } from "./custom";
-export { createEnvVarModule } from "./env_var";

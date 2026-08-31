@@ -30,7 +30,7 @@ const BASE: Omit<Scenario, "id" | "label" | "description"> = {
   os: { name: "Macos", type: "Macos" },
 };
 
-export const SCENARIOS: Scenario[] = [
+const SCENARIOS: Scenario[] = [
   {
     ...BASE,
     id: "simple",

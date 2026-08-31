@@ -14,7 +14,7 @@
  * fought by a control that only understands hex.
  */
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { HexColorPicker } from "react-colorful";
 
 import { Popover } from "./Popover";
@@ -29,12 +29,12 @@ interface ColorFieldProps {
 
 export function ColorField({ label, value, onChange }: ColorFieldProps) {
   const [open, setOpen] = useState(false);
-  const anchor = useRef<HTMLButtonElement | null>(null);
+  const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
 
   return (
     <>
       <button
-        ref={anchor}
+        ref={setAnchor}
         type="button"
         aria-label={label}
         aria-expanded={open}
@@ -45,7 +45,7 @@ export function ColorField({ label, value, onChange }: ColorFieldProps) {
       <Popover
         open={open}
         onClose={() => setOpen(false)}
-        anchor={anchor.current}
+        anchor={anchor}
         label={label}
         width={232}
       >

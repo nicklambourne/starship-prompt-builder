@@ -62,7 +62,7 @@ function readCmap(view, offset, into) {
 }
 
 /** Every code point one font file maps to a glyph. */
-export async function fontCodepoints(file) {
+async function fontCodepoints(file) {
   const sfnt = await fontverter.convert(await readFile(file), "sfnt");
   const view = new DataView(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength);
   const tables = view.getUint16(4);

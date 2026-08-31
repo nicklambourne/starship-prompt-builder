@@ -11,8 +11,8 @@ import { collectVariables, parseFormatString } from "./formatString";
 import { moduleOptionsForConfig, NAMED_MODULE_KINDS } from "./modules";
 import { type ModuleDefinition } from "./modules/types";
 import { type RenderContext, type VariableValue, renderFormat } from "./render";
-import { type Palette, parseStyleString, resolvePalette } from "./styleString";
-import { type Segment, type Style } from "./types";
+import { type Palette, resolvePalette } from "./styleString";
+import { type Segment } from "./types";
 import type { Scenario } from "@/lib/scenarios/types";
 import { selectedVcsFormat } from "./modules/vcs";
 
@@ -121,7 +121,7 @@ function renderModule(
  * Mirrors starship's `ansi_line`: fill width is integer-divided between the
  * chunks on a line, and each fill repeats its value (cycled) up to that width.
  */
-export function assembleLines(segments: Segment[], terminalWidth: number): Segment[][] {
+function assembleLines(segments: Segment[], terminalWidth: number): Segment[][] {
   const lines: Segment[][] = [];
   let current: Segment[] = [];
 
@@ -344,12 +344,4 @@ function collectRootModuleNames(format: string, warnings: string[]): string[] {
     warnings.push("Could not determine explicitly referenced modules.");
     return [];
   }
-}
-
-/** Parses a style string in the config's palette scope. */
-export function styleFor(
-  styleString: string,
-  config: StarshipConfig,
-): Style | undefined {
-  return parseStyleString(styleString, resolvePalette(config.palettes, config.palette));
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { isValidNamedModuleInstance } from "@/lib/config/namedModules";
 import type { NamedModuleKind } from "@/lib/engine/modules";
@@ -20,8 +20,6 @@ export function NamedModuleActions({
   onRename(nextInstance: string): void;
 }) {
   const [nextInstance, setNextInstance] = useState(instance);
-
-  useEffect(() => setNextInstance(instance), [instance]);
 
   const trimmed = nextInstance.trim();
   const duplicate = trimmed !== instance && existing.includes(trimmed);

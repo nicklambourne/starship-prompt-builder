@@ -41,7 +41,7 @@ export type VariableValue =
 
 export type VariableMap = Map<string, VariableValue | undefined>;
 /** Style variables resolve to raw style-string fragments, e.g. `$style`. */
-export type StyleVariableMap = Map<string, string | undefined>;
+type StyleVariableMap = Map<string, string | undefined>;
 
 export interface RenderContext {
   variables: VariableMap;

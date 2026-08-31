@@ -39,7 +39,7 @@ export const UNICODE_CATEGORY = "Unicode";
  * spacing — and a row reading "thin space" is how that gets diagnosed instead
  * of puzzled over.
  */
-export const SPACE_NAMES: Record<string, string> = {
+const SPACE_NAMES: Record<string, string> = {
   " ": "space",
   "\t": "tab",
   "\u00a0": "no-break space",

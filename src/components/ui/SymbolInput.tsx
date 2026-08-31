@@ -33,7 +33,7 @@ export function SymbolInput({
 }: SymbolInputProps) {
   const [picking, setPicking] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
 
   const insert = (char: string) => {
     const el = ref.current;
@@ -64,7 +64,7 @@ export function SymbolInput({
           }
         />
         <button
-          ref={triggerRef}
+          ref={setTrigger}
           type="button"
           onClick={() => setPicking((open) => !open)}
           aria-expanded={picking}
@@ -81,7 +81,7 @@ export function SymbolInput({
         onClose={() => setPicking(false)}
         onPick={insert}
         fontStack={fontStack}
-        anchor={triggerRef.current}
+        anchor={trigger}
       />
     </div>
   );

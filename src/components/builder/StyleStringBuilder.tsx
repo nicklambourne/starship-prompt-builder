@@ -18,7 +18,7 @@
 import { useId, useMemo, useState } from "react";
 
 import { MODIFIER_ICONS } from "@/components/ui/modifierIcons";
-import { NAMED_COLORS, type Color } from "@/lib/engine/types";
+import { NAMED_COLORS } from "@/lib/engine/types";
 import { STYLE_MODIFIERS } from "@/lib/engine/types";
 import { type Palette, parseColorString, parseStyleString } from "@/lib/engine/styleString";
 import { resolveSwatchColor } from "@/components/ui/StyleSwatch";
@@ -40,20 +40,6 @@ interface StyleStringBuilderProps {
     /** The native fallback: another option or a Starship default. */
     source?: string;
   };
-}
-
-function colorToken(color: Color | undefined): string {
-  if (!color) return "";
-  switch (color.kind) {
-    case "named":
-      return color.name;
-    case "fixed":
-      return String(color.index);
-    case "rgb":
-      return `#${[color.r, color.g, color.b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
-    case "prev":
-      return color.source === "fg" ? "prev_fg" : "prev_bg";
-  }
 }
 
 /** Splits a style string into its modifier tokens and its two colour tokens. */

@@ -239,6 +239,8 @@ export function SettingsForm({
     if (!reveal) return;
     // Same set back when it is already open: the prop is a fresh object every
     // render, and a fresh Set every time would be a loop.
+    // This prop deliberately opens a persistent disclosure; it is not derived render state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen((current) =>
       current.has(reveal.key) ? current : new Set(current).add(reveal.key),
     );
