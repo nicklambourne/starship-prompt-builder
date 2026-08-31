@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 import { EnvironmentPanel } from "./EnvironmentPanel";
 import { Explainer } from "./Explainer";
@@ -25,6 +26,7 @@ import { UsageGuide } from "./UsageGuide";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Logo } from "@/components/ui/Logo";
 import { Toggle } from "@/components/ui/Toggle";
+import { SiteNav } from "@/components/site/SiteNav";
 import {
   ChevronIcon,
   CheckIcon,
@@ -660,7 +662,7 @@ export function Builder() {
           reset();
         }}
       />
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 px-4 py-3">
+      <header className="sticky top-0 z-50 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 bg-neutral-950/95 px-4 py-3 backdrop-blur">
         <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
           {/*
             Bigger than the line it sits on. The margin is exactly -7px so the
@@ -673,7 +675,7 @@ export function Builder() {
           <Logo size={44} className="-my-[7px]" />
           Starship Prompt Builder
         </h1>
-
+        <SiteNav className="order-3 w-full sm:order-none sm:w-auto" />
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -834,6 +836,20 @@ export function Builder() {
               What the prompt contains, and in what order. Reorder, remove, recolour,
               or add pieces here. Drag the handles to reorder; group a run of
               related modules so they share one style.
+            </p>
+            <p className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+              <Link
+                href="/guides/format-strings"
+                className="text-accent-300 underline underline-offset-2 hover:text-accent-200"
+              >
+                Format string guide
+              </Link>
+              <Link
+                href="/guides/style-strings"
+                className="text-accent-300 underline underline-offset-2 hover:text-accent-200"
+              >
+                Style string guide
+              </Link>
             </p>
             <FormatBuilder
               value={format}
@@ -1031,6 +1047,16 @@ export function Builder() {
 
             {tomlOpen ? (
               <div id="toml-body">
+                <p className="mb-3 text-xs text-neutral-500">
+                  Bringing an existing file?{" "}
+                  <Link
+                    href="/guides/import-existing-config"
+                    className="text-accent-300 underline underline-offset-2 hover:text-accent-200"
+                  >
+                    Read the import guide
+                  </Link>
+                  .
+                </p>
                 <div className="mt-3">
                   <TomlPane
                     config={{ ...config, format }}

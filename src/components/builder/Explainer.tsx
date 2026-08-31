@@ -9,6 +9,7 @@
  * the light theme darkens in `globals.css` stay legible once the neutral ramp
  * is reversed.
  */
+import Link from "next/link";
 
 const LINK = "text-accent-300 underline underline-offset-2 hover:text-accent-200";
 
@@ -47,6 +48,18 @@ export function Explainer() {
           reproduces it. The editing happens entirely in your browser: your
           config is never uploaded, and the site itself carries no tracking
           code — visits are counted at the edge, without cookies.
+        </p>
+
+        <p>
+          New to the configuration language? Start with the{" "}
+          <Link href="/guides" className={LINK}>
+            guides
+          </Link>
+          , or look up examples and key options in the{" "}
+          <Link href="/modules" className={LINK}>
+            module reference
+          </Link>
+          .
         </p>
 
         <p className="text-neutral-500">

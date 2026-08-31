@@ -22,7 +22,15 @@ export function SiteFooter() {
         >
           nicklambourne
         </a>
-        .{" "}
+        .{" · "}
+        <Link href="/guides" className={LINK}>
+          Guides
+        </Link>
+        {" · "}
+        <Link href="/modules" className={LINK}>
+          Module reference
+        </Link>
+        {" · "}
         <Link href="/licences" className={LINK}>
           Licences
         </Link>

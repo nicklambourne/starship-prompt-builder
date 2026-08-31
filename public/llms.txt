@@ -1,0 +1,31 @@
+# Starship Prompt Builder
+
+> A private, browser-based visual editor for Starship prompt configuration. It previews simulated shell states and exports ordinary starship.toml.
+
+- [Builder](https://starship.ndl.au/): Edit, preview, import, share, and export a Starship prompt.
+- [Guides](https://starship.ndl.au/guides/): Practical guidance for generating, importing, formatting, styling, and extending a config.
+- [Module reference](https://starship.ndl.au/modules/): Curated examples, options, variables, and common adjustments for frequently used modules.
+- [Source](https://github.com/nicklambourne/starship-prompt-builder): MIT-licensed source and issue tracker.
+- [Official Starship documentation](https://starship.rs/config/): Canonical upstream configuration reference.
+
+## Guides
+
+- https://starship.ndl.au/guides/starship-config-generator/
+- https://starship.ndl.au/guides/import-existing-config/
+- https://starship.ndl.au/guides/format-strings/
+- https://starship.ndl.au/guides/style-strings/
+- https://starship.ndl.au/guides/custom-modules/
+
+## Module reference
+
+- https://starship.ndl.au/modules/directory/
+- https://starship.ndl.au/modules/git-branch/
+- https://starship.ndl.au/modules/git-status/
+- https://starship.ndl.au/modules/character/
+- https://starship.ndl.au/modules/username/
+- https://starship.ndl.au/modules/hostname/
+- https://starship.ndl.au/modules/nodejs/
+- https://starship.ndl.au/modules/python/
+- https://starship.ndl.au/modules/custom/
+- https://starship.ndl.au/modules/aws/
+- https://starship.ndl.au/modules/kubernetes/
