@@ -24,6 +24,25 @@ The parity suite skips locally when starship is missing and fails in CI, so
 please install it — `curl -fsSL https://starship.rs/install.sh | sh` — if you
 are touching the engine.
 
+## Where changes belong
+
+The runtime has four deliberate boundaries:
+
+- `src/lib/engine/` is pure TypeScript. It accepts config plus a simulated
+  scenario and never imports React, reads the DOM, or probes the real machine.
+- `src/lib/config/` translates between Starship data and builder data: TOML,
+  defaults, metadata, presets, format trees, sharing, and local sessions.
+- `src/state/builderStore.ts` owns durable builder state, actions, and bounded
+  undo/redo history. Short-lived disclosure, search, popover, and drag state
+  stays in the component that renders it.
+- `src/components/builder/Builder.tsx` composes the page and its engine/UI
+  adapters. Browser persistence belongs in `useBuilderSession`; structured
+  format composition belongs in `FormatBuilder`; format-tree gestures belong
+  in `useFormatTreeDrag`; and recursive row rendering belongs in `FormatNode`.
+
+If a change starts moving rendering rules into a component or browser effects
+into the store, stop and keep the boundary explicit instead.
+
 ## Adding or correcting a module
 
 Every starship module is one file in

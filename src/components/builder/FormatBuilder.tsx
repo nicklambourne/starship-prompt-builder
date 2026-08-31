@@ -12,14 +12,13 @@
  * Redundant style wrappers are hidden by default, not removed from the config.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { FormatNode, type FormatNodeCallbacks } from "./FormatNode";
-import { usePointerDrag } from "./usePointerDrag";
+import { useFormatTreeDrag } from "./useFormatTreeDrag";
 import { StyleStringBuilder } from "./StyleStringBuilder";
 import {
   type FormatItem,
-  type DropPosition,
   fromItems,
   gatherCategory,
   groupName,
@@ -29,10 +28,8 @@ import {
   ungroup,
 } from "@/lib/config/formatItems";
 import {
-  type Path,
   collectModuleNames,
   getAt,
-  moveTo,
   nudge,
   pathKey,
   removeAt,
@@ -255,10 +252,6 @@ export function FormatBuilder({
     references: number;
   } | null>(null);
   const [filter, setFilter] = useState("");
-  const [dragging, setDragging] = useState<Path | null>(null);
-  const [dropTarget, setDropTarget] = useState<
-    { path: Path; position: DropPosition } | null
-  >(null);
 
   const derived = useMemo(() => toItems(value), [value]);
   /*
@@ -308,44 +301,15 @@ export function FormatBuilder({
     render before it. That is React error #300, and it crashed the whole page
     the moment someone deleted a bracket.
   */
-  // The list as it stands right now, for handlers that outlive their render.
-  const itemsRef = useRef(items ?? []);
-  useEffect(() => {
-    itemsRef.current = items ?? [];
-  }, [items]);
-
-  // A compact row moves with its hidden wrappers. Styling and dropping INTO
-  // it still address the visible child, so edits reach the intended group.
-  const movePath = (path: Path): Path => {
-    let target = path;
-    while (!showAllStyleWrappers && target.length > 1) {
-      const parentPath = target.slice(0, -1);
-      const parent = getAt(itemsRef.current, parentPath);
-      if (!parent || !isRedundantStyleWrapper(parent)) break;
-      target = parentPath;
-    }
-    return target;
-  };
-
-  /*
-   * One drag implementation for mouse, pen and touch. The native HTML5 API
-   * this replaced never fired on a phone, which left the handles inert there
-   * and reordering reachable only from a keyboard.
-   */
-  const startPointerDrag = usePointerDrag({
-    onDragStart: (path) => {
-      setDragging(path);
-      setDropTarget(null);
-    },
-    onDragOver: (path, position) => setDropTarget({ path, position }),
-    onDrop: (from, to, position) => {
-      // Read through a ref for the same reason `from` is passed in: this
-      // closure is as old as the drag.
-      commit(moveTo(itemsRef.current, movePath(from), position === "into" ? to : movePath(to), position));
-      setDragging(null);
-      setDropTarget(null);
-    },
-    onCancel: () => setDropTarget(null),
+  const {
+    movePath,
+    startPointerDrag,
+    dropPositionFor,
+    isDragging,
+  } = useFormatTreeDrag({
+    items,
+    showAllStyleWrappers,
+    commit,
   });
 
   if (!items) {
@@ -717,11 +681,8 @@ export function FormatBuilder({
       return false;
     },
     isStyling: (path) => styling === pathKey(path),
-    dropPositionFor: (path) =>
-      dropTarget && pathKey(dropTarget.path) === pathKey(path)
-        ? dropTarget.position
-        : null,
-    isDragging: (path) => dragging !== null && pathKey(dragging) === pathKey(path),
+    dropPositionFor,
+    isDragging,
     isFiltered: (item) => !matches(item),
   };
 

@@ -94,8 +94,10 @@ pnpm test:e2e      # browser tests, against the built export
 pnpm test:parity   # engine vs the real starship binary (needs it installed)
 ```
 
-Stack: Next.js 16 · React 19 · Tailwind CSS v4 · TypeScript. [PLAN.md](PLAN.md)
-has the architecture and the roadmap; [AGENTS.md](AGENTS.md) has the working
+Stack: Next.js 16 · React 19 · Tailwind CSS v4 · TypeScript. The pure
+rendering engine, config translators, zustand state, and React coordinators have
+explicit boundaries documented in [PLAN.md](PLAN.md) and
+[CONTRIBUTING.md](CONTRIBUTING.md); [AGENTS.md](AGENTS.md) has the working
 conventions.
 
 ## Contributing

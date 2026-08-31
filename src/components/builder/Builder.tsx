@@ -9,7 +9,7 @@
  * together, which is the whole point of a live configurator.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { EnvironmentPanel } from "./EnvironmentPanel";
 import { Explainer } from "./Explainer";
@@ -67,8 +67,7 @@ import { optionEnum } from "@/lib/config/optionEnums";
 import { moduleStyleReaches, rowStyleReaches } from "@/lib/config/styleReach";
 import { MODULE_META, moduleMeta, optionKind } from "@/lib/config/meta";
 import { PRESETS } from "@/lib/config/presets";
-import { decodeShare, encodeShare } from "@/lib/config/share";
-import { loadSession, saveSession } from "@/lib/config/session";
+import { encodeShare } from "@/lib/config/share";
 import { parseConfig, serialiseConfig } from "@/lib/config/toml";
 import { MODULE_DEFAULTS } from "@/lib/config/rescue";
 import { structuredEditorFor } from "./structuredOptions";
@@ -78,6 +77,7 @@ import { TERMINAL_FONTS } from "@/lib/fonts";
 import { NAMED_COLORS } from "@/lib/engine/types";
 import { getTheme } from "@/lib/terminalThemes";
 import { useBuilderStore } from "@/state/builderStore";
+import { useBuilderSession } from "./useBuilderSession";
 
 /** Root options that are not the format itself; format gets its own section. */
 const ROOT_OPTIONS: OptionDescriptor[] = [
@@ -150,94 +150,7 @@ export function Builder() {
   const [previewOpen, setPreviewOpen] = useState(true);
   const [tomlOpen, setTomlOpen] = useState(false);
 
-  // Guards the save effect until the restore has run.
-  const sessionReady = useRef(false);
-
-  /*
-   * A config arriving in the URL fragment. The share button has always
-   * written one; nothing ever read it back, so every link anyone shared
-   * opened on the default prompt.
-   *
-   * Read after mount rather than during render: the fragment is not part of
-   * the prerendered HTML, and reading it during render would disagree with it.
-   */
-  useEffect(() => {
-    const shared = decodeShare(window.location.hash);
-    if (shared) loadShared(shared);
-
-    /*
-     * Then the rest of the session. A link's config outranks a stored one —
-     * following a share should show that prompt, not the last one edited on
-     * this machine — but the environment, font and colour scheme are this
-     * visitor's own either way, so they are restored regardless.
-     */
-    const session = loadSession();
-    if (session) restoreSession(session, { config: !shared });
-    sessionReady.current = true;
-
-    /*
-     * Arriving at a different fragment without a reload — pasting a share
-     * link into the address bar of a tab already showing the builder, or
-     * following one from another page on the site — is a same-document
-     * navigation, so the effect above never runs again. The app's own share
-     * button uses replaceState, which does not raise this event.
-     */
-    const onHashChange = () => {
-      const next = decodeShare(window.location.hash);
-      if (next) loadShared(next);
-    };
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  /*
-   * What would be saved right now. Kept in a ref as well as in the debounce
-   * below, so the page can be left mid-debounce without losing the last edit.
-   */
-  const sessionSnapshot = useRef({
-    config,
-    scenario,
-    themeId,
-    fontId,
-    fontSize,
-    // Only a deliberate choice is worth restoring; otherwise the operating
-    // system keeps deciding, which is what someone who never touched the
-    // toggle expects.
-    appTheme: appThemeIsExplicit ? appTheme : undefined,
-  });
-  useEffect(() => {
-    sessionSnapshot.current = {
-      config,
-      scenario,
-      themeId,
-      fontId,
-      fontSize,
-      appTheme: appThemeIsExplicit ? appTheme : undefined,
-    };
-  }, [config, scenario, themeId, fontId, fontSize, appTheme, appThemeIsExplicit]);
-
-  /*
-   * Save on every change, once the restore above has run — writing before it
-   * would overwrite the stored session with the defaults it is about to
-   * replace. Debounced, because typing in the TOML pane changes the config on
-   * every keystroke.
-   */
-  useEffect(() => {
-    if (!sessionReady.current) return;
-    const timer = window.setTimeout(() => {
-      saveSession(sessionSnapshot.current);
-      /*
-       * Keep the fragment honest. Sharing used to stamp it once, so every
-       * later edit left the address bar describing a config that no longer
-       * existed — anyone who copied it by hand, or reloaded, got the older
-       * prompt back. replaceState rather than pushState: this is the same
-       * page, not a new entry in the visitor's back button.
-       */
-      window.history.replaceState(null, "", `#${encodeShare(config)}`);
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [
+  useBuilderSession({
     config,
     scenario,
     themeId,
@@ -245,27 +158,9 @@ export function Builder() {
     fontSize,
     appTheme,
     appThemeIsExplicit,
-  ]);
-
-  /*
-   * Reloading or closing within that quarter second would otherwise lose the
-   * last edit — which is exactly when someone is most likely to do it.
-   * `pagehide` is the one event that fires reliably on mobile, where tabs are
-   * discarded rather than closed.
-   */
-  useEffect(() => {
-    if (!sessionReady.current) return;
-    const flush = () => saveSession(sessionSnapshot.current);
-    const onHidden = () => {
-      if (document.visibilityState === "hidden") flush();
-    };
-    window.addEventListener("pagehide", flush);
-    document.addEventListener("visibilitychange", onHidden);
-    return () => {
-      window.removeEventListener("pagehide", flush);
-      document.removeEventListener("visibilitychange", onHidden);
-    };
-  }, []);
+    loadShared,
+    restoreSession,
+  });
 
   /*
    * Follow the operating system's colour scheme, and keep following it if it
