@@ -1,6 +1,7 @@
+import { compressToEncodedURIComponent } from "lz-string";
 import { describe, expect, it } from "vitest";
 import { PRESETS } from "./presets";
-import { decodeShare, encodeShare } from "./share";
+import { decodeShare, encodeShare, SHARE_LIMITS } from "./share";
 import { parseConfig } from "./toml";
 import type { StarshipConfig } from "@/lib/engine/prompt";
 
@@ -50,6 +51,16 @@ describe("encodeShare / decodeShare", () => {
     expect(decodeShare(encoded)).toBeTruthy();
   });
 
+  it("keeps every bundled preset below the encoded limit", () => {
+    for (const preset of PRESETS) {
+      const parsed = parseConfig(preset.toml);
+      if (!parsed.ok) throw new Error(`preset ${preset.id} did not parse`);
+      expect(encodeShare(parsed.config).length).toBeLessThan(
+        SHARE_LIMITS.payloadCharacters,
+      );
+    }
+  });
+
   it.each(PRESETS.map((p) => p.id))("round-trips the %s preset", (id) => {
     const preset = PRESETS.find((p) => p.id === id);
     if (!preset) throw new Error(`missing preset ${id}`);
@@ -73,5 +84,34 @@ describe("encodeShare / decodeShare", () => {
     expect(decodeShare("#")).toBeNull();
     expect(decodeShare("not-a-payload")).toBeNull();
     expect(decodeShare("#config=")).toBeNull();
+  });
+
+  it("rejects an encoded payload over the navigation limit", () => {
+    expect(
+      decodeShare("A".repeat(SHARE_LIMITS.payloadCharacters + 1)),
+    ).toBeNull();
+  });
+
+  it("rejects a compressed payload that expands beyond the TOML limit", () => {
+    const toml = `format = "${"x".repeat(SHARE_LIMITS.tomlCharacters)}"`;
+    expect(decodeShare(compressToEncodedURIComponent(toml))).toBeNull();
+  });
+
+  it("rejects excessive table nesting", () => {
+    const path = Array.from(
+      { length: SHARE_LIMITS.objectDepth + 2 },
+      (_, index) => `level${index}`,
+    ).join(".");
+    const toml = `[${path}]\nvalue = true`;
+    expect(decodeShare(compressToEncodedURIComponent(toml))).toBeNull();
+  });
+
+  it("rejects oversized arrays", () => {
+    const values = Array.from(
+      { length: SHARE_LIMITS.arrayEntries + 1 },
+      () => "true",
+    ).join(",");
+    const toml = `values = [${values}]`;
+    expect(decodeShare(compressToEncodedURIComponent(toml))).toBeNull();
   });
 });
