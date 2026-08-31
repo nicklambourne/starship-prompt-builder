@@ -118,20 +118,26 @@ export default async function ModulePage({
 
           <section>
             <h2 className="text-xl font-semibold text-neutral-100">Format variables</h2>
-            <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-              {reference.variables.map((variable) => (
-                <div
-                  key={variable}
-                  className="rounded-xl border border-white/10 bg-neutral-900/40 p-4"
-                >
-                  <dt className="font-mono text-sm text-neutral-200">${variable}</dt>
-                  <dd className="mt-2 text-sm leading-6 text-neutral-400">
-                    {variableDoc(reference.moduleName, variable)?.description ??
-                      "A value available to this module's format."}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            {reference.variables.length > 0 ? (
+              <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                {reference.variables.map((variable) => (
+                  <div
+                    key={variable}
+                    className="rounded-xl border border-white/10 bg-neutral-900/40 p-4"
+                  >
+                    <dt className="font-mono text-sm text-neutral-200">${variable}</dt>
+                    <dd className="mt-2 text-sm leading-6 text-neutral-400">
+                      {variableDoc(reference.moduleName, variable)?.description ??
+                        "A value available to this module's format."}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="mt-3 text-sm leading-7 text-neutral-400">
+                Starship does not document format variables for this module.
+              </p>
+            )}
           </section>
 
           <section>
@@ -148,8 +154,8 @@ export default async function ModulePage({
           <div>
             <h2 className="text-sm font-semibold text-neutral-100">Starship key</h2>
             <code className="mt-2 block text-sm text-neutral-300">
-              {reference.moduleName === "custom"
-                ? "[custom.<name>]"
+              {reference.moduleName === "custom" || reference.moduleName === "env_var"
+                ? `[${reference.moduleName}.<name>]`
                 : `[${reference.moduleName}]`}
             </code>
           </div>

@@ -65,6 +65,32 @@ test.describe("guide and module reference content", () => {
     }
   });
 
+  test("the module reference lists every module and filters the collection", async ({
+    page,
+  }) => {
+    await page.goto("./modules/");
+
+    const results = page.getByRole("region", { name: "Module results" });
+    const modules = results.getByRole("listitem");
+    await expect(modules).toHaveCount(106);
+    await expect(page.getByText("106 modules", { exact: true })).toBeVisible();
+
+    const filter = page.getByRole("searchbox", { name: "Filter modules" });
+    await filter.fill("terraform");
+    await expect(modules).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "Terraform module" })).toBeVisible();
+    await expect(page.getByText("1 of 106 modules", { exact: true })).toBeVisible();
+
+    await filter.fill("");
+    await page.getByLabel("Category").selectOption("Languages");
+    await expect(results.getByRole("link", { name: "Python module" })).toBeVisible();
+    await expect(results.getByRole("link", { name: "AWS module" })).toHaveCount(0);
+
+    await filter.fill("does not exist");
+    await expect(modules).toHaveCount(0);
+    await expect(page.getByText("No modules match that filter.", { exact: true })).toBeVisible();
+  });
+
   test("reference pages reuse the builder header structure and visual identity", async ({
     page,
   }) => {
