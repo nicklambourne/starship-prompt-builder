@@ -91,31 +91,31 @@ the repo at build time.
 
 ```
 src/
-  app/                    # Next.js App Router pages (thin; UI shell)
+  app/                    # Next.js App Router pages and metadata
   components/
-    builder/              # panes: ModuleList, SettingsForm, TomlPane, …
-    terminal/             # Terminal, Segment renderer, theme defs
-    controls/             # StyleStringBuilder, FormatEditor, ColorPicker, …
+    builder/
+      Builder.tsx         # page composition and engine/UI adapters
+      useBuilderSession.ts # URL, storage, and lifecycle coordination
+      FormatBuilder.tsx   # structured format-editor composition
+      useFormatTreeDrag.ts # format-tree gesture coordination
+      FormatNode.tsx      # one recursive format row
+      SettingsForm.tsx    # schema-driven module options
+    terminal/             # static terminal and segment rendering
+    ui/                   # shared controls, popovers, icons, fields
   lib/
     engine/               # THE CORE — pure TS, zero React imports
       formatString.ts     #   format-string parser → AST
       styleString.ts      #   style-string parser → Style
-      render.ts           #   (Config, Scenario) → Line[] of Segment[]
+      render.ts           #   format evaluation
+      prompt.ts           #   whole-prompt assembly
       ansi.ts             #   Segment[] → ANSI (for parity tests)
-      modules/            #   one file per starship module
-        index.ts          #   registry
-        directory.ts, git_branch.ts, git_status.ts, nodejs.ts, …
-    config/
-      schema.ts           # types generated/derived from config-schema.json
-      defaults.ts         # starship's default config values
-      toml.ts             # import (parse+validate) / export (minimal diff)
-      share.ts            # URL fragment encode/decode (lz-string)
-    scenarios/            # mocked shell contexts (see §5)
-  state/                  # zustand store: config, selection, scenario, ui
-data/
-  config-schema.json      # vendored from starship.rs/config-schema.json
-  presets/                # vendored official preset TOMLs (ISC, attributed)
-  module-meta.json        # curated UI metadata overlay (see §6)
+      modules/            #   one file per starship module + registry
+    config/               # TOML, defaults, presets, metadata, share/session
+    scenarios/            # mocked shell contexts used by preview and parity
+  state/
+    builderStore.ts       # zustand state, actions, and bounded history
+data/                     # vendored upstream artefacts and generated metadata
+public/                   # static images and subsetted terminal fonts
 ```
 
 **Engine is pure and framework-free.** `lib/engine` takes
@@ -123,10 +123,13 @@ data/
 the parity test harness (§8) possible: the same engine output serialises to ANSI
 for comparison against real starship, and to React spans for display.
 
-**State:** one zustand store holding the parsed config object (mirroring the
-TOML structure), the active scenario, and UI state. Derived values (rendered
-segments, serialised TOML) are computed with memoised selectors. Undo/redo is a
-bounded history of config snapshots.
+**State and UI coordination:** the zustand store owns durable builder state —
+the parsed config, simulated scenario, terminal choices, actions, and bounded
+undo/redo history. Editor-local state such as disclosures, search, popovers, and
+drag targets stays with the component that renders it. `Builder` and
+`FormatBuilder` compose data and callbacks; dedicated hooks own browser session
+side effects and format-tree gestures. Derived prompt output and UI adapters are
+memoised in the composition layer rather than folded into the pure engine.
 
 ---
 
