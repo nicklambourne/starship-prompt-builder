@@ -24,9 +24,8 @@ import { SettingsForm, type OptionDescriptor } from "./SettingsForm";
 import { TomlPane } from "./TomlPane";
 import { UsageGuide } from "./UsageGuide";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Logo } from "@/components/ui/Logo";
 import { Toggle } from "@/components/ui/Toggle";
-import { SiteNav } from "@/components/site/SiteNav";
+import { SiteHeader } from "@/components/site/SiteHeader";
 import {
   ChevronIcon,
   CheckIcon,
@@ -662,20 +661,7 @@ export function Builder() {
           reset();
         }}
       />
-      <header className="sticky top-0 z-50 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 bg-neutral-950/95 px-4 py-3 backdrop-blur">
-        <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-          {/*
-            Bigger than the line it sits on. The margin is exactly -7px so the
-            mark's *layout* height stays 30px — what it was before — while it
-            draws at 44: on desktop the bar's height comes from the 36px icon
-            buttons, but on a phone the header wraps and this heading sets the
-            first row, so anything taller than 30 moved the bar. Its viewBox
-            carries glow bleed, so the ink is 40px of the 44.
-          */}
-          <Logo size={44} className="-my-[7px]" />
-          Starship Prompt Builder
-        </h1>
-        <SiteNav className="order-3 w-full sm:order-none sm:w-auto" />
+      <SiteHeader>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -736,7 +722,7 @@ export function Builder() {
             {shareCopied ? <CheckIcon /> : <ShareIcon />}
           </button>
         </div>
-      </header>
+      </SiteHeader>
 
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 pt-4">
         <Explainer />

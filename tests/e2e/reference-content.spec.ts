@@ -65,6 +65,36 @@ test.describe("guide and module reference content", () => {
     }
   });
 
+  test("reference pages reuse the builder header structure and visual identity", async ({
+    page,
+  }) => {
+    const headers = [];
+    for (const route of ["", "guides/"]) {
+      await page.goto(`./${route}`);
+      const header = page.locator("header").first();
+      const navigation = header.getByRole("navigation", { name: "Primary" });
+      const identity = header.getByText("Starship Prompt Builder", { exact: true });
+      const metrics = await identity.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const logo = element.querySelector("svg")!.getBoundingClientRect();
+        return {
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          logoWidth: Math.round(logo.width),
+        };
+      });
+
+      await expect(header.locator(":scope > nav")).toHaveCount(1);
+      headers.push({
+        headerClass: await header.getAttribute("class"),
+        navigationClass: await navigation.getAttribute("class"),
+        ...metrics,
+      });
+    }
+
+    expect(headers[1]).toEqual(headers[0]);
+  });
+
   test("content pages have unique canonical metadata and useful headings", async ({
     page,
   }, info) => {
