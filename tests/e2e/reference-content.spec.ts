@@ -65,6 +65,33 @@ test.describe("guide and module reference content", () => {
     }
   });
 
+  test("reference pages expose theme, GitHub, and current-page share actions", async ({
+    context,
+    page,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("./guides/format-strings/");
+
+    const header = page.locator("header").first();
+    await expect(
+      header.getByRole("link", { name: "View this project on GitHub" }),
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/nicklambourne/starship-prompt-builder",
+    );
+
+    await header.getByRole("button", { name: "Switch to light theme" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+    const pageUrl = page.url();
+    await header.getByRole("button", { name: "Copy a share link" }).click();
+    await expect(
+      header.getByRole("button", { name: "Share link copied" }),
+    ).toBeVisible();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(pageUrl);
+  });
+
   test("the module reference lists every module and filters the collection", async ({
     page,
   }) => {
