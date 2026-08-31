@@ -108,6 +108,14 @@ export function variableDoc(
   return UNDOCUMENTED_UPSTREAM[moduleName]?.[variable];
 }
 
+/** Every format variable documented for a module, in upstream table order. */
+export function moduleVariableNames(moduleName: string): string[] {
+  const anchor = docsAnchor(moduleName);
+  const documented = anchor ? Object.keys(BY_ANCHOR[anchor] ?? {}) : [];
+  const supplemental = Object.keys(UNDOCUMENTED_UPSTREAM[moduleName] ?? {});
+  return [...new Set([...documented, ...supplemental])];
+}
+
 /**
  * One line for a row, with the documented example appended: knowing that
  * `$duration` reads `2h27m20s` settles more questions than the sentence does.

@@ -1,5 +1,10 @@
 import { encodeShare } from "@/lib/config/share";
-import { parseConfig } from "@/lib/config/toml";
+import { DEFAULT_CONFIG } from "@/lib/config/defaults";
+import { describeModule } from "@/lib/config/descriptions";
+import { MODULE_META } from "@/lib/config/meta";
+import { getModuleSchemas, type ModuleSchema } from "@/lib/config/schema";
+import { parseConfig, serialiseConfig } from "@/lib/config/toml";
+import { moduleVariableNames } from "@/lib/config/variables";
 
 export interface ModuleReference {
   slug: string;
@@ -15,7 +20,7 @@ export interface ModuleReference {
   related: string[];
 }
 
-export const MODULE_REFERENCES: readonly ModuleReference[] = [
+const CURATED_MODULE_REFERENCES: readonly ModuleReference[] = [
   {
     slug: "directory",
     moduleName: "directory",
@@ -204,6 +209,150 @@ export const MODULE_REFERENCES: readonly ModuleReference[] = [
     related: ["aws"],
   },
 ] as const;
+
+const MODULE_DISPLAY_NAMES: Record<string, string> = {
+  aws: "AWS",
+  c: "C",
+  claude_context: "Claude context",
+  claude_cost: "Claude cost",
+  claude_model: "Claude model",
+  cmd_duration: "Command duration",
+  cobol: "COBOL",
+  conda: "Conda",
+  cpp: "C++",
+  docker_context: "Docker context",
+  dotnet: ".NET",
+  env_var: "Environment variable",
+  fossil_branch: "Fossil branch",
+  fossil_metrics: "Fossil metrics",
+  gcloud: "Google Cloud",
+  git_branch: "Git branch",
+  git_commit: "Git commit",
+  git_metrics: "Git metrics",
+  git_state: "Git state",
+  git_status: "Git status",
+  golang: "Go",
+  guix_shell: "Guix shell",
+  hg_branch: "Mercurial branch",
+  hg_state: "Mercurial state",
+  line_break: "Line break",
+  localip: "Local IP",
+  memory_usage: "Memory usage",
+  netns: "Network namespace",
+  nix_shell: "Nix shell",
+  nodejs: "Node.js",
+  openstack: "OpenStack",
+  os: "Operating system",
+  pijul_channel: "Pijul channel",
+  purescript: "PureScript",
+  rlang: "R",
+  shlvl: "Shell level",
+  vcs: "Version control",
+  vcsh: "VCSH",
+  vlang: "V",
+};
+
+function displayName(moduleName: string): string {
+  const named = MODULE_DISPLAY_NAMES[moduleName];
+  if (named) return named;
+  return moduleName
+    .split("_")
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
+function defaultTable(moduleName: string): Record<string, unknown> {
+  const defaults = DEFAULT_CONFIG[moduleName];
+  return defaults && typeof defaults === "object" && !Array.isArray(defaults)
+    ? (defaults as Record<string, unknown>)
+    : {};
+}
+
+function genericExample(schema: ModuleSchema): string {
+  if (schema.name === "custom") {
+    return '[custom.example]\ncommand = "echo hello"\nwhen = true\nformat = "[$output]($style)"';
+  }
+  if (schema.name === "env_var") {
+    return '[env_var.SHELL]\nvariable = "SHELL"\nformat = "[$env_value]($style)"';
+  }
+
+  const defaults = defaultTable(schema.name);
+  const options: Record<string, unknown> = {};
+  if (defaults.disabled === true) options.disabled = false;
+  for (const key of ["format", "symbol", "style"]) {
+    const value = defaults[key];
+    if (typeof value === "string") options[key] = value;
+  }
+  if (Object.keys(options).length === 0) options.disabled = false;
+
+  return serialiseConfig(
+    { [schema.name]: options },
+    { defaults: {}, header: false },
+  ).trimEnd();
+}
+
+function genericAdjustments(schema: ModuleSchema): string[] {
+  const optionNames = new Set(schema.options.map((option) => option.key));
+  const adjustments: string[] = [];
+  if (
+    ["detect_extensions", "detect_files", "detect_folders", "detect_env_vars"].some(
+      (key) => optionNames.has(key),
+    )
+  ) {
+    adjustments.push(
+      "Tune the detection options if this module appears in the wrong projects or misses the right ones.",
+    );
+  }
+  if (optionNames.has("format")) {
+    adjustments.push(
+      "Edit format to reorder its variables or make surrounding text conditional.",
+    );
+  }
+  if ((MODULE_META[schema.name]?.styleOptions.length ?? 0) > 0) {
+    adjustments.push(
+      "Adjust its style options to fit the palette used by the rest of the prompt.",
+    );
+  }
+  if (adjustments.length === 0) {
+    adjustments.push(
+      "Use disabled to control whether this module can appear in the prompt.",
+    );
+  }
+  return adjustments;
+}
+
+function genericReference(schema: ModuleSchema): ModuleReference {
+  const description =
+    describeModule(schema.name) ??
+    schema.description ??
+    `Configure Starship's ${displayName(schema.name)} module.`;
+  const disabledByDefault = defaultTable(schema.name).disabled === true;
+  return {
+    slug: schema.name.replaceAll("_", "-"),
+    moduleName: schema.name,
+    title: `${displayName(schema.name)} module`,
+    description,
+    when: disabledByDefault
+      ? "This module is disabled by default. Enable it, then it renders when Starship detects the matching context."
+      : "It renders when Starship detects the matching context and its configured conditions are met.",
+    example: genericExample(schema),
+    format:
+      schema.name === "env_var" ? "${env_var.SHELL}" : `$${schema.name}`,
+    keyOptions: schema.options.map((option) => option.key),
+    variables: moduleVariableNames(schema.name),
+    adjustments: genericAdjustments(schema),
+    related: [],
+  };
+}
+
+const CURATED_BY_NAME = new Map(
+  CURATED_MODULE_REFERENCES.map((reference) => [reference.moduleName, reference]),
+);
+
+/** Complete Starship module coverage, with richer hand-written entries where available. */
+export const MODULE_REFERENCES: readonly ModuleReference[] = getModuleSchemas().map(
+  (schema) => CURATED_BY_NAME.get(schema.name) ?? genericReference(schema),
+);
 
 export function moduleReferenceBySlug(slug: string): ModuleReference | undefined {
   return MODULE_REFERENCES.find((reference) => reference.slug === slug);
