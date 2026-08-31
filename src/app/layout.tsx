@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 /**
- * The site is one page, so everything a search engine or a link unfurler needs
- * has to be here.
+ * Site-wide defaults for search engines and link unfurlers. Individual guide
+ * and module pages supply their own titles, descriptions, and canonical URLs.
  *
  * `metadataBase` is what makes the rest work: without it Next emits relative
  * URLs for the preview image and the canonical link, and neither a crawler nor

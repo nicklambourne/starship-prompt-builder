@@ -1498,9 +1498,9 @@ test.describe("builder", () => {
     });
 
     expect(measured.mark).toBeGreaterThan(measured.laidOut);
-    // The bar is 61px on desktop and 99px wrapped on a phone; both are what
-    // they were before the mark grew.
-    expect(measured.header).toBe(info.project.name === "mobile" ? 99 : 61);
+    // Desktop stays one row. A phone uses three deliberate rows: identity,
+    // always-available actions, then the permanent site navigation.
+    expect(measured.header).toBe(info.project.name === "mobile" ? 127 : 61);
     // And it stays inside the bar rather than crossing its border.
     expect(measured.clearsTop).toBeGreaterThan(0);
     expect(measured.clearsBottom).toBeGreaterThan(0);
