@@ -32,28 +32,39 @@ jobs:
     # GitHub-hosted, always — see ci.yml.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install starship
+      - name: Install verified starship release
         env:
           # Pull requests and pushes compare against a pinned release, so a
           # starship release cannot redden a PR that has nothing to do with
-          # it. The scheduled run below tracks the newest release instead —
-          # that is where upstream drift is supposed to surface, on a branch
-          # nobody is waiting on.
-          PINNED: "1.25.1"
+          # it. Scheduled and manually dispatched runs deliberately track the
+          # newest release instead.
+          PINNED_TAG: "v1.25.1"
         run: |
           set -euo pipefail
+          archive="starship-x86_64-unknown-linux-musl.tar.gz"
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "tracking the latest starship release"
-            curl -fsSL https://starship.rs/install.sh \
-              | sh -s -- --yes --bin-dir /usr/local/bin
+            release_base="https://github.com/starship/starship/releases/latest/download"
           else
-            echo "pinned to starship v$PINNED"
-            curl -fsSL https://starship.rs/install.sh \
-              | sh -s -- --yes --bin-dir /usr/local/bin --version "v$PINNED"
+            echo "pinned to starship $PINNED_TAG"
+            release_base="https://github.com/starship/starship/releases/download/$PINNED_TAG"
           fi
-          starship --version
+
+          download_dir="$RUNNER_TEMP/starship-download"
+          bin_dir="$RUNNER_TEMP/starship-bin"
+          mkdir -p "$download_dir" "$bin_dir"
+          cd "$download_dir"
+          curl --proto "=https" --tlsv1.2 -fsSLO "$release_base/$archive"
+          curl --proto "=https" --tlsv1.2 -fsSLO "$release_base/$archive.sha256"
+          expected_checksum="$(tr -d '[:space:]' < "$archive.sha256")"
+          actual_checksum="$(sha256sum "$archive" | cut -d " " -f 1)"
+          test "$actual_checksum" = "$expected_checksum"
+          tar -xzf "$archive"
+          install -m 0755 starship "$bin_dir/starship"
+          echo "$bin_dir" >> "$GITHUB_PATH"
+          "$bin_dir/starship" --version
 
       - name: Configure git for fixtures
         run: |
@@ -65,7 +76,7 @@ jobs:
       - name: Enable pnpm
         run: corepack enable
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
