@@ -111,7 +111,9 @@ test.describe("user-named modules", () => {
 
     const format = page.locator("[data-format-scope='root-format']");
     await activate(format.getByRole("button", { name: /^\+ Add module$/ }));
-    await format.getByPlaceholder("Search modules…").last().fill("custom.project");
+    await format
+      .getByRole("searchbox", { name: "Search modules to add" })
+      .fill("custom.project");
     const candidate = format.getByRole("button", { name: /\$custom\.project/ });
     await expect(candidate).toBeVisible();
     await activate(candidate);

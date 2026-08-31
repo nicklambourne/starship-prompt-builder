@@ -492,7 +492,7 @@ test.describe("builder", () => {
     const lit = await open.evaluate((el) => getComputedStyle(el).backgroundColor);
     // Announced *and* visible: aria-expanded alone left it looking untouched.
     expect(lit).not.toBe(shut);
-    await expect(page.getByPlaceholder("Search modules…").last()).toBeVisible();
+    await expect(page.getByPlaceholder("Filter existing modules...").last()).toBeVisible();
 
     await activate(open);
     await expect(add).toHaveAttribute("aria-expanded", "false");

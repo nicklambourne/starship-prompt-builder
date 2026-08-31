@@ -707,7 +707,7 @@ export function FormatBuilder({
             type="search"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Search modules…"
+            placeholder="Filter existing modules..."
             className="w-full rounded border border-white/10 bg-neutral-950 px-2.5 py-1.5 text-base text-neutral-100 focus:border-accent-400 focus:outline-none"
           />
           {needle ? (
