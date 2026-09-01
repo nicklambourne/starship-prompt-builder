@@ -93,7 +93,12 @@ test.describe("guide and module reference content", () => {
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(pageUrl);
   });
 
-  test("the breadcrumb root is a compact logo link to the builder", async ({ page }) => {
+  test("breadcrumbs are reserved for child reference pages", async ({ page }) => {
+    for (const route of ["guides/", "modules/"]) {
+      await page.goto(`./${route}`);
+      await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toHaveCount(0);
+    }
+
     await page.goto("./guides/format-strings/");
 
     const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });

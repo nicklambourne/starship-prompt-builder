@@ -26,6 +26,7 @@ export default function ModulesPage() {
       title="Module reference"
       description="Search every Starship module and the builder's prompt components by name, purpose, or category. Module pages explain when they appear and list their options; component pages explain the format syntax they generate."
       path="/modules/"
+      showBreadcrumb={false}
       kind="CollectionPage"
     >
       <ModuleReferenceIndex
