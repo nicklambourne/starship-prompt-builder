@@ -2208,9 +2208,40 @@ test.describe("builder", () => {
       }),
     );
 
-    await expect(page.getByLabel("Simulated terminal prompt")).toContainText(
+    const terminal = page.getByLabel("Simulated terminal prompt");
+    await expect(terminal).toContainText(
       /~\/src.*master.*took.*5s.*at.*16:23:42/s,
     );
-    await expect(page.getByLabel("Simulated terminal prompt")).toContainText("─╯");
+    await expect(terminal).toContainText("─╯");
+
+    const upperRight = await terminal
+      .locator("span[style]")
+      .filter({ hasText: /^─╮$/ })
+      .last()
+      .boundingBox();
+    const lowerRight = await terminal
+      .locator("span[style]")
+      .filter({ hasText: /^─╯$/ })
+      .last()
+      .boundingBox();
+    const lowerLeft = await terminal
+      .locator("span[style]")
+      .filter({ hasText: /^╰─$/ })
+      .last()
+      .boundingBox();
+
+    expect(upperRight).not.toBeNull();
+    expect(lowerRight).not.toBeNull();
+    expect(lowerLeft).not.toBeNull();
+    if (!upperRight || !lowerRight || !lowerLeft) return;
+
+    // Starship places right_format on the input row. It must end at the same
+    // simulated terminal column as the upper frame, opposite the lower-left
+    // corner, with terminal rows touching rather than typographic leading.
+    expect(
+      Math.abs(lowerRight.x + lowerRight.width - (upperRight.x + upperRight.width)),
+    ).toBeLessThanOrEqual(1);
+    expect(Math.abs(lowerRight.y - lowerLeft.y)).toBeLessThanOrEqual(1);
+    expect(lowerRight.y - (upperRight.y + upperRight.height)).toBeLessThanOrEqual(1);
   });
 });

@@ -28,6 +28,7 @@ import type { Segment } from "@/lib/engine/types";
 interface PreviewPaneProps {
   lines: Segment[][];
   right: Segment[];
+  terminalWidth: number;
   leadingNewline: boolean;
   warnings: string[];
 
@@ -47,6 +48,7 @@ const SELECT_CLASS =
 export function PreviewPane({
   lines,
   right,
+  terminalWidth,
   leadingNewline,
   warnings,
   themeId,
@@ -65,6 +67,7 @@ export function PreviewPane({
       <Terminal
         lines={lines}
         right={right}
+        terminalWidth={terminalWidth}
         leadingNewline={leadingNewline}
         theme={theme}
         fontStack={fontStack}

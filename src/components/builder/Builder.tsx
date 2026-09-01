@@ -738,6 +738,7 @@ export function Builder() {
               <PreviewPane
                 lines={rendered.lines}
                 right={rendered.right}
+                terminalWidth={scenario.terminalWidth}
                 leadingNewline={rendered.leadingNewline}
                 warnings={rendered.warnings}
                 themeId={themeId}
