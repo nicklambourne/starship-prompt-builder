@@ -89,13 +89,31 @@ describe("PRESETS", () => {
   it("keeps the Rainbow two-line sample's slanted heads and tails", () => {
     const config = loadPreset("powerlevel10k-rainbow-2-lines");
 
-    expect(config?.format).toContain("[](fg:white)$os");
-    expect(config?.format).toContain("$git_status[](fg:green)");
+    expect(config?.format).toContain("[](fg:p10k_ansi_white)$os");
+    expect(config?.format).toContain("$git_status[](fg:p10k_ansi_green)");
     expect(config?.format).toContain(
-      "([](fg:yellow)$status$cmd_duration$jobs$time[](fg:white))",
+      "([](fg:p10k_ansi_yellow)$status$cmd_duration$jobs$time[](fg:p10k_ansi_white))",
     );
-    expect(config?.format).not.toContain("[](fg:green)");
-    expect(config?.format).not.toContain("[](fg:yellow)");
+    expect(config?.format).not.toContain("[](fg:p10k_ansi_green)");
+    expect(config?.format).not.toContain("[](fg:p10k_ansi_yellow)");
+  });
+
+  it("pins Rainbow's ANSI segments to the reference Tango Dark colours", () => {
+    const tango = {
+      p10k_ansi_black: "#2e3436",
+      p10k_ansi_green: "#4e9a06",
+      p10k_ansi_yellow: "#c4a000",
+      p10k_ansi_blue: "#3465a4",
+      p10k_ansi_white: "#d3d7cf",
+    };
+
+    for (const lines of ["1-line", "2-lines"]) {
+      const toml = getPreset(`powerlevel10k-rainbow-${lines}`)?.toml ?? "";
+      for (const [name, value] of Object.entries(tango)) {
+        expect(toml).toContain(`${name} = "${value}"`);
+      }
+      expect(toml).not.toMatch(/\b(?:fg|bg):(black|blue|green|yellow|white)\b/);
+    }
   });
 
   it("pairs every Powerlevel10k translation with the wizard's demonstration environment", () => {

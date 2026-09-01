@@ -1,14 +1,14 @@
 "$schema" = "https://starship.rs/config-schema.json"
 
 add_newline = false
-format = "[╭─](fg:p10k_outline)[](fg:white)$os$directory$git_branch$git_status[](fg:green)$fill([](fg:yellow)$status$cmd_duration$jobs$time[](fg:white))[─╮](fg:p10k_outline)$line_break[╰─](fg:p10k_outline)$character"
+format = "[╭─](fg:p10k_outline)[](fg:p10k_ansi_white)$os$directory$git_branch$git_status[](fg:p10k_ansi_green)$fill([](fg:p10k_ansi_yellow)$status$cmd_duration$jobs$time[](fg:p10k_ansi_white))[─╮](fg:p10k_outline)$line_break[╰─](fg:p10k_outline)$character"
 right_format = "[─╯](fg:p10k_outline)"
 palette = "powerlevel10k"
 
 [os]
 disabled = false
-format = "[ $symbol]($style)[](fg:white bg:blue)"
-style = "fg:black bg:white"
+format = "[ $symbol]($style)[](fg:p10k_ansi_white bg:p10k_ansi_blue)"
+style = "fg:p10k_black bg:p10k_ansi_white"
 
 [os.symbols]
 Linux = " "
@@ -17,43 +17,43 @@ Ubuntu = " "
 Windows = " "
 
 [directory]
-format = "[   $path ]($style)[](fg:blue bg:green)"
-style = "bold fg:white bg:blue"
+format = "[   $path ]($style)[](fg:p10k_ansi_blue bg:p10k_ansi_green)"
+style = "bold fg:p10k_foreground bg:p10k_ansi_blue"
 truncate_to_repo = false
 truncation_length = 3
 truncation_symbol = "…/"
 
 [git_branch]
-format = "[ on ](fg:black bg:green)[$symbol $branch]($style)"
-style = "fg:black bg:green"
+format = "[ on ](fg:p10k_ansi_black bg:p10k_ansi_green)[$symbol $branch]($style)"
+style = "fg:p10k_ansi_black bg:p10k_ansi_green"
 symbol = ""
 
 [git_status]
 format = "[$all_status$ahead_behind]($style)"
-style = "fg:p10k_modified bg:green"
+style = "fg:p10k_modified bg:p10k_ansi_green"
 
 [status]
 disabled = false
-format = "[ $symbol$status ](bold fg:p10k_red bg:yellow)"
+format = "[ $symbol$status ](bold fg:p10k_red bg:p10k_ansi_yellow)"
 symbol = "✘"
-style = "bold fg:p10k_red bg:yellow"
+style = "bold fg:p10k_red bg:p10k_ansi_yellow"
 
 [fill]
 style = "fg:p10k_outline"
 symbol = "─"
 
 [cmd_duration]
-format = "[ took  $duration ](fg:black bg:yellow)"
+format = "[ took  $duration ](fg:p10k_ansi_black bg:p10k_ansi_yellow)"
 min_time = 3000
 
 [jobs]
-format = "[ $symbol$number ](bold fg:blue bg:yellow)"
+format = "[ $symbol$number ](bold fg:p10k_ansi_blue bg:p10k_ansi_yellow)"
 symbol = "✦"
-style = "bold fg:blue bg:yellow"
+style = "bold fg:p10k_ansi_blue bg:p10k_ansi_yellow"
 
 [time]
 disabled = false
-format = "[](fg:white bg:yellow)[ at  $time ](fg:black bg:white)"
+format = "[](fg:p10k_ansi_white bg:p10k_ansi_yellow)[ at  $time ](fg:p10k_ansi_black bg:p10k_ansi_white)"
 time_format = "%H:%M:%S"
 
 [character]
@@ -73,6 +73,11 @@ p10k_separator = "#949494"
 p10k_foreground = "#e4e4e4"
 p10k_outline = "#6c6c6c"
 p10k_black = "#080808"
+p10k_ansi_black = "#2e3436"
+p10k_ansi_green = "#4e9a06"
+p10k_ansi_yellow = "#c4a000"
+p10k_ansi_blue = "#3465a4"
+p10k_ansi_white = "#d3d7cf"
 p10k_blue = "#005faf"
 p10k_yellow = "#d7af00"
 p10k_white = "#d0d0d0"
