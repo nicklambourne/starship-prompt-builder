@@ -8,7 +8,6 @@
 
 import { battery } from "./battery";
 import { character } from "./character";
-import { CLAUDE_MODULES } from "./claude";
 import { cmd_duration } from "./cmd_duration";
 import { container } from "./container";
 import { custom } from "./custom";
@@ -40,7 +39,6 @@ export const CORE_MODULES: ModuleDefinition[] = [
   shell,
   container,
   os,
-  ...CLAUDE_MODULES,
   directory,
   git_branch,
   git_commit,

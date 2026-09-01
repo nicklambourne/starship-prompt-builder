@@ -124,28 +124,5 @@ export function modulePreviewScenario(
     nats: { name: "local" },
     nix: { name: "shell", impure: true },
     container: { name: "podman" },
-    claude: {
-      model: { id: "claude-sonnet-4-5", displayName: "Claude Sonnet 4.5" },
-      effort: "high",
-      contextWindow: {
-        size: 200_000,
-        totalInputTokens: 124_000,
-        totalOutputTokens: 6_500,
-        usedPercentage: 65,
-        currentUsage: {
-          inputTokens: 8_400,
-          outputTokens: 1_200,
-          cacheCreationInputTokens: 2_000,
-          cacheReadInputTokens: 34_000,
-        },
-      },
-      cost: {
-        totalCostUsd: 2.46,
-        totalDurationMs: 123_000,
-        totalApiDurationMs: 78_000,
-        totalLinesAdded: 1_200,
-        totalLinesRemoved: 340,
-      },
-    },
   };
 }

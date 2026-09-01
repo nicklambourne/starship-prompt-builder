@@ -29,6 +29,7 @@ export function ReferencePreview({
       <Terminal
         lines={rendered.lines}
         right={rendered.right}
+        terminalWidth={72}
         leadingNewline={false}
         theme={TERMINAL_THEMES[0]}
         fontStack={TERMINAL_FONTS[0].stack}
