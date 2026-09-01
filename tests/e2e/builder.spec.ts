@@ -1228,6 +1228,13 @@ test.describe("builder", () => {
       /pseudo-minimalist prompt/,
     );
 
+    // Every option shows the actual prompt it will load, without adding
+    // another interactive control inside the option button.
+    await expect(panel.locator("[data-preset-preview]")).toHaveCount(23);
+    await expect(
+      panel.locator("[data-preset-preview='powerlevel10k-rainbow-2-lines']"),
+    ).toContainText("~/src");
+
     // The ones starship does not publish name their project and licence.
     await expect(panel).toContainText("rose-pine/starship · MIT");
     await expect(panel.getByRole("button", { name: "Rosé Pine Dawn", exact: true })).toBeVisible();
