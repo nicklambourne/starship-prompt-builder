@@ -2293,6 +2293,62 @@ test.describe("builder", () => {
     );
   });
 
+  test("long selected terminal font names stay inside the preview card", async ({
+    page,
+  }, testInfo) => {
+    if (testInfo.project.name === "mobile") {
+      await page.setViewportSize({ width: 640, height: 844 });
+    }
+    await page.goto("./");
+    await pickTerminalOption(
+      page,
+      "Terminal font",
+      "Terminal fonts",
+      "SauceCodePro Nerd Font (Source Code Pro)",
+    );
+
+    const preview = page.locator("[data-section='preview']");
+    const picker = page.getByLabel("Terminal font");
+    const value = picker.locator(":scope > span").first();
+    const download = page.getByRole("link", {
+      name: "Download SauceCodePro Nerd Font (Source Code Pro) from Nerd Fonts",
+    });
+    const [previewBox, pickerBox, downloadBox] = await Promise.all([
+      preview.boundingBox(),
+      picker.boundingBox(),
+      download.boundingBox(),
+    ]);
+
+    expect(previewBox).not.toBeNull();
+    expect(pickerBox).not.toBeNull();
+    expect(downloadBox).not.toBeNull();
+    expect(pickerBox!.x + pickerBox!.width).toBeLessThanOrEqual(
+      previewBox!.x + previewBox!.width,
+    );
+    expect(downloadBox!.x + downloadBox!.width).toBeLessThanOrEqual(
+      previewBox!.x + previewBox!.width,
+    );
+    expect(await preview.evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+      .toBe(true);
+
+    if (testInfo.project.name === "mobile") {
+      const truncation = await value.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          clientWidth: element.clientWidth,
+          scrollWidth: element.scrollWidth,
+          overflow: style.overflow,
+          textOverflow: style.textOverflow,
+          whiteSpace: style.whiteSpace,
+        };
+      });
+      expect(truncation.scrollWidth).toBeGreaterThan(truncation.clientWidth);
+      expect(truncation.overflow).toBe("hidden");
+      expect(truncation.textOverflow).toBe("ellipsis");
+      expect(truncation.whiteSpace).toBe("nowrap");
+    }
+  });
+
   test("the page never scrolls horizontally", async ({ page }) => {
     await page.goto("./");
     const overflows = await page.evaluate(
