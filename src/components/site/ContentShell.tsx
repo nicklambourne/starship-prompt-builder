@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { Logo } from "@/components/ui/Logo";
+
 const SITE = "https://starship.ndl.au";
 
 export const CONTENT_LINK =
@@ -74,8 +76,13 @@ export function ContentShell({
         <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-neutral-500">
             <li>
-              <Link href="/" className={CONTENT_LINK}>
-                Builder
+              <Link
+                href="/"
+                aria-label="Builder"
+                title="Builder"
+                className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+              >
+                <Logo size={16} />
               </Link>
             </li>
             {parent && parentHref ? (

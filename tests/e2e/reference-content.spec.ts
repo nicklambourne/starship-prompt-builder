@@ -92,6 +92,16 @@ test.describe("guide and module reference content", () => {
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(pageUrl);
   });
 
+  test("the breadcrumb root is a compact logo link to the builder", async ({ page }) => {
+    await page.goto("./guides/format-strings/");
+
+    const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
+    const builder = breadcrumb.getByRole("link", { name: "Builder", exact: true });
+    await expect(builder).toHaveAttribute("href", "/");
+    await expect(builder.locator("svg")).toHaveAttribute("width", "16");
+    await expect(builder).not.toContainText("Builder");
+  });
+
   test("the module reference lists every module and filters the collection", async ({
     page,
   }) => {
