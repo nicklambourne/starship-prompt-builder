@@ -157,7 +157,7 @@ export function Terminal({
             fontFamily: fontStack,
             // Terminal rows are adjacent cells. Typographic leading leaves a
             // visible hole in multiline frame glyphs such as `╮` above `╯`.
-            lineHeight: 1,
+            lineHeight: "calc(1em + 2px)",
             // Scales with the viewport so a long prompt stays legible on a
             // phone without the user pinching.
             /*
@@ -177,13 +177,15 @@ export function Terminal({
           <span className="sr-only">{plainText}</span>
           <span
             aria-hidden="true"
-            className="relative block whitespace-pre-wrap break-all"
+            className="relative block whitespace-pre"
             /*
              * Fills and shell-managed right prompts both target this column
              * boundary. On a narrow host UI the canvas scrolls inside the
              * terminal instead of acquiring a second, contradictory width.
+             * A fractional pixel prevents `ch`/glyph rounding from wrapping
+             * the final cell without visibly moving the shared right edge.
              */
-            style={{ width: `calc(${terminalWidth}ch + 1px)` }}
+            style={{ width: `calc(${terminalWidth}ch + 0.2px)` }}
           >
             {leadingNewline ? "\n" : null}
             {lines.map((line, lineIndex) => {

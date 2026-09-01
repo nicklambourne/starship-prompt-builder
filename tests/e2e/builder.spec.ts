@@ -2240,8 +2240,10 @@ test.describe("builder", () => {
     // corner, with terminal rows touching rather than typographic leading.
     expect(
       Math.abs(lowerRight.x + lowerRight.width - (upperRight.x + upperRight.width)),
-    ).toBeLessThanOrEqual(1);
+    ).toBeLessThanOrEqual(0.25);
     expect(Math.abs(lowerRight.y - lowerLeft.y)).toBeLessThanOrEqual(1);
-    expect(lowerRight.y - (upperRight.y + upperRight.height)).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(lowerRight.y - (upperRight.y + upperRight.height)),
+    ).toBeLessThanOrEqual(0.25);
   });
 });
