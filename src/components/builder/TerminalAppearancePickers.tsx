@@ -57,7 +57,7 @@ function CardPicker<T extends PickerOption>({
           onClick={() => setOpen((current) => !current)}
           className={TRIGGER_CLASS}
         >
-          <span className="min-w-0 truncate">{renderValue(selected)}</span>
+          <span className="min-w-0 flex-1 truncate">{renderValue(selected)}</span>
           <ChevronIcon
             className={`shrink-0 text-neutral-500 transition-transform ${open ? "-rotate-90" : "rotate-90"}`}
           />
@@ -109,13 +109,13 @@ function ThemeSwatch({ theme }: { theme: TerminalTheme }) {
     <span
       data-theme-swatch={theme.id}
       aria-hidden="true"
-      className="grid shrink-0 grid-cols-8 gap-px rounded border border-white/15 p-0.5"
+      className="flex shrink-0 overflow-hidden rounded border border-white/15"
       style={{ backgroundColor: theme.background }}
     >
       {theme.ansi.map((color, index) => (
         <span
           key={`${color}-${index}`}
-          className="h-1.5 w-2 rounded-[1px] sm:w-2.5"
+          className="h-2.5 w-1.5 sm:w-2"
           style={{ backgroundColor: color }}
         />
       ))}
@@ -138,7 +138,12 @@ export function TerminalThemePicker({
       options={TERMINAL_THEMES}
       value={value}
       onChange={onChange}
-      renderValue={(theme) => theme.label}
+      renderValue={(theme) => (
+        <span className="flex min-w-0 items-center justify-between gap-2">
+          <span className="truncate">{theme.label}</span>
+          <ThemeSwatch theme={theme} />
+        </span>
+      )}
       renderOption={(theme) => (
         <span className="flex min-w-0 items-center justify-between gap-3">
           <span className="min-w-0">
