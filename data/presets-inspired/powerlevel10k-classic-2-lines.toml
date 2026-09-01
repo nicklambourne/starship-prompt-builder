@@ -1,7 +1,7 @@
 "$schema" = "https://starship.rs/config-schema.json"
 
 add_newline = false
-format = "[╭─](fg:p10k_outline)$os$directory$git_branch$git_status[](fg:p10k_surface)$fill([](fg:p10k_surface)$status$cmd_duration$jobs$time)[─╮](fg:p10k_outline)$line_break[╰─](fg:p10k_outline)$character"
+format = "[╭─](fg:p10k_outline)[░▒▓](fg:p10k_surface)$os$directory$git_branch$git_status[▓▒░](fg:p10k_surface)$fill([░▒▓](fg:p10k_surface)$status$cmd_duration$jobs$time[▓▒░](fg:p10k_surface))[─╮](fg:p10k_outline)$line_break[╰─](fg:p10k_outline)$character"
 right_format = "[─╯](fg:p10k_outline)"
 palette = "powerlevel10k"
 

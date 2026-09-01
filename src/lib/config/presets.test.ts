@@ -59,6 +59,18 @@ describe("PRESETS", () => {
     }
   });
 
+  it("keeps the Classic two-line sample's blurred heads and tails", () => {
+    const config = loadPreset("powerlevel10k-classic-2-lines");
+
+    expect(config?.format).toContain("[░▒▓](fg:p10k_surface)$os");
+    expect(config?.format).toContain("$git_status[▓▒░](fg:p10k_surface)");
+    expect(config?.format).toContain(
+      "([░▒▓](fg:p10k_surface)$status$cmd_duration$jobs$time[▓▒░](fg:p10k_surface))",
+    );
+    expect(config?.format).not.toContain("[](fg:p10k_surface)");
+    expect(config?.format).not.toContain("[](fg:p10k_surface)");
+  });
+
   it("pairs every Powerlevel10k translation with the wizard's demonstration environment", () => {
     for (const style of ["lean", "classic", "rainbow"]) {
       for (const lines of ["1-line", "2-lines"]) {
