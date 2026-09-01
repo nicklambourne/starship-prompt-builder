@@ -85,6 +85,8 @@ export interface TerminalProps {
   /** Text typed after the prompt, for realism. */
   command?: string;
   className?: string;
+  /** Small, non-interactive prompt surface for previews embedded in controls. */
+  compact?: boolean;
 }
 
 function SegmentSpans({
@@ -119,11 +121,13 @@ export function Terminal({
   fontSize = 14,
   command,
   className,
+  compact = false,
 }: TerminalProps) {
   const hasRight = (right?.length ?? 0) > 0;
 
   // Screen readers get the plain text; the styled spans are decorative detail
-  // that would otherwise be read out character by character.
+  // that would otherwise be read out character by character. Compact
+  // terminals are decorative previews inside already-labelled controls.
   const plainText = useMemo(
     () =>
       lines
@@ -131,6 +135,45 @@ export function Terminal({
         .join("\n"),
     [lines],
   );
+
+  if (compact) {
+    return (
+      <span
+        aria-hidden="true"
+        className={`block overflow-hidden rounded-md border border-white/10 ${className ?? ""}`}
+        style={{ backgroundColor: theme.background }}
+      >
+        <span
+          className="block overflow-hidden px-2 py-1.5"
+          style={{
+            color: theme.foreground,
+            fontFamily: fontStack,
+            fontSize: `clamp(8px, 2.3vw, ${fontSize}px)`,
+            lineHeight: "calc(1em + 1px)",
+          }}
+        >
+          <span
+            className="relative block whitespace-pre"
+            style={{ width: `calc(${terminalWidth}ch + 0.2px)` }}
+          >
+            {lines.map((line, lineIndex) => {
+              const isLast = lineIndex === lines.length - 1;
+              return (
+                <span key={lineIndex} className="relative block">
+                  <SegmentSpans segments={line} theme={theme} />
+                  {isLast && hasRight ? (
+                    <span className="absolute right-0 top-0">
+                      <SegmentSpans segments={right ?? []} theme={theme} />
+                    </span>
+                  ) : null}
+                </span>
+              );
+            })}
+          </span>
+        </span>
+      </span>
+    );
+  }
 
   return (
     <div

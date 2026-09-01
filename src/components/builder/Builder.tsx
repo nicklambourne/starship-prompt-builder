@@ -779,7 +779,11 @@ export function Builder() {
               </button>
 
               <span className="ml-auto flex shrink-0 items-center gap-2">
-                <PresetPicker onPick={loadPreset} />
+                <PresetPicker
+                  onPick={loadPreset}
+                  theme={theme}
+                  fontStack={font.stack}
+                />
 
                 <button
                   type="button"
