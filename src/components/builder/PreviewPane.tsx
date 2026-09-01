@@ -14,16 +14,14 @@
  * without a patched font.
  */
 
-import { Terminal } from "@/components/terminal/Terminal";
 import {
-  MAX_FONT_SIZE,
-  MIN_FONT_SIZE,
-  TERMINAL_FONTS,
-  clampFontSize,
-} from "@/lib/fonts";
-import { DownloadIcon } from "@/components/ui/icons";
-import { TERMINAL_THEMES, type TerminalTheme } from "@/lib/terminalThemes";
+  TerminalFontPicker,
+  TerminalThemePicker,
+} from "@/components/builder/TerminalAppearancePickers";
+import { Terminal } from "@/components/terminal/Terminal";
+import { MAX_FONT_SIZE, MIN_FONT_SIZE, clampFontSize } from "@/lib/fonts";
 import type { Segment } from "@/lib/engine/types";
+import type { TerminalTheme } from "@/lib/terminalThemes";
 
 interface PreviewPaneProps {
   lines: Segment[][];
@@ -60,8 +58,6 @@ export function PreviewPane({
   theme,
   fontStack,
 }: PreviewPaneProps) {
-  const selected = TERMINAL_FONTS.find((f) => f.id === fontId);
-
   return (
     <div className="flex flex-col gap-3">
       <Terminal
@@ -80,66 +76,9 @@ export function PreviewPane({
         squeeze the two controls whose names need the width.
       */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_1fr_auto]">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="theme-select" className="text-xs text-neutral-400">
-            Terminal color scheme
-          </label>
-          <select
-            id="theme-select"
-            value={themeId}
-            onChange={(e) => onThemeChange(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            {TERMINAL_THEMES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TerminalThemePicker value={themeId} onChange={onThemeChange} />
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="font-select" className="text-xs text-neutral-400">
-            Terminal font
-          </label>
-          <div className="flex items-center gap-1.5">
-            <select
-              id="font-select"
-              value={fontId}
-              onChange={(e) => onFontChange(e.target.value)}
-              // Takes the row: without this the select is only as wide as its
-              // longest option, and the download button floats in the gap
-              // rather than sitting at the edge the colour-scheme select ends
-              // at. `min-w-0` so a long font name shrinks it instead of
-              // pushing the button out of the card.
-              className={`${SELECT_CLASS} min-w-0 flex-1`}
-            >
-              {TERMINAL_FONTS.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-            {/*
-              The preview fakes the glyphs with a subsetted webfont; a prompt
-              full of Nerd Font symbols only works in a terminal once the real
-              font is installed, and this is where someone notices that. The
-              system option has nothing to install, so it has no link.
-            */}
-            {selected?.source ? (
-              <a
-                href={selected.source}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Download ${selected.label} from Nerd Fonts`}
-                title={`Download ${selected.label}`}
-                className="inline-flex shrink-0 items-center rounded border border-white/10 p-1.5 text-neutral-300 transition hover:border-accent-400 hover:text-accent-200"
-              >
-                <DownloadIcon />
-              </a>
-            ) : null}
-          </div>
-        </div>
+        <TerminalFontPicker value={fontId} onChange={onFontChange} />
 
         <div className="col-span-2 flex flex-col gap-1 sm:col-span-1">
           <label htmlFor="font-size" className="text-xs text-neutral-400">

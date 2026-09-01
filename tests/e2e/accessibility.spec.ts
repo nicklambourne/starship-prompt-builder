@@ -49,6 +49,31 @@ for (const scheme of ["dark", "light"] as const) {
     }
   });
 
+  test(`terminal appearance pickers are accessible in the ${scheme} theme`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("./");
+
+    for (const [triggerLabel, panelLabel] of [
+      ["Terminal color scheme", "Terminal color schemes"],
+      ["Terminal font", "Terminal fonts"],
+    ] as const) {
+      await page.getByLabel(triggerLabel).press("Enter");
+      const panel = page.getByRole("dialog", { name: panelLabel });
+      await expect(panel).toBeVisible();
+
+      const { violations } = await new AxeBuilder({ page })
+        .include(`[role="dialog"][aria-label="${panelLabel}"]`)
+        .withTags(TAGS)
+        .analyze();
+      expect(violations).toEqual([]);
+
+      await page.keyboard.press("Escape");
+      await expect(panel).toHaveCount(0);
+    }
+  });
+
   test(`the ${scheme} theme has no accessibility violations`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
     await openEverything(page);
