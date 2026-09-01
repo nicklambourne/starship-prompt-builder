@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { GUIDES } from "@/lib/content/guides";
 import { MODULE_REFERENCES } from "@/lib/content/modules";
+import { PROMPT_COMPONENT_REFERENCES } from "@/lib/content/promptComponents";
 
 /**
  * The builder, learning content, module references, and licence notices.
@@ -28,6 +29,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE}/modules/${reference.slug}/`,
       changeFrequency: "monthly" as const,
       priority: 0.6,
+    })),
+    ...PROMPT_COMPONENT_REFERENCES.map((reference) => ({
+      url: `${SITE}/modules/${reference.slug}/`,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
     { url: `${SITE}/licences/`, changeFrequency: "yearly", priority: 0.3 },
   ];

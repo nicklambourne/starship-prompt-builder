@@ -12,6 +12,7 @@ const GUIDE_ROUTES = [
 ] as const;
 
 const MODULE_ROUTES = [
+  "text",
   "directory",
   "git-branch",
   "git-status",
@@ -102,21 +103,25 @@ test.describe("guide and module reference content", () => {
     await expect(builder).not.toContainText("Builder");
   });
 
-  test("the module reference lists every module and filters the collection", async ({
+  test("the module reference lists modules and builder components and filters them", async ({
     page,
   }) => {
     await page.goto("./modules/");
 
-    const results = page.getByRole("region", { name: "Module results" });
-    const modules = results.getByRole("listitem");
-    await expect(modules).toHaveCount(106);
-    await expect(page.getByText("106 modules", { exact: true })).toBeVisible();
+    const results = page.getByRole("region", { name: "Reference results" });
+    const references = results.getByRole("listitem");
+    await expect(references).toHaveCount(107);
+    await expect(page.getByText("107 references", { exact: true })).toBeVisible();
 
-    const filter = page.getByRole("searchbox", { name: "Filter modules" });
+    const filter = page.getByRole("searchbox", { name: "Filter references" });
     await filter.fill("terraform");
-    await expect(modules).toHaveCount(1);
+    await expect(references).toHaveCount(1);
     await expect(page.getByRole("link", { name: "Terraform module" })).toBeVisible();
-    await expect(page.getByText("1 of 106 modules", { exact: true })).toBeVisible();
+    await expect(page.getByText("1 of 107 references", { exact: true })).toBeVisible();
+
+    await filter.fill("literal text");
+    await expect(references).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "Text component" })).toBeVisible();
 
     await filter.fill("");
     await page.getByLabel("Category").selectOption("Languages");
@@ -124,8 +129,27 @@ test.describe("guide and module reference content", () => {
     await expect(results.getByRole("link", { name: "AWS module" })).toHaveCount(0);
 
     await filter.fill("does not exist");
-    await expect(modules).toHaveCount(0);
-    await expect(page.getByText("No modules match that filter.", { exact: true })).toBeVisible();
+    await expect(references).toHaveCount(0);
+    await expect(page.getByText("No references match that filter.", { exact: true })).toBeVisible();
+  });
+
+  test("the Text component reference explains and renders literal symbols", async ({
+    page,
+  }) => {
+    await page.goto("./modules/text/");
+
+    await expect(page.getByRole("heading", { level: 1, name: "Text component" })).toBeVisible();
+    await expect(page.getByLabel("Simulated terminal prompt")).toContainText("Text · $literal");
+    await expect(page.locator("main")).toContainText("10,890");
+    await expect(page.locator("main")).toContainText("Nerd Fonts 3.5.0");
+    await expect(page.locator("main")).toContainText("Powerline Extra");
+    await expect(page.locator("main")).toContainText("Material Design");
+    const open = page.getByRole("link", {
+      name: "Open the Text example in the builder",
+    });
+    await expect(open).toHaveAttribute("href", /\/#/);
+    await open.click();
+    await expect(page.getByLabel("Simulated terminal prompt")).toContainText("Text · $literal");
   });
 
   test("reference pages reuse the builder header structure and visual identity", async ({
@@ -191,6 +215,15 @@ test.describe("guide and module reference content", () => {
     await expect(page.getByLabel("Simulated terminal prompt")).toBeVisible();
   });
 
+  test("module pages render their starting configuration through the preview engine", async ({
+    page,
+  }) => {
+    await page.goto("./modules/nodejs/");
+    await expect(page.getByRole("heading", { name: "Preview" })).toBeVisible();
+    await expect(page.getByLabel("Simulated terminal prompt")).toContainText("1.2.3");
+
+  });
+
   test("reference content remains readable without JavaScript", async ({
     browser,
   }, info) => {
@@ -206,7 +239,12 @@ test.describe("guide and module reference content", () => {
   test("the reference surfaces are accessible in both themes", async ({ page }) => {
     for (const colorScheme of ["dark", "light"] as const) {
       await page.emulateMedia({ colorScheme });
-      for (const route of ["guides/", "modules/", "modules/directory/"]) {
+      for (const route of [
+        "guides/",
+        "modules/",
+        "modules/directory/",
+        "modules/text/",
+      ]) {
         await page.goto(`./${route}`);
         const { violations } = await new AxeBuilder({ page })
           .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

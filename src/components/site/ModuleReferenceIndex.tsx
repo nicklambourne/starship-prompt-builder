@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import type { ModuleGroup } from "@/lib/config/meta";
 import { ContentCard } from "./ContentShell";
 
 export interface ModuleReferenceListItem {
@@ -10,35 +9,37 @@ export interface ModuleReferenceListItem {
   moduleName: string;
   title: string;
   description: string;
-  group: ModuleGroup;
+  group: string;
+  searchTerms?: string[];
 }
 
 const ALL_GROUPS = "All categories";
 
 export function ModuleReferenceIndex({
-  modules,
+  references,
   groups,
 }: {
-  modules: readonly ModuleReferenceListItem[];
-  groups: readonly ModuleGroup[];
+  references: readonly ModuleReferenceListItem[];
+  groups: readonly string[];
 }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string>(ALL_GROUPS);
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const visible = modules.filter((module) => {
-    if (group !== ALL_GROUPS && module.group !== group) return false;
+  const visible = references.filter((reference) => {
+    if (group !== ALL_GROUPS && reference.group !== group) return false;
     if (!normalizedQuery) return true;
     return [
-      module.moduleName,
-      module.title,
-      module.description,
-      module.group,
+      reference.moduleName,
+      reference.title,
+      reference.description,
+      reference.group,
+      ...(reference.searchTerms ?? []),
     ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery));
   });
   const resultLabel =
-    visible.length === modules.length
-      ? `${modules.length} modules`
-      : `${visible.length} of ${modules.length} modules`;
+    visible.length === references.length
+      ? `${references.length} references`
+      : `${visible.length} of ${references.length} references`;
 
   return (
     <div className="flex flex-col gap-8">
@@ -47,7 +48,7 @@ export function ModuleReferenceIndex({
         className="grid gap-4 rounded-xl border border-white/10 bg-neutral-900/40 p-4 sm:grid-cols-[minmax(0,1fr)_15rem]"
       >
         <label className="flex flex-col gap-2 text-sm font-medium text-neutral-200">
-          Filter modules
+          Filter references
           <input
             type="search"
             value={query}
@@ -75,7 +76,7 @@ export function ModuleReferenceIndex({
         {resultLabel}
       </p>
 
-      <div role="region" aria-label="Module results" className="flex flex-col gap-10">
+      <div role="region" aria-label="Reference results" className="flex flex-col gap-10">
         {groups.map((candidate) => {
           const references = visible.filter((module) => module.group === candidate);
           return references.length > 0 ? (
@@ -97,7 +98,7 @@ export function ModuleReferenceIndex({
         })}
         {visible.length === 0 ? (
           <p className="rounded-xl border border-white/10 bg-neutral-900/40 p-5 text-sm text-neutral-400">
-            No modules match that filter.
+            No references match that filter.
           </p>
         ) : null}
       </div>

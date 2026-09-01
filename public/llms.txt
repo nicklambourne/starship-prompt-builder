@@ -29,3 +29,7 @@
 - https://starship.ndl.au/modules/custom/
 - https://starship.ndl.au/modules/aws/
 - https://starship.ndl.au/modules/kubernetes/
+
+## Prompt components
+
+- https://starship.ndl.au/modules/text/
