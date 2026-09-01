@@ -71,6 +71,21 @@ describe("PRESETS", () => {
     expect(config?.format).not.toContain("[](fg:p10k_surface)");
   });
 
+  it("keeps the Classic two-line sample's slanted inner separators", () => {
+    const config = loadPreset("powerlevel10k-classic-2-lines");
+    const formatOf = (module: string) =>
+      (config?.[module] as { format?: string } | undefined)?.format;
+
+    expect(formatOf("os")).toContain("[╱](fg:p10k_separator bg:p10k_surface)");
+    expect(formatOf("directory")).toContain(
+      "[╱](fg:p10k_separator bg:p10k_surface)",
+    );
+    expect(formatOf("time")).toContain("[╱](fg:p10k_separator bg:p10k_surface)");
+    expect([formatOf("os"), formatOf("directory"), formatOf("time")].join()).not.toMatch(
+      /[]/,
+    );
+  });
+
   it("keeps the Rainbow two-line sample's slanted heads and tails", () => {
     const config = loadPreset("powerlevel10k-rainbow-2-lines");
 

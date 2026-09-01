@@ -7,7 +7,7 @@ palette = "powerlevel10k"
 
 [os]
 disabled = false
-format = "[ $symbol]($style)[](fg:p10k_separator bg:p10k_surface)"
+format = "[ $symbol]($style)[╱](fg:p10k_separator bg:p10k_surface)"
 style = "fg:p10k_foreground bg:p10k_surface"
 
 [os.symbols]
@@ -17,7 +17,7 @@ Ubuntu = " "
 Windows = " "
 
 [directory]
-format = "[ $path ]($style)[](fg:p10k_separator bg:p10k_surface)"
+format = "[ $path ]($style)[╱](fg:p10k_separator bg:p10k_surface)"
 style = "bg:p10k_surface fg:p10k_directory"
 truncate_to_repo = false
 truncation_length = 3
@@ -53,7 +53,7 @@ style = "bold fg:p10k_directory bg:p10k_surface"
 
 [time]
 disabled = false
-format = "[](fg:p10k_separator bg:p10k_surface)[ at  $time ](fg:p10k_time bg:p10k_surface)"
+format = "[╱](fg:p10k_separator bg:p10k_surface)[ at  $time ](fg:p10k_time bg:p10k_surface)"
 time_format = "%H:%M:%S"
 
 [character]
