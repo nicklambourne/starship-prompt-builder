@@ -23,6 +23,7 @@ base path. Everything runs client-side; there is no backend.
 ```sh
 pnpm install
 pnpm dev          # local dev server
+pnpm dev:stack    # fixed loopback dev stack for persistent handoff
 pnpm typecheck    # tsc --noEmit
 pnpm test         # vitest unit tests
 pnpm build        # static export to out/
@@ -87,8 +88,8 @@ pair.
 
 Use this convention:
 
-- Worktree root: `/private/tmp/starship-prompt-builder-worktrees/`
-- Worktree path: `/private/tmp/starship-prompt-builder-worktrees/<task-slug>`
+- Worktree root: `/Volumes/Repos/starship-prompt-builder-worktrees/`
+- Worktree path: `/Volumes/Repos/starship-prompt-builder-worktrees/<task-slug>`
 - Branch: `agent/<task-slug>`
 - `<task-slug>`: short, lowercase, kebab-case, descriptive of the PR
 
@@ -102,7 +103,7 @@ Before making changes:
 
    ```sh
    git worktree add -b agent/<task-slug> \
-     /private/tmp/starship-prompt-builder-worktrees/<task-slug> origin/main
+     /Volumes/Repos/starship-prompt-builder-worktrees/<task-slug> origin/main
    ```
 
 4. Report the worktree's absolute path and branch name before editing, and
@@ -124,7 +125,7 @@ After GitHub confirms the PR is **merged**, remove only this agent's own
 worktree, and only when `git status --short` in it is empty:
 
 ```sh
-git worktree remove /private/tmp/starship-prompt-builder-worktrees/<task-slug>
+git worktree remove /Volumes/Repos/starship-prompt-builder-worktrees/<task-slug>
 git branch -D agent/<task-slug>
 ```
 
@@ -135,6 +136,29 @@ after the merge is confirmed. If a worktree is dirty, its ownership is
 uncertain, or removal fails, preserve it and report its path and condition
 instead of forcing cleanup. Never run broad automatic worktree or branch
 cleanup.
+
+## Persistent local development handoff
+
+When the user asks for a running local demo, leave one canonical watch-mode
+server running rather than starting a new port and worktree for every task.
+
+1. Use `/Volumes/Repos/starship-prompt-builder-worktrees/local-dev` and local
+   branch `codex/local-dev` for the user-facing stack. Do not create parallel
+   persistent worktrees. If that worktree or its process is dirty, unknown, or
+   owned by another active session, preserve it and report the blocked handoff.
+2. Preserve an existing user-facing URL and port. Otherwise use
+   `pnpm dev:stack`, whose default is `http://127.0.0.1:3000`. Temporary
+   verification servers must set a different `STARSHIP_DEV_PORT`.
+3. Before interrupting a running stack, install and start the requested
+   revision on a temporary port. Confirm its root returns HTTP 200 and its
+   worktree `HEAD` is the intended revision.
+4. Only after that check passes, stop the previous verified Starship process,
+   update the canonical worktree, and start `pnpm dev:stack` on the preserved
+   user-facing port. Confirm HTTP 200 again and keep the final process running
+   after the agent turn ends.
+5. Report the live URL, canonical worktree, branch, exact commit, watch-mode
+   status, and final health result. Never claim the handoff succeeded unless
+   the final process is healthy.
 
 ## Pull requests
 
@@ -163,3 +187,13 @@ the fork-PR guard was rejected rather than kept, is in
 
 Toolchains come from `actions/setup-node`; pnpm is resolved through corepack
 from the `packageManager` field.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

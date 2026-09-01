@@ -87,6 +87,16 @@ Or bring your own Node ≥ 20 with pnpm. The site is a fully static Next.js
 export (`pnpm build` → `out/`), served under the `/starship-prompt-builder`
 base path.
 
+For a long-lived local handoff, use the fixed loopback development stack:
+
+```sh
+pnpm dev:stack       # http://127.0.0.1:3000, with watch mode and HMR
+```
+
+Set `STARSHIP_DEV_PORT` when a parallel task needs a temporary verification
+port. Agents reuse one canonical `local-dev` worktree for the user-facing
+stack; [AGENTS.md](AGENTS.md) documents the handoff procedure.
+
 ```sh
 pnpm typecheck     # tsc --noEmit
 pnpm test          # unit tests
