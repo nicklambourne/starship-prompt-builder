@@ -71,6 +71,18 @@ describe("PRESETS", () => {
     expect(config?.format).not.toContain("[](fg:p10k_surface)");
   });
 
+  it("keeps the Rainbow two-line sample's slanted heads and tails", () => {
+    const config = loadPreset("powerlevel10k-rainbow-2-lines");
+
+    expect(config?.format).toContain("[](fg:white)$os");
+    expect(config?.format).toContain("$git_status[](fg:green)");
+    expect(config?.format).toContain(
+      "([](fg:yellow)$status$cmd_duration$jobs$time[](fg:white))",
+    );
+    expect(config?.format).not.toContain("[](fg:green)");
+    expect(config?.format).not.toContain("[](fg:yellow)");
+  });
+
   it("pairs every Powerlevel10k translation with the wizard's demonstration environment", () => {
     for (const style of ["lean", "classic", "rainbow"]) {
       for (const lines of ["1-line", "2-lines"]) {
