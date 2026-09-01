@@ -50,6 +50,12 @@ describe("PRESETS", () => {
       expect(twoLineConfig?.format).toContain("$status");
       expect(twoLineConfig?.format).toContain("$jobs");
       expect(twoLineConfig?.format).toContain("$time");
+
+      if (style === "lean") {
+        expect(twoLineConfig?.right_format).toBeUndefined();
+      } else {
+        expect(twoLineConfig?.right_format).toBe("[─╯](fg:p10k_outline)");
+      }
     }
   });
 

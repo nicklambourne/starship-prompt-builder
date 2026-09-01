@@ -2211,5 +2211,6 @@ test.describe("builder", () => {
     await expect(page.getByLabel("Simulated terminal prompt")).toContainText(
       /~\/src.*master.*took.*5s.*at.*16:23:42/s,
     );
+    await expect(page.getByLabel("Simulated terminal prompt")).toContainText("─╯");
   });
 });
