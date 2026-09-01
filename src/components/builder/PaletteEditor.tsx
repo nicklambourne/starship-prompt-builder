@@ -21,6 +21,12 @@ import { TrashIcon } from "@/components/ui/icons";
 import { parseColorString, type Palette } from "@/lib/engine/styleString";
 import { resolveSwatchColor } from "@/components/ui/StyleSwatch";
 import type { TerminalTheme } from "@/lib/terminalThemes";
+import type { StarshipConfig } from "@/lib/engine/prompt";
+import {
+  applyPaletteSwitch,
+  planPaletteSwitch,
+  type PaletteSwitchPlan,
+} from "@/lib/config/paletteSwitch";
 
 interface PaletteEditorProps {
   /** Every named palette in the config, keyed by palette name. */
@@ -29,6 +35,9 @@ interface PaletteEditorProps {
   active: string | null;
   onChange(palettes: Record<string, Record<string, string>>): void;
   onActivate(name: string | null): void;
+  /** Commits an atomic palette switch plus any requested style rewrites. */
+  config: StarshipConfig;
+  onConfigChange(config: StarshipConfig): void;
   /** Colours the prompt asks for right now, whether named here or not. */
   inUse: ColorInUse[];
   theme: TerminalTheme;
@@ -76,6 +85,8 @@ export function PaletteEditor({
   active,
   onChange,
   onActivate,
+  config,
+  onConfigChange,
   inUse,
   theme,
 }: PaletteEditorProps) {
@@ -83,12 +94,42 @@ export function PaletteEditor({
   const curatedId = useId();
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
+  const [pending, setPending] = useState<{
+    target: string | null;
+    palette?: Palette;
+    plan: PaletteSwitchPlan;
+  } | null>(null);
 
   const names = Object.keys(palettes);
   const entries = active ? Object.entries(palettes[active] ?? {}) : [];
   const current = active ? palettes[active] : undefined;
 
   const unnamed = inUse.filter((colour) => !colour.fromPalette).length;
+
+  const configWithPalette = (name: string, colours: Palette): StarshipConfig => ({
+    ...config,
+    palettes: { ...(config.palettes ?? {}), [name]: { ...colours } },
+  });
+
+  const requestSwitch = (target: string | null, palette?: Palette) => {
+    const candidate = target && palette ? configWithPalette(target, palette) : config;
+    const plan = planPaletteSwitch(candidate, target);
+    if (plan.affected.length === 0) {
+      onConfigChange(applyPaletteSwitch(candidate, target, { remap: false }));
+      setPending(null);
+      return;
+    }
+    setPending({ target, palette, plan });
+  };
+
+  const finishSwitch = (remap: boolean) => {
+    if (!pending) return;
+    const candidate = pending.target && pending.palette
+      ? configWithPalette(pending.target, pending.palette)
+      : config;
+    onConfigChange(applyPaletteSwitch(candidate, pending.target, { remap }));
+    setPending(null);
+  };
 
   /**
    * Names a colour the prompt already uses, in one click.
@@ -140,7 +181,7 @@ export function PaletteEditor({
             <select
               id={selectId}
               value={active ?? ""}
-              onChange={(event) => onActivate(event.target.value || null)}
+              onChange={(event) => requestSwitch(event.target.value || null)}
               className={`${INPUT} min-w-0 flex-1`}
             >
               <option value="">None — colours are written out in full</option>
@@ -157,8 +198,7 @@ export function PaletteEditor({
                   event.preventDefault();
                   const name = newName.trim();
                   if (!name) return;
-                  onChange({ ...palettes, [name]: palettes[name] ?? {} });
-                  onActivate(name);
+                  requestSwitch(name, palettes[name] ?? {});
                   setNewName("");
                   setAdding(false);
                 }}
@@ -183,6 +223,53 @@ export function PaletteEditor({
           </div>
         </div>
 
+        {pending ? (
+          <div
+            aria-live="polite"
+            className="flex flex-col gap-2 rounded border border-yellow-400/30 bg-yellow-400/5 p-2.5"
+          >
+            <p className="text-xs leading-relaxed text-neutral-300">
+              <span className="font-semibold text-neutral-100">
+                {pending.plan.affected.length} palette name
+                {pending.plan.affected.length === 1 ? "" : "s"} used by this config{" "}
+                {pending.plan.affected.length === 1 ? "is" : "are"} not defined by{" "}
+                <code>{pending.target ?? "no palette"}</code>.
+              </span>{" "}
+              Switching only can drop those styles or make ANSI colours take over.
+            </p>
+            <div className="flex flex-wrap gap-1.5" aria-label="Proposed colour remapping">
+              {pending.plan.affected.map((name) => (
+                <code
+                  key={name}
+                  className="rounded border border-white/10 bg-neutral-950 px-1.5 py-0.5 text-xs text-neutral-300"
+                >
+                  {name} → {pending.plan.replacements[name]}
+                </code>
+              ))}
+            </div>
+            <p className="text-xs leading-relaxed text-neutral-500">
+              Remap uses the nearest colour in the destination palette. If there is no
+              comparable entry, it writes the current colour value directly.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setPending(null)} className={BUTTON}>
+                Keep current
+              </button>
+              <button type="button" onClick={() => finishSwitch(false)} className={BUTTON}>
+                Switch only
+              </button>
+              <button
+                type="button"
+                onClick={() => finishSwitch(true)}
+                className={`${BUTTON} border-accent-400 bg-accent-400/15 text-accent-200`}
+              >
+                Switch &amp; remap {pending.plan.affected.length} name
+                {pending.plan.affected.length === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="flex flex-col gap-1">
           <label htmlFor={curatedId} className="text-xs text-neutral-400">
             Curated palettes
@@ -194,8 +281,7 @@ export function PaletteEditor({
             onChange={(event) => {
               const chosen = CURATED_PALETTES.find((p) => p.name === event.target.value);
               if (!chosen) return;
-              onChange({ ...palettes, [chosen.name]: { ...chosen.colours } });
-              onActivate(chosen.name);
+              requestSwitch(chosen.name, chosen.colours);
             }}
             className={INPUT}
           >

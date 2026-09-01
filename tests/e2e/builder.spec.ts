@@ -745,6 +745,9 @@ test.describe("builder", () => {
     await activate(card.locator("summary"));
 
     await card.getByLabel("Curated palettes").selectOption("gruvbox_dark");
+    await expect(card).toContainText("not defined by gruvbox_dark");
+    await expect(card.getByLabel("Active palette")).toHaveValue("catppuccin_mocha");
+    await activate(card.getByRole("button", { name: /Switch & remap/ }));
     // Copied in, not referenced: it is the active palette and its colours are
     // editable rows.
     await expect(card.getByLabel("Active palette")).toHaveValue("gruvbox_dark");
@@ -757,6 +760,36 @@ test.describe("builder", () => {
     await expect(
       page.getByRole("button", { name: "Foreground: palette colour color_orange" }),
     ).toBeVisible();
+  });
+
+  test("an incompatible palette can deliberately be switched without remapping", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await openToml(page);
+    await page.getByLabel("starship.toml").fill(
+      [
+        'format = "[x](peach)"',
+        'palette = "source"',
+        "",
+        "[palettes.source]",
+        'peach = "#ff0000"',
+        "",
+        "[palettes.target]",
+        'orange = "#ee0000"',
+        "",
+      ].join("\n"),
+    );
+    const card = page.locator("[data-section='palettes']");
+    await activate(card.locator("summary"));
+
+    await card.getByLabel("Active palette").selectOption("target");
+    await expect(card).toContainText("1 palette name used by this config is not defined by target");
+    await expect(card.getByLabel("Active palette")).toHaveValue("source");
+    await activate(card.getByRole("button", { name: "Switch only" }));
+
+    await expect(card.getByLabel("Active palette")).toHaveValue("target");
+    await expect(page.getByLabel("starship.toml")).toHaveValue(/\[x\]\(peach\)/);
   });
 
   test("naming a colour from the prompt takes one click", async ({ page }) => {
@@ -2028,6 +2061,9 @@ test.describe("builder", () => {
     await page.getByRole("button", { name: "+ Empty palette" }).click();
     await page.getByLabel("New palette name").fill("mine");
     await page.getByRole("button", { name: "Create" }).click();
+    // An empty destination has none of the active palette's names. Preserve
+    // the current appearance by writing those colours out before activating it.
+    await activate(page.getByRole("button", { name: /Switch & remap/ }));
     await expect(page.getByLabel("Active palette")).toHaveValue("mine");
     await page.getByRole("button", { name: "+ Add a colour" }).click();
     await expect(page.getByLabel(/^Name of colour /)).toHaveCount(1);
