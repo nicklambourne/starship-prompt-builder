@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { decodeShare } from "../../src/lib/config/share";
+import { TERMINAL_FONTS } from "../../src/lib/fonts";
+import { TERMINAL_THEMES } from "../../src/lib/terminalThemes";
 
 /**
  * End-to-end coverage of flows that span the whole stack: a setting change
@@ -67,6 +69,19 @@ async function openToml(page: import("@playwright/test").Page) {
     await activate(toggle);
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
   }
+}
+
+async function pickTerminalOption(
+  page: import("@playwright/test").Page,
+  triggerLabel: "Terminal color scheme" | "Terminal font",
+  panelLabel: "Terminal color schemes" | "Terminal fonts",
+  optionLabel: string,
+) {
+  await activate(page.getByLabel(triggerLabel));
+  const panel = page.getByRole("dialog", { name: panelLabel });
+  await expect(panel).toBeVisible();
+  await activate(panel.getByRole("button", { name: optionLabel, exact: true }));
+  await expect(panel).toHaveCount(0);
 }
 
 /**
@@ -469,12 +484,22 @@ test.describe("builder", () => {
     await page.goto("./");
     const link = page.getByRole("link", { name: /^Download .* from Nerd Fonts$/ });
 
-    await page.getByLabel("Terminal font").selectOption("jetbrains-mono");
+    await pickTerminalOption(
+      page,
+      "Terminal font",
+      "Terminal fonts",
+      "JetBrainsMono Nerd Font",
+    );
     await expect(link).toHaveAttribute("href", /JetBrainsMono\.zip$/);
     await expect(link).toHaveAttribute("href", /nerd-fonts\/releases/);
 
     // The system stack is whatever the machine already has — nothing to fetch.
-    await page.getByLabel("Terminal font").selectOption("system");
+    await pickTerminalOption(
+      page,
+      "Terminal font",
+      "Terminal fonts",
+      "System monospace (no Nerd Font)",
+    );
     await expect(link).toHaveCount(0);
   });
 
@@ -607,7 +632,7 @@ test.describe("builder", () => {
     const rows = await page.evaluate(() => {
       const top = (id: string) =>
         Math.round(document.getElementById(id)!.getBoundingClientRect().top);
-      return { theme: top("theme-select"), font: top("font-select"), size: top("font-size") };
+      return { theme: top("theme-picker"), font: top("font-picker"), size: top("font-size") };
     });
     expect(rows.theme).toBe(rows.font);
     if (info.project.name === "mobile") expect(rows.size).toBeGreaterThan(rows.font);
@@ -1975,17 +2000,25 @@ test.describe("builder", () => {
     // Something from each of the three things that used to be lost.
     await openEnvSection(page, "Session");
     await page.locator("[data-section='environment']").getByLabel("Username").fill("ada");
-    await page.getByLabel("Terminal font").selectOption({ index: 1 });
-    await page.getByLabel("Terminal color scheme").selectOption({ index: 2 });
-    const font = await page.getByLabel("Terminal font").inputValue();
-    const scheme = await page.getByLabel("Terminal color scheme").inputValue();
+    await pickTerminalOption(
+      page,
+      "Terminal font",
+      "Terminal fonts",
+      "JetBrainsMono Nerd Font",
+    );
+    await pickTerminalOption(
+      page,
+      "Terminal color scheme",
+      "Terminal color schemes",
+      "Gruvbox Dark",
+    );
     await expect(page.getByLabel("Simulated terminal prompt")).toContainText("ada");
 
     await page.reload();
 
     await expect(page.getByLabel("Simulated terminal prompt")).toContainText("ada");
-    await expect(page.getByLabel("Terminal font")).toHaveValue(font);
-    await expect(page.getByLabel("Terminal color scheme")).toHaveValue(scheme);
+    await expect(page.getByLabel("Terminal font")).toContainText("JetBrainsMono Nerd Font");
+    await expect(page.getByLabel("Terminal color scheme")).toContainText("Gruvbox Dark");
   });
 
   test("a shared link's config beats the stored one", async ({ page, context }) => {
@@ -2199,6 +2232,35 @@ test.describe("builder", () => {
   }) => {
     await page.goto("./");
     await expect(page.getByLabel("Terminal color scheme")).toBeVisible();
+  });
+
+  test("terminal appearance options preview their colors and fonts", async ({ page }) => {
+    await page.goto("./");
+
+    await activate(page.getByLabel("Terminal color scheme"));
+    const themes = page.getByRole("dialog", { name: "Terminal color schemes" });
+    await expect(themes.locator("[data-theme-swatch]")).toHaveCount(TERMINAL_THEMES.length);
+    const colorCounts = await themes.locator("[data-theme-swatch]").evaluateAll((swatches) =>
+      swatches.map((swatch) => swatch.children.length),
+    );
+    expect(colorCounts.every((count) => count === 16)).toBe(true);
+
+    const tokyoNight = themes.getByRole("button", { name: "Tokyo Night", exact: true });
+    await expect(tokyoNight).toHaveAttribute("aria-pressed", "true");
+    const nameBox = await tokyoNight.getByText("Tokyo Night", { exact: true }).boundingBox();
+    const swatchBox = await tokyoNight.locator('[data-theme-swatch="tokyo-night"]').boundingBox();
+    expect(nameBox).not.toBeNull();
+    expect(swatchBox).not.toBeNull();
+    expect(swatchBox!.x).toBeGreaterThan(nameBox!.x + nameBox!.width);
+
+    await page.keyboard.press("Escape");
+    await activate(page.getByLabel("Terminal font"));
+    const fonts = page.getByRole("dialog", { name: "Terminal fonts" });
+    await expect(fonts.locator("[data-font-sample]")).toHaveCount(TERMINAL_FONTS.length);
+    await expect(fonts.locator('[data-font-sample="jetbrains-mono"]')).toHaveCSS(
+      "font-family",
+      /JetBrainsMono/,
+    );
   });
 
   test("the page never scrolls horizontally", async ({ page }) => {
