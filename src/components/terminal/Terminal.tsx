@@ -151,8 +151,9 @@ export function Terminal({
 
       <div>
         <pre
+          tabIndex={0}
           aria-label="Simulated terminal prompt"
-          className="m-0 overflow-x-auto p-3 sm:p-5"
+          className="m-0 overflow-x-auto p-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400 sm:p-5"
           style={{
             fontFamily: fontStack,
             // Terminal rows are adjacent cells. Typographic leading leaves a
