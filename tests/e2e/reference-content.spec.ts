@@ -144,7 +144,11 @@ test.describe("guide and module reference content", () => {
     await page.goto("./modules/text/");
 
     await expect(page.getByRole("heading", { level: 1, name: "Text component" })).toBeVisible();
-    await expect(page.getByLabel("Simulated terminal prompt")).toContainText("Text · $literal");
+    await expect(page.getByLabel("Simulated terminal prompt")).toContainText(
+      " Text · $literal",
+    );
+    await expect(page.getByLabel("Configuration example")).toContainText("");
+    await expect(page.getByLabel("Configuration example")).toContainText("");
     await expect(page.locator("main")).toContainText("10,890");
     await expect(page.locator("main")).toContainText("Nerd Fonts 3.5.0");
     await expect(page.locator("main")).toContainText("Powerline Extra");
@@ -155,6 +159,38 @@ test.describe("guide and module reference content", () => {
     await expect(open).toHaveAttribute("href", /\/#/);
     await open.click();
     await expect(page.getByLabel("Simulated terminal prompt")).toContainText("Text · $literal");
+  });
+
+  test("documentation configuration examples use the bundled glyph-capable font", async ({
+    page,
+  }) => {
+    for (const route of [
+      "modules/text/",
+      "modules/git-branch/",
+      "guides/format-strings/",
+    ]) {
+      await page.goto(`./${route}`);
+      const examples = page.getByLabel("Configuration example");
+      expect(await examples.count(), route).toBeGreaterThan(0);
+
+      const fontFamilies = await examples.locator("code").evaluateAll(
+        (elements) =>
+          elements.map((element) => getComputedStyle(element).fontFamily),
+      );
+      expect(fontFamilies, route).not.toContainEqual(
+        expect.not.stringMatching(/Hack Nerd Font Mono/),
+      );
+    }
+
+    await page.goto("./modules/text/");
+    const powerlineFaceCount = await page.evaluate(async () => {
+      const faces = await document.fonts.load(
+        "14px 'Hack Nerd Font Mono'",
+        "",
+      );
+      return faces.length;
+    });
+    expect(powerlineFaceCount).toBeGreaterThan(0);
   });
 
   test("reference pages reuse the builder header structure and visual identity", async ({

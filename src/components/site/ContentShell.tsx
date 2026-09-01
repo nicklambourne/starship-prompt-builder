@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/ui/Logo";
+import { TERMINAL_FONTS } from "@/lib/fonts";
 
 const SITE = "https://starship.ndl.au";
 
@@ -14,7 +15,7 @@ export function CodeBlock({ children }: { children: string }) {
       aria-label="Configuration example"
       className="overflow-x-auto rounded-lg border border-white/10 bg-neutral-950 p-4 text-sm leading-6 text-neutral-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
     >
-      <code>{children}</code>
+      <code style={{ fontFamily: TERMINAL_FONTS[0].stack }}>{children}</code>
     </pre>
   );
 }
