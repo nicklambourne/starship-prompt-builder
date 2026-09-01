@@ -81,8 +81,8 @@ test.describe("discoverability", () => {
   }) => {
     await page.goto("./licences");
     const main = page.locator("main");
-    // The fonts were always here; the vendored themes are the ones that were
-    // being redistributed without a notice on this page.
+    // The fonts were always here; every preset derived from another project
+    // should carry the same source and copyright notice as the picker.
     await expect(main).toContainText("Presets and palettes");
     for (const credit of [
       "catppuccin/starship",
@@ -91,11 +91,18 @@ test.describe("discoverability", () => {
       "© 2022 Dracula Theme",
       "rose-pine/starship",
       "© Rosé Pine",
+      "romkatv/powerlevel10k",
+      "© 2009–2014 Robby Russell and contributors",
+      "© 2014–2017 Ben Hilburn",
+      "© 2019 Roman Perepelitsa and contributors",
     ]) {
       await expect(main).toContainText(credit);
     }
     // Named against the presets they are, so the two lists cannot drift apart.
     await expect(main).toContainText("Rosé Pine, Rosé Pine Moon, Rosé Pine Dawn");
+    await expect(main).toContainText(
+      "Powerlevel10k Lean · 1 line, Powerlevel10k Lean · 2 lines, Powerlevel10k Classic · 1 line, Powerlevel10k Classic · 2 lines, Powerlevel10k Rainbow · 1 line, Powerlevel10k Rainbow · 2 lines",
+    );
   });
 
   test("robots.txt and the sitemap are served", async ({ request }, info) => {

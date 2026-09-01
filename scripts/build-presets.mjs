@@ -8,12 +8,14 @@
  * which both toolchains read through `resolveJsonModule`.
  *
  * Labels and descriptions come from starship's own presets index
- * (docs/presets/README.md) and are maintained here, since the TOMLs carry no
- * metadata of their own.
+ * (docs/presets/README.md), the community theme projects, and the source
+ * prompts that inspired our Starship recreations. They are maintained here
+ * because the TOMLs carry no metadata of their own.
  *
- * Two sources: starship's twelve official presets in `data/presets/`, and the
- * themes their own projects publish in `data/presets-community/`. Each carries
- * where it came from, which the picker shows and THIRD_PARTY.md records.
+ * Three sources: starship's twelve official presets in `data/presets/`, the
+ * themes their own projects publish in `data/presets-community/`, and
+ * Starship recreations of other prompts in `data/presets-inspired/`. Each
+ * carries where it came from, which the picker shows and THIRD_PARTY.md records.
  *
  * Run:  pnpm build:presets
  */
@@ -25,6 +27,7 @@ import { dirname, join } from "node:path";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE_DIR = join(repoRoot, "data", "presets");
 const COMMUNITY_DIR = join(repoRoot, "data", "presets-community");
+const INSPIRED_DIR = join(repoRoot, "data", "presets-inspired");
 const TARGET = join(repoRoot, "data", "presets.generated.json");
 
 const STARSHIP = {
@@ -176,6 +179,114 @@ const COMMUNITY = [
     },
   },
 ];
+const POWERLEVEL10K = {
+  project: "romkatv/powerlevel10k",
+  url: "https://github.com/romkatv/powerlevel10k",
+  licence: "MIT",
+  copyright:
+    "© 2009–2014 Robby Russell and contributors; © 2014–2017 Ben Hilburn; © 2019 Roman Perepelitsa and contributors",
+  licenceUrl: "https://github.com/romkatv/powerlevel10k/blob/master/LICENSE",
+};
+
+/**
+ * The deterministic shell state used by Powerlevel10k's configuration wizard
+ * examples: ~/src on a clean master branch after a five-second command, with
+ * the clock fixed at 16:23:42. Keeping it with the preset metadata means the
+ * Starship translation demonstrates the same conditional modules as its
+ * source instead of inheriting whichever environment happened to be open.
+ */
+const POWERLEVEL10K_ENVIRONMENT = {
+  id: "powerlevel10k-wizard",
+  label: "Powerlevel10k wizard example",
+  description: "The clean ~/src repository used by Powerlevel10k's style previews.",
+  path: "/Users/you/src",
+  home: "/Users/you",
+  readOnly: false,
+  files: [],
+  git: {
+    branch: "master",
+    commit: "a1b2c3d",
+    detached: false,
+    ahead: 0,
+    behind: 0,
+    staged: 0,
+    modified: 0,
+    deleted: 0,
+    renamed: 0,
+    untracked: 0,
+    conflicted: 0,
+    stashed: 0,
+    root: "/Users/you/src",
+    hasRemote: true,
+    remoteBranch: "master",
+    remoteName: "origin",
+  },
+  status: 0,
+  cmdDurationMs: 5_000,
+  jobs: 0,
+  username: "you",
+  hostname: "laptop",
+  ssh: false,
+  isRoot: false,
+  shell: "zsh",
+  keymap: "insert",
+  time: "2026-08-18T16:23:42",
+  terminalWidth: 88,
+  toolVersions: {},
+  env: {},
+  os: { name: "Macos", type: "Macos" },
+};
+
+/**
+ * Starship-native translations of the actual configure-wizard samples in
+ * `internal/wizard.zsh`, backed by the corresponding p10k-{style}.zsh module
+ * lists. Powerlevel10k and Starship have different formatters, so these map
+ * segment behavior rather than copying shell-specific implementation details.
+ */
+const INSPIRED = [
+  {
+    id: "powerlevel10k-lean-1-line",
+    label: "Powerlevel10k Lean · 1 line",
+    description:
+      "Powerlevel10k's minimal transparent style on one line, with command duration on the right.",
+    source: POWERLEVEL10K,
+  },
+  {
+    id: "powerlevel10k-lean-2-lines",
+    label: "Powerlevel10k Lean · 2 lines",
+    description:
+      "Powerlevel10k's minimal transparent style across two lines, adding OS, icons, time and an isolated input line.",
+    source: POWERLEVEL10K,
+  },
+  {
+    id: "powerlevel10k-classic-1-line",
+    label: "Powerlevel10k Classic · 1 line",
+    description:
+      "Powerlevel10k's restrained single-background Powerline style on one line.",
+    source: POWERLEVEL10K,
+  },
+  {
+    id: "powerlevel10k-classic-2-lines",
+    label: "Powerlevel10k Classic · 2 lines",
+    description:
+      "Powerlevel10k's framed Powerline style across two lines, with dotted fill and right-side timing.",
+    source: POWERLEVEL10K,
+  },
+  {
+    id: "powerlevel10k-rainbow-1-line",
+    label: "Powerlevel10k Rainbow · 1 line",
+    description:
+      "Powerlevel10k's blue, green and yellow Powerline segments in a compact one-line prompt.",
+    source: POWERLEVEL10K,
+  },
+  {
+    id: "powerlevel10k-rainbow-2-lines",
+    label: "Powerlevel10k Rainbow · 2 lines",
+    description:
+      "Powerlevel10k's full-colour Powerline style across two lines, with a ruled fill and isolated input line.",
+    source: POWERLEVEL10K,
+  },
+].map((preset) => ({ ...preset, environment: POWERLEVEL10K_ENVIRONMENT }));
 
 function collect(dir, metadata, defaultSource) {
   const onDisk = new Set(
@@ -190,13 +301,14 @@ function collect(dir, metadata, defaultSource) {
     throw new Error(`Preset TOMLs with no metadata entry: ${undescribed.join(", ")}`);
   }
 
-  return metadata.map(({ id, label, description, source }) => {
+  return metadata.map(({ id, label, description, source, ...extra }) => {
     if (!onDisk.has(id)) throw new Error(`Missing ${dir}/${id}.toml`);
     return {
       id,
       label,
       description,
       source: source ?? defaultSource,
+      ...extra,
       toml: readFileSync(join(dir, `${id}.toml`), "utf8"),
     };
   });
@@ -205,10 +317,12 @@ function collect(dir, metadata, defaultSource) {
 const presets = [
   ...collect(SOURCE_DIR, METADATA, STARSHIP),
   ...collect(COMMUNITY_DIR, COMMUNITY),
+  ...collect(INSPIRED_DIR, INSPIRED),
 ];
 
 writeFileSync(TARGET, `${JSON.stringify({ presets }, null, 2)}\n`);
 process.stdout.write(
   `${TARGET}: ${presets.length} presets ` +
-    `(${METADATA.length} from starship, ${COMMUNITY.length} from their own projects)\n`,
+    `(${METADATA.length} from starship, ${COMMUNITY.length} community themes, ` +
+    `${INSPIRED.length} inspired recreations)\n`,
 );

@@ -13,6 +13,7 @@
 import generated from "../../../data/presets.generated.json";
 import { parseConfig } from "./toml";
 import type { StarshipConfig } from "@/lib/engine/prompt";
+import type { Scenario } from "@/lib/scenarios/types";
 
 export interface Preset {
   /** Upstream filename stem, e.g. `tokyo-night`. */
@@ -29,6 +30,8 @@ export interface Preset {
   };
   /** The preset's TOML, verbatim. */
   toml: string;
+  /** Optional shell state chosen to demonstrate the preset's conditional content. */
+  environment?: Scenario;
 }
 
 export const PRESETS: readonly Preset[] = Object.freeze(

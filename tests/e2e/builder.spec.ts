@@ -1153,7 +1153,7 @@ test.describe("builder", () => {
     await activate(page.getByRole("button", { name: "Start from a preset" }));
     const panel = page.locator("[aria-label='Presets']");
 
-    // Seventeen names alone say nothing — "Jetpack" and "No Empty Icons" mean
+    // Names alone say nothing — "Jetpack" and "No Empty Icons" mean
     // something only to someone who has already seen them.
     await expect(panel.getByRole("button", { name: "Jetpack", exact: true })).toHaveAccessibleDescription(
       /pseudo-minimalist prompt/,
@@ -1162,6 +1162,16 @@ test.describe("builder", () => {
     // The ones starship does not publish name their project and licence.
     await expect(panel).toContainText("rose-pine/starship · MIT");
     await expect(panel.getByRole("button", { name: "Rosé Pine Dawn", exact: true })).toBeVisible();
+    await expect(panel).toContainText("Inspired by Powerlevel10k");
+    await expect(panel).toContainText("romkatv/powerlevel10k · MIT");
+    for (const style of ["Lean", "Classic", "Rainbow"]) {
+      await expect(
+        panel.getByRole("button", { name: `Powerlevel10k ${style} · 1 line`, exact: true }),
+      ).toBeVisible();
+      await expect(
+        panel.getByRole("button", { name: `Powerlevel10k ${style} · 2 lines`, exact: true }),
+      ).toBeVisible();
+    }
   });
 
   test("the palette panel credits whose palettes they are", async ({ page }) => {
@@ -2184,5 +2194,56 @@ test.describe("builder", () => {
     });
 
     expect(ink.rare).not.toBe(ink.missing);
+  });
+
+  test("a Powerlevel10k preset loads the environment used by its wizard sample", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await activate(page.getByRole("button", { name: "Start from a preset" }));
+    await activate(
+      page.locator("[aria-label='Presets']").getByRole("button", {
+        name: "Powerlevel10k Rainbow · 2 lines",
+        exact: true,
+      }),
+    );
+
+    const terminal = page.getByLabel("Simulated terminal prompt");
+    await expect(terminal).toContainText(
+      /~\/src.*master.*took.*5s.*at.*16:23:42/s,
+    );
+    await expect(terminal).toContainText("─╯");
+
+    const upperRight = await terminal
+      .locator("span[style]")
+      .filter({ hasText: /^─╮$/ })
+      .last()
+      .boundingBox();
+    const lowerRight = await terminal
+      .locator("span[style]")
+      .filter({ hasText: /^─╯$/ })
+      .last()
+      .boundingBox();
+    const lowerLeft = await terminal
+      .locator("span[style]")
+      .filter({ hasText: /^╰─$/ })
+      .last()
+      .boundingBox();
+
+    expect(upperRight).not.toBeNull();
+    expect(lowerRight).not.toBeNull();
+    expect(lowerLeft).not.toBeNull();
+    if (!upperRight || !lowerRight || !lowerLeft) return;
+
+    // Starship places right_format on the input row. It must end at the same
+    // simulated terminal column as the upper frame, opposite the lower-left
+    // corner, with terminal rows touching rather than typographic leading.
+    expect(
+      Math.abs(lowerRight.x + lowerRight.width - (upperRight.x + upperRight.width)),
+    ).toBeLessThanOrEqual(0.25);
+    expect(Math.abs(lowerRight.y - lowerLeft.y)).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(lowerRight.y - (upperRight.y + upperRight.height)),
+    ).toBeLessThanOrEqual(0.25);
   });
 });
