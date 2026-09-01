@@ -144,6 +144,7 @@ export function Builder() {
 
   // The starship.toml card is a disclosure of its own making; see below.
   const [previewOpen, setPreviewOpen] = useState(true);
+  const [formatOpen, setFormatOpen] = useState(true);
   const [tomlOpen, setTomlOpen] = useState(false);
 
   useBuilderSession({
@@ -758,105 +759,133 @@ export function Builder() {
       <div className="mx-auto grid max-w-[1600px] gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(460px,1.15fr)] lg:items-start">
         {/* Left column: everything that changes the prompt. */}
         <div className="flex min-w-0 flex-col gap-4">
-          <details open data-section="format" className={CARD}>
-            <summary className="section-summary flex flex-wrap items-center gap-2">
-              <span id="format-heading" className="text-sm font-semibold text-neutral-100">
-                Prompt format
-              </span>
-              <ChevronIcon className="section-chevron text-neutral-500" />
-            </summary>
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              {/* A preset replaces the whole format, so it starts this section. */}
-              <div className="ml-auto flex items-center gap-2">
+          <section
+            data-section="format"
+            data-open={formatOpen ? "" : undefined}
+            className={CARD}
+          >
+            {/* The preset must be a sibling of the disclosure control, not nested in it. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                aria-expanded={formatOpen}
+                aria-controls="format-body"
+                onClick={() => setFormatOpen((open) => !open)}
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+              >
+                <span id="format-heading" className="text-sm font-semibold text-neutral-100">
+                  Prompt format
+                </span>
+              </button>
+
+              <span className="ml-auto flex shrink-0 items-center gap-2">
                 <PresetPicker onPick={loadPreset} />
-              </div>
-            </div>
-            <p className="mb-3 text-xs text-neutral-500">
-              What the prompt contains, and in what order. Reorder, remove, recolour,
-              or add pieces here. Drag the handles to reorder; group a run of
-              related modules so they share one style.
-            </p>
-            <p className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-              <Link
-                href="/guides/format-strings"
-                className="text-accent-300 underline underline-offset-2 hover:text-accent-200"
-              >
-                Format string guide
-              </Link>
-              <Link
-                href="/guides/style-strings"
-                className="text-accent-300 underline underline-offset-2 hover:text-accent-200"
-              >
-                Style string guide
-              </Link>
-            </p>
-            <FormatBuilder
-              value={format}
-              onChange={(next) => setRootOption("format", next)}
-              vocabulary={moduleVocabulary}
-              palette={palette}
-              paletteNames={paletteNames}
-              inUseColors={inUseTokens}
-              allowCategoryGrouping
-              scope="root-format"
-              theme={theme}
-              fontStack={font.stack}
-              modules={moduleControls}
-              createNamedModule={createNamedModule}
-              searchable
-            />
 
-            <h3 className="mb-2 mt-5 text-sm font-semibold text-neutral-100">
-              Right prompt
-            </h3>
-            <p className="mb-2 text-xs text-neutral-500">
-              Rendered flush against the right edge. Not supported by every shell.
-            </p>
-            <FormatBuilder
-              value={rightFormat}
-              onChange={(next) => setRootOption("right_format", next)}
-              vocabulary={moduleVocabulary}
-              palette={palette}
-              paletteNames={paletteNames}
-        inUseColors={inUseTokens}
-              scope="right-format"
-              theme={theme}
-              fontStack={font.stack}
-              modules={moduleControls}
-            />
-
-            <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/5 pt-3">
-              <span className="text-sm text-neutral-300">
-                Blank line before each prompt
-                <span className="block text-xs text-neutral-500">add_newline</span>
+                <button
+                  type="button"
+                  data-format-chevron
+                  aria-label={formatOpen ? "Collapse prompt format" : "Expand prompt format"}
+                  aria-expanded={formatOpen}
+                  aria-controls="format-body"
+                  onClick={() => setFormatOpen((open) => !open)}
+                  className="shrink-0 rounded text-neutral-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+                >
+                  <ChevronIcon
+                    aria-hidden="true"
+                    className={`transition-transform ${formatOpen ? "rotate-90" : ""}`}
+                  />
+                </button>
               </span>
-              <Toggle
-                label="Blank line before each prompt"
-                checked={config.add_newline !== false}
-                onChange={(next) => setRootOption("add_newline", next)}
-              />
             </div>
 
-            <details className="mt-3">
-              <summary className="cursor-pointer text-xs text-neutral-500 hover:text-neutral-300">
-                Other prompt-wide options
-              </summary>
-              <div className="mt-1">
-                <SettingsForm
-                  options={ROOT_OPTIONS}
-                  values={config as Record<string, unknown>}
-                  onChange={(key, value) => setRootOption(key, value)}
-                  onReset={(key) => setRootOption(key, undefined)}
-                  formatVariables={moduleVocabulary}
+            <div id="format-body" hidden={!formatOpen} className="mt-3">
+                <p className="mb-3 text-xs text-neutral-500">
+                  What the prompt contains, and in what order. Reorder, remove, recolour,
+                  or add pieces here. Drag the handles to reorder; group a run of
+                  related modules so they share one style.
+                </p>
+                <p className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                  <Link
+                    href="/guides/format-strings"
+                    className="text-accent-300 underline underline-offset-2 hover:text-accent-200"
+                  >
+                    Format string guide
+                  </Link>
+                  <Link
+                    href="/guides/style-strings"
+                    className="text-accent-300 underline underline-offset-2 hover:text-accent-200"
+                  >
+                    Style string guide
+                  </Link>
+                </p>
+                <FormatBuilder
+                  value={format}
+                  onChange={(next) => setRootOption("format", next)}
+                  vocabulary={moduleVocabulary}
                   palette={palette}
                   paletteNames={paletteNames}
-        inUseColors={inUseTokens}
+                  inUseColors={inUseTokens}
+                  allowCategoryGrouping
+                  scope="root-format"
                   theme={theme}
                   fontStack={font.stack}
+                  modules={moduleControls}
+                  createNamedModule={createNamedModule}
+                  searchable
                 />
-              </div>
-            </details>
-          </details>
+
+                <h3 className="mb-2 mt-5 text-sm font-semibold text-neutral-100">
+                  Right prompt
+                </h3>
+                <p className="mb-2 text-xs text-neutral-500">
+                  Rendered flush against the right edge. Not supported by every shell.
+                </p>
+                <FormatBuilder
+                  value={rightFormat}
+                  onChange={(next) => setRootOption("right_format", next)}
+                  vocabulary={moduleVocabulary}
+                  palette={palette}
+                  paletteNames={paletteNames}
+                  inUseColors={inUseTokens}
+                  scope="right-format"
+                  theme={theme}
+                  fontStack={font.stack}
+                  modules={moduleControls}
+                />
+
+                <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/5 pt-3">
+                  <span className="text-sm text-neutral-300">
+                    Blank line before each prompt
+                    <span className="block text-xs text-neutral-500">add_newline</span>
+                  </span>
+                  <Toggle
+                    label="Blank line before each prompt"
+                    checked={config.add_newline !== false}
+                    onChange={(next) => setRootOption("add_newline", next)}
+                  />
+                </div>
+
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs text-neutral-500 hover:text-neutral-300">
+                    Other prompt-wide options
+                  </summary>
+                  <div className="mt-1">
+                    <SettingsForm
+                      options={ROOT_OPTIONS}
+                      values={config as Record<string, unknown>}
+                      onChange={(key, value) => setRootOption(key, value)}
+                      onReset={(key) => setRootOption(key, undefined)}
+                      formatVariables={moduleVocabulary}
+                      palette={palette}
+                      paletteNames={paletteNames}
+                      inUseColors={inUseTokens}
+                      theme={theme}
+                      fontStack={font.stack}
+                    />
+                  </div>
+                </details>
+            </div>
+          </section>
 
         </div>
 
