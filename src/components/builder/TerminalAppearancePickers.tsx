@@ -43,7 +43,7 @@ function CardPicker<T extends PickerOption>({
   const selected = options.find((option) => option.id === value) ?? options[0];
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-xs text-neutral-400">
         {label}
       </label>
