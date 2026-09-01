@@ -115,7 +115,7 @@ function ThemeSwatch({ theme }: { theme: TerminalTheme }) {
       {theme.ansi.map((color, index) => (
         <span
           key={`${color}-${index}`}
-          className="h-2.5 w-1.5 sm:w-2"
+          className="h-3.5 w-2 sm:w-3"
           style={{ backgroundColor: color }}
         />
       ))}

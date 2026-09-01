@@ -2242,6 +2242,15 @@ test.describe("builder", () => {
       .locator('[data-theme-swatch="tokyo-night"]');
     await expect(selectedThemeSwatch).toBeVisible();
     await expect(selectedThemeSwatch.locator(":scope > span")).toHaveCount(16);
+    const selectedSwatchBox = await selectedThemeSwatch.boundingBox();
+    const selectedColorBox = await selectedThemeSwatch
+      .locator(":scope > span")
+      .first()
+      .boundingBox();
+    expect(selectedSwatchBox).not.toBeNull();
+    expect(selectedColorBox).not.toBeNull();
+    expect(selectedSwatchBox!.height).toBeGreaterThanOrEqual(16);
+    expect(selectedColorBox!.width).toBeGreaterThanOrEqual(8);
 
     await activate(page.getByLabel("Terminal color scheme"));
     const themes = page.getByRole("dialog", { name: "Terminal color schemes" });
