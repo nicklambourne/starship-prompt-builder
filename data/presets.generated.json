@@ -232,7 +232,51 @@
         "copyright": "© 2009–2014 Robby Russell and contributors; © 2014–2017 Ben Hilburn; © 2019 Roman Perepelitsa and contributors",
         "licenceUrl": "https://github.com/romkatv/powerlevel10k/blob/master/LICENSE"
       },
-      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nformat = \"$directory$git_branch$git_status$character\"\nright_format = \"$cmd_duration\"\npalette = \"powerlevel10k\"\n\n[directory]\nformat = \"[$path]($style) \"\nstyle = \"bold fg:p10k_directory\"\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[$branch]($style) \"\nstyle = \"bold fg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style) \"\nstyle = \"fg:p10k_modified\"\n\n[cmd_duration]\nformat = \"[$duration]($style)\"\nmin_time = 3000\nstyle = \"fg:p10k_duration\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#87875f\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#666666\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
+      "environment": {
+        "id": "powerlevel10k-wizard",
+        "label": "Powerlevel10k wizard example",
+        "description": "The clean ~/src repository used by Powerlevel10k's style previews.",
+        "path": "/Users/you/src",
+        "home": "/Users/you",
+        "readOnly": false,
+        "files": [],
+        "git": {
+          "branch": "master",
+          "commit": "a1b2c3d",
+          "detached": false,
+          "ahead": 0,
+          "behind": 0,
+          "staged": 0,
+          "modified": 0,
+          "deleted": 0,
+          "renamed": 0,
+          "untracked": 0,
+          "conflicted": 0,
+          "stashed": 0,
+          "root": "/Users/you/src",
+          "hasRemote": true,
+          "remoteBranch": "master",
+          "remoteName": "origin"
+        },
+        "status": 0,
+        "cmdDurationMs": 5000,
+        "jobs": 0,
+        "username": "you",
+        "hostname": "laptop",
+        "ssh": false,
+        "isRoot": false,
+        "shell": "zsh",
+        "keymap": "insert",
+        "time": "2026-08-18T16:23:42",
+        "terminalWidth": 88,
+        "toolVersions": {},
+        "env": {},
+        "os": {
+          "name": "Macos",
+          "type": "Macos"
+        }
+      },
+      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nadd_newline = false\nformat = \"$directory$git_branch$git_status$character\"\nright_format = \"$status$cmd_duration$jobs\"\npalette = \"powerlevel10k\"\n\n[directory]\nformat = \"[$path]($style) \"\nstyle = \"bold fg:p10k_directory\"\ntruncate_to_repo = false\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[$branch]($style) \"\nstyle = \"bold fg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style) \"\nstyle = \"fg:p10k_modified\"\n\n[status]\ndisabled = false\nformat = \"[$symbol$status]($style) \"\nsymbol = \"✘\"\nstyle = \"bold fg:p10k_red\"\n\n[cmd_duration]\nformat = \"[$duration]($style)\"\nmin_time = 3000\nstyle = \"fg:p10k_duration\"\n\n[jobs]\nformat = \"[$symbol$number]($style) \"\nsymbol = \"✦\"\nstyle = \"bold fg:p10k_directory\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#87875f\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#6c6c6c\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
     },
     {
       "id": "powerlevel10k-lean-2-lines",
@@ -245,7 +289,51 @@
         "copyright": "© 2009–2014 Robby Russell and contributors; © 2014–2017 Ben Hilburn; © 2019 Roman Perepelitsa and contributors",
         "licenceUrl": "https://github.com/romkatv/powerlevel10k/blob/master/LICENSE"
       },
-      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nformat = \"$os$directory$git_branch$git_status$fill$cmd_duration$time$line_break$character\"\npalette = \"powerlevel10k\"\n\n[os]\ndisabled = false\nformat = \"[$symbol]($style)\"\nstyle = \"fg:p10k_foreground\"\n\n[os.symbols]\nLinux = \" \"\nMacos = \" \"\nUbuntu = \" \"\nWindows = \" \"\n\n[directory]\nformat = \"[  $path]($style) \"\nstyle = \"bold fg:p10k_directory\"\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[on](fg:p10k_separator) [$symbol $branch]($style) \"\nstyle = \"fg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style) \"\nstyle = \"fg:p10k_modified\"\n\n[fill]\nstyle = \"fg:p10k_outline\"\nsymbol = \" \"\n\n[cmd_duration]\nformat = \"[took](fg:p10k_foreground) [ $duration]($style) \"\nmin_time = 3000\nstyle = \"fg:p10k_duration\"\n\n[time]\ndisabled = false\nformat = \"[at](fg:p10k_foreground) [ $time]($style)\"\nstyle = \"fg:p10k_time\"\ntime_format = \"%H:%M:%S\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#87875f\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#666666\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
+      "environment": {
+        "id": "powerlevel10k-wizard",
+        "label": "Powerlevel10k wizard example",
+        "description": "The clean ~/src repository used by Powerlevel10k's style previews.",
+        "path": "/Users/you/src",
+        "home": "/Users/you",
+        "readOnly": false,
+        "files": [],
+        "git": {
+          "branch": "master",
+          "commit": "a1b2c3d",
+          "detached": false,
+          "ahead": 0,
+          "behind": 0,
+          "staged": 0,
+          "modified": 0,
+          "deleted": 0,
+          "renamed": 0,
+          "untracked": 0,
+          "conflicted": 0,
+          "stashed": 0,
+          "root": "/Users/you/src",
+          "hasRemote": true,
+          "remoteBranch": "master",
+          "remoteName": "origin"
+        },
+        "status": 0,
+        "cmdDurationMs": 5000,
+        "jobs": 0,
+        "username": "you",
+        "hostname": "laptop",
+        "ssh": false,
+        "isRoot": false,
+        "shell": "zsh",
+        "keymap": "insert",
+        "time": "2026-08-18T16:23:42",
+        "terminalWidth": 88,
+        "toolVersions": {},
+        "env": {},
+        "os": {
+          "name": "Macos",
+          "type": "Macos"
+        }
+      },
+      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nadd_newline = false\nformat = \"$os$directory$git_branch$git_status$fill$status$cmd_duration$jobs$time$line_break$character\"\npalette = \"powerlevel10k\"\n\n[os]\ndisabled = false\nformat = \"[$symbol]($style)\"\nstyle = \"fg:p10k_foreground\"\n\n[os.symbols]\nLinux = \" \"\nMacos = \" \"\nUbuntu = \" \"\nWindows = \" \"\n\n[directory]\nformat = \"[  $path]($style) \"\nstyle = \"bold fg:p10k_directory\"\ntruncate_to_repo = false\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[on](fg:p10k_separator) [$symbol $branch]($style) \"\nstyle = \"fg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style) \"\nstyle = \"fg:p10k_modified\"\n\n[status]\ndisabled = false\nformat = \"[$symbol$status]($style) \"\nsymbol = \"✘\"\nstyle = \"bold fg:p10k_red\"\n\n[fill]\nstyle = \"fg:p10k_outline\"\nsymbol = \" \"\n\n[cmd_duration]\nformat = \"[took ](fg:p10k_foreground)[ $duration]($style) \"\nmin_time = 3000\nstyle = \"fg:p10k_duration\"\n\n[jobs]\nformat = \"[$symbol$number]($style) \"\nsymbol = \"✦\"\nstyle = \"bold fg:p10k_directory\"\n\n[time]\ndisabled = false\nformat = \"[at ](fg:p10k_foreground)[ $time]($style)\"\nstyle = \"fg:p10k_time\"\ntime_format = \"%H:%M:%S\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#87875f\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#6c6c6c\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
     },
     {
       "id": "powerlevel10k-classic-1-line",
@@ -258,7 +346,51 @@
         "copyright": "© 2009–2014 Robby Russell and contributors; © 2014–2017 Ben Hilburn; © 2019 Roman Perepelitsa and contributors",
         "licenceUrl": "https://github.com/romkatv/powerlevel10k/blob/master/LICENSE"
       },
-      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nformat = \"$directory$git_branch$git_status[](fg:p10k_surface) $character\"\nright_format = \"$cmd_duration\"\npalette = \"powerlevel10k\"\n\n[directory]\nformat = \"[ $path ]($style)[](fg:p10k_separator bg:p10k_surface)\"\nstyle = \"bg:p10k_surface fg:p10k_directory\"\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[ $branch]($style)\"\nstyle = \"bg:p10k_surface fg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style)\"\nstyle = \"bg:p10k_surface fg:p10k_modified\"\n\n[cmd_duration]\nformat = \"[](fg:p10k_surface)[ $duration ](fg:p10k_duration bg:p10k_surface)\"\nmin_time = 3000\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#a8a8a8\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#666666\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
+      "environment": {
+        "id": "powerlevel10k-wizard",
+        "label": "Powerlevel10k wizard example",
+        "description": "The clean ~/src repository used by Powerlevel10k's style previews.",
+        "path": "/Users/you/src",
+        "home": "/Users/you",
+        "readOnly": false,
+        "files": [],
+        "git": {
+          "branch": "master",
+          "commit": "a1b2c3d",
+          "detached": false,
+          "ahead": 0,
+          "behind": 0,
+          "staged": 0,
+          "modified": 0,
+          "deleted": 0,
+          "renamed": 0,
+          "untracked": 0,
+          "conflicted": 0,
+          "stashed": 0,
+          "root": "/Users/you/src",
+          "hasRemote": true,
+          "remoteBranch": "master",
+          "remoteName": "origin"
+        },
+        "status": 0,
+        "cmdDurationMs": 5000,
+        "jobs": 0,
+        "username": "you",
+        "hostname": "laptop",
+        "ssh": false,
+        "isRoot": false,
+        "shell": "zsh",
+        "keymap": "insert",
+        "time": "2026-08-18T16:23:42",
+        "terminalWidth": 88,
+        "toolVersions": {},
+        "env": {},
+        "os": {
+          "name": "Macos",
+          "type": "Macos"
+        }
+      },
+      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nadd_newline = false\nformat = \"$directory$git_branch$git_status[](fg:p10k_surface) $character\"\nright_format = \"([](fg:p10k_surface)$status$cmd_duration$jobs)\"\npalette = \"powerlevel10k\"\n\n[directory]\nformat = \"[ $path ]($style)[](fg:p10k_separator bg:p10k_surface)\"\nstyle = \"bg:p10k_surface fg:p10k_directory\"\ntruncate_to_repo = false\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[ $branch]($style)\"\nstyle = \"bg:p10k_surface fg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style)\"\nstyle = \"bg:p10k_surface fg:p10k_modified\"\n\n[status]\ndisabled = false\nformat = \"[ $symbol$status ](bold fg:p10k_red bg:p10k_surface)\"\nsymbol = \"✘\"\nstyle = \"bold fg:p10k_red bg:p10k_surface\"\n\n[cmd_duration]\nformat = \"[ $duration ](fg:p10k_duration bg:p10k_surface)\"\nmin_time = 3000\n\n[jobs]\nformat = \"[ $symbol$number ](bold fg:p10k_directory bg:p10k_surface)\"\nsymbol = \"✦\"\nstyle = \"bold fg:p10k_directory bg:p10k_surface\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#a8a8a8\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#6c6c6c\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
     },
     {
       "id": "powerlevel10k-classic-2-lines",
@@ -271,7 +403,51 @@
         "copyright": "© 2009–2014 Robby Russell and contributors; © 2014–2017 Ben Hilburn; © 2019 Roman Perepelitsa and contributors",
         "licenceUrl": "https://github.com/romkatv/powerlevel10k/blob/master/LICENSE"
       },
-      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nformat = \"[╭─](fg:p10k_outline)$os$directory$git_branch$git_status[](fg:p10k_surface)$fill$cmd_duration$time[─╮](fg:p10k_outline)$line_break[╰─](fg:p10k_outline)$character\"\npalette = \"powerlevel10k\"\n\n[os]\ndisabled = false\nformat = \"[ $symbol]($style)[](fg:p10k_separator bg:p10k_surface)\"\nstyle = \"fg:p10k_foreground bg:p10k_surface\"\n\n[os.symbols]\nLinux = \" \"\nMacos = \" \"\nUbuntu = \" \"\nWindows = \" \"\n\n[directory]\nformat = \"[ $path ]($style)[](fg:p10k_separator bg:p10k_surface)\"\nstyle = \"bg:p10k_surface fg:p10k_directory\"\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[ on ](fg:p10k_foreground bg:p10k_surface)[$symbol $branch]($style)\"\nstyle = \"bg:p10k_surface fg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style)\"\nstyle = \"bg:p10k_surface fg:p10k_modified\"\n\n[fill]\nstyle = \"fg:p10k_outline\"\nsymbol = \"·\"\n\n[cmd_duration]\nformat = \"[](fg:p10k_surface)[ took  $duration ](fg:p10k_duration bg:p10k_surface)\"\nmin_time = 3000\n\n[time]\ndisabled = false\nformat = \"[](fg:p10k_separator bg:p10k_surface)[ at  $time ](fg:p10k_time bg:p10k_surface)\"\ntime_format = \"%H:%M:%S\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#a8a8a8\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#666666\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
+      "environment": {
+        "id": "powerlevel10k-wizard",
+        "label": "Powerlevel10k wizard example",
+        "description": "The clean ~/src repository used by Powerlevel10k's style previews.",
+        "path": "/Users/you/src",
+        "home": "/Users/you",
+        "readOnly": false,
+        "files": [],
+        "git": {
+          "branch": "master",
+          "commit": "a1b2c3d",
+          "detached": false,
+          "ahead": 0,
+          "behind": 0,
+          "staged": 0,
+          "modified": 0,
+          "deleted": 0,
+          "renamed": 0,
+          "untracked": 0,
+          "conflicted": 0,
+          "stashed": 0,
+          "root": "/Users/you/src",
+          "hasRemote": true,
+          "remoteBranch": "master",
+          "remoteName": "origin"
+        },
+        "status": 0,
+        "cmdDurationMs": 5000,
+        "jobs": 0,
+        "username": "you",
+        "hostname": "laptop",
+        "ssh": false,
+        "isRoot": false,
+        "shell": "zsh",
+        "keymap": "insert",
+        "time": "2026-08-18T16:23:42",
+        "terminalWidth": 88,
+        "toolVersions": {},
+        "env": {},
+        "os": {
+          "name": "Macos",
+          "type": "Macos"
+        }
+      },
+      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nadd_newline = false\nformat = \"[╭─](fg:p10k_outline)$os$directory$git_branch$git_status[](fg:p10k_surface)$fill([](fg:p10k_surface)$status$cmd_duration$jobs$time)[─╮](fg:p10k_outline)$line_break[╰─](fg:p10k_outline)$character\"\npalette = \"powerlevel10k\"\n\n[os]\ndisabled = false\nformat = \"[ $symbol]($style)[](fg:p10k_separator bg:p10k_surface)\"\nstyle = \"fg:p10k_foreground bg:p10k_surface\"\n\n[os.symbols]\nLinux = \" \"\nMacos = \" \"\nUbuntu = \" \"\nWindows = \" \"\n\n[directory]\nformat = \"[ $path ]($style)[](fg:p10k_separator bg:p10k_surface)\"\nstyle = \"bg:p10k_surface fg:p10k_directory\"\ntruncate_to_repo = false\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[ on ](fg:p10k_foreground bg:p10k_surface)[$symbol $branch]($style)\"\nstyle = \"bg:p10k_surface fg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style)\"\nstyle = \"bg:p10k_surface fg:p10k_modified\"\n\n[status]\ndisabled = false\nformat = \"[ $symbol$status ](bold fg:p10k_red bg:p10k_surface)\"\nsymbol = \"✘\"\nstyle = \"bold fg:p10k_red bg:p10k_surface\"\n\n[fill]\nstyle = \"fg:p10k_outline\"\nsymbol = \"·\"\n\n[cmd_duration]\nformat = \"[ took  $duration ](fg:p10k_duration bg:p10k_surface)\"\nmin_time = 3000\n\n[jobs]\nformat = \"[ $symbol$number ](bold fg:p10k_directory bg:p10k_surface)\"\nsymbol = \"✦\"\nstyle = \"bold fg:p10k_directory bg:p10k_surface\"\n\n[time]\ndisabled = false\nformat = \"[](fg:p10k_separator bg:p10k_surface)[ at  $time ](fg:p10k_time bg:p10k_surface)\"\ntime_format = \"%H:%M:%S\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#a8a8a8\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#6c6c6c\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
     },
     {
       "id": "powerlevel10k-rainbow-1-line",
@@ -284,7 +460,51 @@
         "copyright": "© 2009–2014 Robby Russell and contributors; © 2014–2017 Ben Hilburn; © 2019 Roman Perepelitsa and contributors",
         "licenceUrl": "https://github.com/romkatv/powerlevel10k/blob/master/LICENSE"
       },
-      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nformat = \"$directory$git_branch$git_status[](fg:p10k_green) $character\"\nright_format = \"$cmd_duration\"\npalette = \"powerlevel10k\"\n\n[directory]\nformat = \"[ $path ]($style)[](fg:p10k_blue bg:p10k_green)\"\nstyle = \"bold fg:p10k_foreground bg:p10k_blue\"\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[ $branch]($style)\"\nstyle = \"fg:p10k_black bg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style)\"\nstyle = \"fg:p10k_modified bg:p10k_green\"\n\n[cmd_duration]\nformat = \"[](fg:p10k_yellow)[ $duration ](fg:p10k_black bg:p10k_yellow)\"\nmin_time = 3000\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5faf00\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#87875f\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#666666\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
+      "environment": {
+        "id": "powerlevel10k-wizard",
+        "label": "Powerlevel10k wizard example",
+        "description": "The clean ~/src repository used by Powerlevel10k's style previews.",
+        "path": "/Users/you/src",
+        "home": "/Users/you",
+        "readOnly": false,
+        "files": [],
+        "git": {
+          "branch": "master",
+          "commit": "a1b2c3d",
+          "detached": false,
+          "ahead": 0,
+          "behind": 0,
+          "staged": 0,
+          "modified": 0,
+          "deleted": 0,
+          "renamed": 0,
+          "untracked": 0,
+          "conflicted": 0,
+          "stashed": 0,
+          "root": "/Users/you/src",
+          "hasRemote": true,
+          "remoteBranch": "master",
+          "remoteName": "origin"
+        },
+        "status": 0,
+        "cmdDurationMs": 5000,
+        "jobs": 0,
+        "username": "you",
+        "hostname": "laptop",
+        "ssh": false,
+        "isRoot": false,
+        "shell": "zsh",
+        "keymap": "insert",
+        "time": "2026-08-18T16:23:42",
+        "terminalWidth": 88,
+        "toolVersions": {},
+        "env": {},
+        "os": {
+          "name": "Macos",
+          "type": "Macos"
+        }
+      },
+      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nadd_newline = false\nformat = \"$directory$git_branch$git_status[](fg:green) $character\"\nright_format = \"([](fg:yellow)$status$cmd_duration$jobs)\"\npalette = \"powerlevel10k\"\n\n[directory]\nformat = \"[ $path ]($style)[](fg:blue bg:green)\"\nstyle = \"bold fg:white bg:blue\"\ntruncate_to_repo = false\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[ $branch]($style)\"\nstyle = \"fg:black bg:green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style)\"\nstyle = \"fg:p10k_modified bg:green\"\n\n[status]\ndisabled = false\nformat = \"[ $symbol$status ](bold fg:p10k_red bg:yellow)\"\nsymbol = \"✘\"\nstyle = \"bold fg:p10k_red bg:yellow\"\n\n[cmd_duration]\nformat = \"[ $duration ](fg:black bg:yellow)\"\nmin_time = 3000\n\n[jobs]\nformat = \"[ $symbol$number ](bold fg:blue bg:yellow)\"\nsymbol = \"✦\"\nstyle = \"bold fg:blue bg:yellow\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#87875f\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#6c6c6c\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
     },
     {
       "id": "powerlevel10k-rainbow-2-lines",
@@ -297,7 +517,51 @@
         "copyright": "© 2009–2014 Robby Russell and contributors; © 2014–2017 Ben Hilburn; © 2019 Roman Perepelitsa and contributors",
         "licenceUrl": "https://github.com/romkatv/powerlevel10k/blob/master/LICENSE"
       },
-      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nformat = \"$os$directory$git_branch$git_status[](fg:p10k_green)$fill$cmd_duration$time$line_break$character\"\npalette = \"powerlevel10k\"\n\n[os]\ndisabled = false\nformat = \"[ $symbol]($style)[](fg:p10k_white bg:p10k_blue)\"\nstyle = \"fg:p10k_black bg:p10k_white\"\n\n[os.symbols]\nLinux = \" \"\nMacos = \" \"\nUbuntu = \" \"\nWindows = \" \"\n\n[directory]\nformat = \"[   $path ]($style)[](fg:p10k_blue bg:p10k_green)\"\nstyle = \"bold fg:p10k_foreground bg:p10k_blue\"\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[ on ](fg:p10k_black bg:p10k_green)[$symbol $branch]($style)\"\nstyle = \"fg:p10k_black bg:p10k_green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style)\"\nstyle = \"fg:p10k_modified bg:p10k_green\"\n\n[fill]\nstyle = \"fg:p10k_outline\"\nsymbol = \"─\"\n\n[cmd_duration]\nformat = \"[](fg:p10k_yellow)[ took  $duration ](fg:p10k_black bg:p10k_yellow)\"\nmin_time = 3000\n\n[time]\ndisabled = false\nformat = \"[](fg:p10k_white bg:p10k_yellow)[ at  $time ](fg:p10k_black bg:p10k_white)\"\ntime_format = \"%H:%M:%S\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5faf00\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#87875f\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#666666\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
+      "environment": {
+        "id": "powerlevel10k-wizard",
+        "label": "Powerlevel10k wizard example",
+        "description": "The clean ~/src repository used by Powerlevel10k's style previews.",
+        "path": "/Users/you/src",
+        "home": "/Users/you",
+        "readOnly": false,
+        "files": [],
+        "git": {
+          "branch": "master",
+          "commit": "a1b2c3d",
+          "detached": false,
+          "ahead": 0,
+          "behind": 0,
+          "staged": 0,
+          "modified": 0,
+          "deleted": 0,
+          "renamed": 0,
+          "untracked": 0,
+          "conflicted": 0,
+          "stashed": 0,
+          "root": "/Users/you/src",
+          "hasRemote": true,
+          "remoteBranch": "master",
+          "remoteName": "origin"
+        },
+        "status": 0,
+        "cmdDurationMs": 5000,
+        "jobs": 0,
+        "username": "you",
+        "hostname": "laptop",
+        "ssh": false,
+        "isRoot": false,
+        "shell": "zsh",
+        "keymap": "insert",
+        "time": "2026-08-18T16:23:42",
+        "terminalWidth": 88,
+        "toolVersions": {},
+        "env": {},
+        "os": {
+          "name": "Macos",
+          "type": "Macos"
+        }
+      },
+      "toml": "\"$schema\" = \"https://starship.rs/config-schema.json\"\n\nadd_newline = false\nformat = \"[╭─](fg:p10k_outline)$os$directory$git_branch$git_status[](fg:green)$fill([](fg:yellow)$status$cmd_duration$jobs$time)[─╮](fg:p10k_outline)$line_break[╰─](fg:p10k_outline)$character\"\npalette = \"powerlevel10k\"\n\n[os]\ndisabled = false\nformat = \"[ $symbol]($style)[](fg:white bg:blue)\"\nstyle = \"fg:black bg:white\"\n\n[os.symbols]\nLinux = \" \"\nMacos = \" \"\nUbuntu = \" \"\nWindows = \" \"\n\n[directory]\nformat = \"[   $path ]($style)[](fg:blue bg:green)\"\nstyle = \"bold fg:white bg:blue\"\ntruncate_to_repo = false\ntruncation_length = 3\ntruncation_symbol = \"…/\"\n\n[git_branch]\nformat = \"[ on ](fg:black bg:green)[$symbol $branch]($style)\"\nstyle = \"fg:black bg:green\"\nsymbol = \"\"\n\n[git_status]\nformat = \"[$all_status$ahead_behind]($style)\"\nstyle = \"fg:p10k_modified bg:green\"\n\n[status]\ndisabled = false\nformat = \"[ $symbol$status ](bold fg:p10k_red bg:yellow)\"\nsymbol = \"✘\"\nstyle = \"bold fg:p10k_red bg:yellow\"\n\n[fill]\nstyle = \"fg:p10k_outline\"\nsymbol = \"─\"\n\n[cmd_duration]\nformat = \"[ took  $duration ](fg:black bg:yellow)\"\nmin_time = 3000\n\n[jobs]\nformat = \"[ $symbol$number ](bold fg:blue bg:yellow)\"\nsymbol = \"✦\"\nstyle = \"bold fg:blue bg:yellow\"\n\n[time]\ndisabled = false\nformat = \"[](fg:white bg:yellow)[ at  $time ](fg:black bg:white)\"\ntime_format = \"%H:%M:%S\"\n\n[character]\nsuccess_symbol = \"[❯](bold fg:p10k_green)\"\nerror_symbol = \"[❯](bold fg:p10k_red)\"\nvimcmd_symbol = \"[❮](bold fg:p10k_green)\"\n\n[palettes.powerlevel10k]\np10k_directory = \"#00afff\"\np10k_green = \"#5fd700\"\np10k_red = \"#ff0000\"\np10k_modified = \"#d7af00\"\np10k_duration = \"#87875f\"\np10k_time = \"#5f8787\"\np10k_surface = \"#444444\"\np10k_separator = \"#949494\"\np10k_foreground = \"#e4e4e4\"\np10k_outline = \"#6c6c6c\"\np10k_black = \"#080808\"\np10k_blue = \"#005faf\"\np10k_yellow = \"#d7af00\"\np10k_white = \"#d0d0d0\"\n"
     }
   ]
 }

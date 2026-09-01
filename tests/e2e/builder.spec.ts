@@ -2195,4 +2195,21 @@ test.describe("builder", () => {
 
     expect(ink.rare).not.toBe(ink.missing);
   });
+
+  test("a Powerlevel10k preset loads the environment used by its wizard sample", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await activate(page.getByRole("button", { name: "Start from a preset" }));
+    await activate(
+      page.locator("[aria-label='Presets']").getByRole("button", {
+        name: "Powerlevel10k Rainbow · 2 lines",
+        exact: true,
+      }),
+    );
+
+    await expect(page.getByLabel("Simulated terminal prompt")).toContainText(
+      /~\/src.*master.*took.*5s.*at.*16:23:42/s,
+    );
+  });
 });

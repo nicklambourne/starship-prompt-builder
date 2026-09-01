@@ -1,6 +1,7 @@
 "$schema" = "https://starship.rs/config-schema.json"
 
-format = "$os$directory$git_branch$git_status$fill$cmd_duration$time$line_break$character"
+add_newline = false
+format = "$os$directory$git_branch$git_status$fill$status$cmd_duration$jobs$time$line_break$character"
 palette = "powerlevel10k"
 
 [os]
@@ -17,6 +18,7 @@ Windows = " "
 [directory]
 format = "[  $path]($style) "
 style = "bold fg:p10k_directory"
+truncate_to_repo = false
 truncation_length = 3
 truncation_symbol = "…/"
 
@@ -29,18 +31,29 @@ symbol = ""
 format = "[$all_status$ahead_behind]($style) "
 style = "fg:p10k_modified"
 
+[status]
+disabled = false
+format = "[$symbol$status]($style) "
+symbol = "✘"
+style = "bold fg:p10k_red"
+
 [fill]
 style = "fg:p10k_outline"
 symbol = " "
 
 [cmd_duration]
-format = "[took](fg:p10k_foreground) [ $duration]($style) "
+format = "[took ](fg:p10k_foreground)[ $duration]($style) "
 min_time = 3000
 style = "fg:p10k_duration"
 
+[jobs]
+format = "[$symbol$number]($style) "
+symbol = "✦"
+style = "bold fg:p10k_directory"
+
 [time]
 disabled = false
-format = "[at](fg:p10k_foreground) [ $time]($style)"
+format = "[at ](fg:p10k_foreground)[ $time]($style)"
 style = "fg:p10k_time"
 time_format = "%H:%M:%S"
 
@@ -59,7 +72,7 @@ p10k_time = "#5f8787"
 p10k_surface = "#444444"
 p10k_separator = "#949494"
 p10k_foreground = "#e4e4e4"
-p10k_outline = "#666666"
+p10k_outline = "#6c6c6c"
 p10k_black = "#080808"
 p10k_blue = "#005faf"
 p10k_yellow = "#d7af00"

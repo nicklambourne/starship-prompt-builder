@@ -42,9 +42,29 @@ describe("PRESETS", () => {
       const oneLineConfig = loadPreset(`powerlevel10k-${style}-1-line`);
       const twoLineConfig = loadPreset(`powerlevel10k-${style}-2-lines`);
       expect(oneLineConfig?.format).not.toContain("$line_break");
-      expect(oneLineConfig?.right_format).toBe("$cmd_duration");
+      expect(oneLineConfig?.right_format).toContain("$cmd_duration");
       expect(twoLineConfig?.format).toContain("$fill");
       expect(twoLineConfig?.format).toContain("$line_break");
+      expect(oneLineConfig?.right_format).toContain("$status");
+      expect(oneLineConfig?.right_format).toContain("$jobs");
+      expect(twoLineConfig?.format).toContain("$status");
+      expect(twoLineConfig?.format).toContain("$jobs");
+      expect(twoLineConfig?.format).toContain("$time");
+    }
+  });
+
+  it("pairs every Powerlevel10k translation with the wizard's demonstration environment", () => {
+    for (const style of ["lean", "classic", "rainbow"]) {
+      for (const lines of ["1-line", "2-lines"]) {
+        const preset = getPreset(`powerlevel10k-${style}-${lines}`);
+        expect(preset?.environment?.path).toBe("/Users/you/src");
+        expect(preset?.environment?.home).toBe("/Users/you");
+        expect(preset?.environment?.git?.branch).toBe("master");
+        expect(preset?.environment?.git?.modified).toBe(0);
+        expect(preset?.environment?.cmdDurationMs).toBe(5_000);
+        expect(preset?.environment?.time).toBe("2026-08-18T16:23:42");
+        expect(preset?.environment?.os?.type).toBe("Macos");
+      }
     }
   });
 

@@ -65,7 +65,8 @@ export function PresetPicker({ onPick }: PresetPickerProps) {
       >
         <div className="flex max-h-[26rem] flex-col gap-3 overflow-y-auto p-2">
           <p className="px-1 text-xs text-neutral-500">
-            A preset replaces the whole configuration. Undo brings back what you had.
+            A preset replaces the whole configuration. Some also load a matching simulated
+            environment. Undo brings back your previous configuration.
           </p>
           {group(PRESETS).map((section) => (
             <section key={section.key} className="flex flex-col gap-1">

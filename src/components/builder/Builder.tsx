@@ -603,9 +603,11 @@ export function Builder() {
       const preset = PRESETS.find((p) => p.id === id);
       if (!preset) return;
       const result = parseConfig(preset.toml);
-      if (result.ok) setConfig(result.config);
+      if (!result.ok) return;
+      setConfig(result.config);
+      if (preset.environment) updateScenario(preset.environment);
     },
-    [setConfig],
+    [setConfig, updateScenario],
   );
 
   // The style pickers' swatches follow the active terminal colour scheme.

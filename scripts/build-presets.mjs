@@ -189,9 +189,59 @@ const POWERLEVEL10K = {
 };
 
 /**
- * Starship-native translations of Powerlevel10k's configure-wizard styles.
- * These preserve the visual hierarchy and layout of the originals while using
- * only modules and format strings a normal starship.toml supports.
+ * The deterministic shell state used by Powerlevel10k's configuration wizard
+ * examples: ~/src on a clean master branch after a five-second command, with
+ * the clock fixed at 16:23:42. Keeping it with the preset metadata means the
+ * Starship translation demonstrates the same conditional modules as its
+ * source instead of inheriting whichever environment happened to be open.
+ */
+const POWERLEVEL10K_ENVIRONMENT = {
+  id: "powerlevel10k-wizard",
+  label: "Powerlevel10k wizard example",
+  description: "The clean ~/src repository used by Powerlevel10k's style previews.",
+  path: "/Users/you/src",
+  home: "/Users/you",
+  readOnly: false,
+  files: [],
+  git: {
+    branch: "master",
+    commit: "a1b2c3d",
+    detached: false,
+    ahead: 0,
+    behind: 0,
+    staged: 0,
+    modified: 0,
+    deleted: 0,
+    renamed: 0,
+    untracked: 0,
+    conflicted: 0,
+    stashed: 0,
+    root: "/Users/you/src",
+    hasRemote: true,
+    remoteBranch: "master",
+    remoteName: "origin",
+  },
+  status: 0,
+  cmdDurationMs: 5_000,
+  jobs: 0,
+  username: "you",
+  hostname: "laptop",
+  ssh: false,
+  isRoot: false,
+  shell: "zsh",
+  keymap: "insert",
+  time: "2026-08-18T16:23:42",
+  terminalWidth: 88,
+  toolVersions: {},
+  env: {},
+  os: { name: "Macos", type: "Macos" },
+};
+
+/**
+ * Starship-native translations of the actual configure-wizard samples in
+ * `internal/wizard.zsh`, backed by the corresponding p10k-{style}.zsh module
+ * lists. Powerlevel10k and Starship have different formatters, so these map
+ * segment behavior rather than copying shell-specific implementation details.
  */
 const INSPIRED = [
   {
@@ -236,7 +286,7 @@ const INSPIRED = [
       "Powerlevel10k's full-colour Powerline style across two lines, with a ruled fill and isolated input line.",
     source: POWERLEVEL10K,
   },
-];
+].map((preset) => ({ ...preset, environment: POWERLEVEL10K_ENVIRONMENT }));
 
 function collect(dir, metadata, defaultSource) {
   const onDisk = new Set(
@@ -251,13 +301,14 @@ function collect(dir, metadata, defaultSource) {
     throw new Error(`Preset TOMLs with no metadata entry: ${undescribed.join(", ")}`);
   }
 
-  return metadata.map(({ id, label, description, source }) => {
+  return metadata.map(({ id, label, description, source, ...extra }) => {
     if (!onDisk.has(id)) throw new Error(`Missing ${dir}/${id}.toml`);
     return {
       id,
       label,
       description,
       source: source ?? defaultSource,
+      ...extra,
       toml: readFileSync(join(dir, `${id}.toml`), "utf8"),
     };
   });

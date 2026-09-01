@@ -1,12 +1,14 @@
 "$schema" = "https://starship.rs/config-schema.json"
 
+add_newline = false
 format = "$directory$git_branch$git_status$character"
-right_format = "$cmd_duration"
+right_format = "$status$cmd_duration$jobs"
 palette = "powerlevel10k"
 
 [directory]
 format = "[$path]($style) "
 style = "bold fg:p10k_directory"
+truncate_to_repo = false
 truncation_length = 3
 truncation_symbol = "…/"
 
@@ -19,10 +21,21 @@ symbol = ""
 format = "[$all_status$ahead_behind]($style) "
 style = "fg:p10k_modified"
 
+[status]
+disabled = false
+format = "[$symbol$status]($style) "
+symbol = "✘"
+style = "bold fg:p10k_red"
+
 [cmd_duration]
 format = "[$duration]($style)"
 min_time = 3000
 style = "fg:p10k_duration"
+
+[jobs]
+format = "[$symbol$number]($style) "
+symbol = "✦"
+style = "bold fg:p10k_directory"
 
 [character]
 success_symbol = "[❯](bold fg:p10k_green)"
@@ -39,7 +52,7 @@ p10k_time = "#5f8787"
 p10k_surface = "#444444"
 p10k_separator = "#949494"
 p10k_foreground = "#e4e4e4"
-p10k_outline = "#666666"
+p10k_outline = "#6c6c6c"
 p10k_black = "#080808"
 p10k_blue = "#005faf"
 p10k_yellow = "#d7af00"
