@@ -10,14 +10,14 @@
  * one thing this app exists to avoid.
  */
 
-import { Fragment, useId, useState } from "react";
-import Link from "next/link";
+import { useId, useState } from "react";
 
 import { ColorField } from "@/components/ui/ColorField";
+import { Popover } from "@/components/ui/Popover";
 import { StyleSwatch } from "@/components/ui/StyleSwatch";
 import type { ColorInUse } from "@/lib/config/colorsInUse";
 import { CURATED_PALETTES, type CuratedPalette } from "@/lib/config/curatedPalettes";
-import { TrashIcon } from "@/components/ui/icons";
+import { ChevronIcon, TrashIcon } from "@/components/ui/icons";
 import { parseColorString, type Palette } from "@/lib/engine/styleString";
 import { resolveSwatchColor } from "@/components/ui/StyleSwatch";
 import type { TerminalTheme } from "@/lib/terminalThemes";
@@ -43,23 +43,21 @@ interface PaletteEditorProps {
   theme: TerminalTheme;
 }
 
-/**
- * One entry per project the curated palettes come from, in the order they
- * first appear. Derived rather than listed: a preset added upstream brings its
- * palette, and its credit, without anyone remembering to write it here.
- */
-const CREDITS = CURATED_PALETTES.reduce<CuratedPalette["source"][]>((found, palette) => {
-  if (!found.some((credit) => credit.project === palette.source.project)) {
-    found.push(palette.source);
-  }
-  return found;
-}, []);
-
 const INPUT =
   "w-full rounded border border-white/10 bg-neutral-950 px-2 py-1 text-base text-neutral-100 focus:border-accent-400 focus:outline-none";
 
 const BUTTON =
   "rounded border border-white/15 px-2 py-1 text-xs text-neutral-200 transition hover:border-accent-400 hover:text-accent-200";
+
+/** Grouped like the prompt preset picker: starship's own first. */
+function groupCuratedPalettes(palettes: readonly CuratedPalette[]) {
+  const official = palettes.filter((palette) => palette.source.project === "starship");
+  const community = palettes.filter((palette) => palette.source.project !== "starship");
+  return [
+    { key: "starship", heading: "From starship", palettes: official },
+    { key: "community", heading: "From the palettes' own projects", palettes: community },
+  ].filter((section) => section.palettes.length > 0);
+}
 
 /** A colour value the browser's own picker can show, or black if it cannot. */
 function asHex(value: string, palette: Palette | undefined, theme: TerminalTheme): string {
@@ -92,7 +90,9 @@ export function PaletteEditor({
 }: PaletteEditorProps) {
   const selectId = useId();
   const curatedId = useId();
+  const [curatedAnchor, setCuratedAnchor] = useState<HTMLButtonElement | null>(null);
   const [adding, setAdding] = useState(false);
+  const [curatedOpen, setCuratedOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [pending, setPending] = useState<{
     target: string | null;
@@ -104,7 +104,7 @@ export function PaletteEditor({
   const entries = active ? Object.entries(palettes[active] ?? {}) : [];
   const current = active ? palettes[active] : undefined;
 
-  const unnamed = inUse.filter((colour) => !colour.fromPalette).length;
+  const notInPalette = inUse.filter((colour) => !colour.fromPalette).length;
 
   const configWithPalette = (name: string, colours: Palette): StarshipConfig => ({
     ...config,
@@ -132,14 +132,13 @@ export function PaletteEditor({
   };
 
   /**
-   * Names a colour the prompt already uses, in one click.
+   * Copies a colour token into the active palette under the same temporary name.
    *
-   * The name is the colour itself to begin with — `#fab387` under the key
-   * `#fab387` is odd but honest, and renaming it is the next thing anyone
-   * does. Inventing "peach" for them would be guessing at a scheme they may
-   * not be following.
+   * Existing styles are deliberately left alone: inventing a reusable name or
+   * silently rewriting every matching style would guess at how the user wants
+   * to organise their scheme.
    */
-  const onName = (token: string) => {
+  const copyIntoPalette = (token: string) => {
     if (!active) return;
     setEntries({ ...(current ?? {}), [token]: token });
   };
@@ -166,16 +165,16 @@ export function PaletteEditor({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs leading-relaxed text-neutral-500">
-        A palette gives colours names, so a prompt can say{" "}
-        <code className="text-neutral-400">peach</code> instead of{" "}
-        <code className="text-neutral-400">#fab387</code> and every module using
-        it changes at once. Names defined here appear in every style picker.
+        A palette pairs a reusable name with a colour. To make a style follow
+        it, choose the name — for example <code className="text-neutral-400">peach</code>{" "}
+        instead of <code className="text-neutral-400">#fab387</code>. Changing the
+        entry then updates every style that uses <code className="text-neutral-400">peach</code>.
       </p>
 
       <div className="flex flex-col gap-3 rounded border border-white/10 bg-neutral-900/40 p-2.5">
         <div className="flex flex-col gap-1">
           <label htmlFor={selectId} className="text-xs text-neutral-400">
-            Active palette — the names every style picker offers
+            Active palette — its names appear in every style picker
           </label>
           <div className="flex flex-wrap items-center gap-2">
             <select
@@ -184,7 +183,7 @@ export function PaletteEditor({
               onChange={(event) => requestSwitch(event.target.value || null)}
               className={`${INPUT} min-w-0 flex-1`}
             >
-              <option value="">None — colours are written out in full</option>
+              <option value="">None — styles use colours directly</option>
               {names.map((name) => (
                 <option key={name} value={name}>
                   {name}
@@ -271,81 +270,111 @@ export function PaletteEditor({
         ) : null}
 
         <div className="flex flex-col gap-1">
-          <label htmlFor={curatedId} className="text-xs text-neutral-400">
+          <span className="text-xs text-neutral-400">
             Curated palettes
             <span className="ml-2 text-neutral-500">copied in, then yours to edit</span>
-          </label>
-          <select
-            id={curatedId}
-            value=""
-            onChange={(event) => {
-              const chosen = CURATED_PALETTES.find((p) => p.name === event.target.value);
-              if (!chosen) return;
-              requestSwitch(chosen.name, chosen.colours);
-            }}
-            className={INPUT}
+          </span>
+          <button
+            ref={setCuratedAnchor}
+            type="button"
+            aria-expanded={curatedOpen}
+            aria-haspopup="dialog"
+            onClick={() => setCuratedOpen((currentOpen) => !currentOpen)}
+            className="flex w-fit items-center gap-1.5 rounded border border-white/10 bg-neutral-950 px-2 py-1 text-sm text-neutral-200 transition hover:border-accent-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400"
           >
-            <option value="">Choose one…</option>
-            {CURATED_PALETTES.map((palette) => (
-              <option key={palette.name} value={palette.name}>
-                {palette.name} — {Object.keys(palette.colours).length} colours, from{" "}
-                {palette.from}
-                {palette.source.project === "starship" ? "" : ` (${palette.source.project})`}
-              </option>
-            ))}
-          </select>
-          {/*
-            The colours are the part of a theme its authors are known for, so
-            the panel that hands them out says whose they are. The full notices
-            are on the licences page; this is the line that stops the palettes
-            reading as ours.
-          */}
-          <p className="text-xs text-neutral-500">
-            Palettes belong to their projects —{" "}
-            {CREDITS.map((credit, index) => (
-              <Fragment key={credit.project}>
-                {index > 0 ? ", " : ""}
-                <a
-                  href={credit.url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-neutral-400 underline underline-offset-2 hover:text-accent-200"
-                >
-                  {credit.project}
-                </a>{" "}
-                ({credit.licence})
-              </Fragment>
-            ))}
-            .{" "}
-            <Link
-              href="/licences"
-              className="text-neutral-400 underline underline-offset-2 hover:text-accent-200"
-            >
-              Full notices
-            </Link>
-            .
-          </p>
+            Choose a curated palette
+            <ChevronIcon
+              className={`text-neutral-500 transition-transform ${curatedOpen ? "-rotate-90" : "rotate-90"}`}
+            />
+          </button>
+
+          <Popover
+            open={curatedOpen}
+            onClose={() => setCuratedOpen(false)}
+            anchor={curatedAnchor}
+            width={460}
+            label="Curated palettes"
+          >
+            <div className="flex max-h-[26rem] flex-col gap-3 overflow-y-auto p-2">
+              <p className="px-1 text-xs text-neutral-500">
+                Choosing one copies its colours into your config and makes it active.
+              </p>
+              {groupCuratedPalettes(CURATED_PALETTES).map((section) => (
+                <section key={section.key} className="flex flex-col gap-1">
+                  <h3 className="px-1 text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    {section.heading}
+                  </h3>
+                  {section.palettes.map((palette) => {
+                    const labelId = `${curatedId}-${palette.name}-label`;
+                    const descriptionId = `${curatedId}-${palette.name}-description`;
+                    const creditId = `${curatedId}-${palette.name}-credit`;
+                    return (
+                      <button
+                        key={palette.name}
+                        type="button"
+                        aria-labelledby={labelId}
+                        aria-describedby={`${descriptionId} ${creditId}`}
+                        onClick={() => {
+                          requestSwitch(palette.name, palette.colours);
+                          setCuratedOpen(false);
+                        }}
+                        className="flex flex-col gap-0.5 rounded border border-transparent px-2 py-1.5 text-left transition hover:border-accent-400/40 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400"
+                      >
+                        <span id={labelId} className="font-mono text-sm text-neutral-100">
+                          {palette.name}
+                        </span>
+                        <span
+                          id={descriptionId}
+                          className="text-xs leading-relaxed text-neutral-400"
+                        >
+                          {Object.keys(palette.colours).length} colours · from {palette.from}
+                        </span>
+                        <span id={creditId} className="font-mono text-[11px] text-neutral-500">
+                          {palette.source.project} · {palette.source.licence}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </section>
+              ))}
+            </div>
+          </Popover>
         </div>
       </div>
 
       {/*
         Detached from the palette above: these are the colours the prompt on
-        screen is painted with, named or not. A colour written out in full is
-        one that will not follow the palette when it changes — which is the
-        whole argument for naming it, and the reason each one here can be
-        named in a single click.
+        screen is painted with. Matching an active-palette key and being
+        written directly are separate states, and copying a direct token into
+        the palette does not silently rewrite the styles that use it.
       */}
       <div className="flex flex-col gap-1.5 rounded border border-white/10 bg-neutral-900/40 p-2.5">
         <span className="text-xs text-neutral-400">
-          In the prompt now
+          Colours used by this prompt
           <span className="ml-2 text-neutral-500">
             {inUse.length === 0
               ? "nothing is styled yet"
-              : unnamed === 0
-                ? "every colour has a name"
-                : `${unnamed} not named yet${active ? " — click one to add it" : ""}`}
+              : notInPalette === 0
+                ? `every colour has a matching entry in ${active}`
+                : active
+                  ? `${notInPalette} ${notInPalette === 1 ? "colour is" : "colours are"} not in ${active}`
+                  : `${notInPalette} ${notInPalette === 1 ? "colour is" : "colours are"} written directly`}
           </span>
         </span>
+        {inUse.length > 0 ? (
+          <p className="text-xs leading-relaxed text-neutral-500">
+            {active ? (
+              <>
+                Solid chips have matching entries in{" "}
+                <code className="text-neutral-400">{active}</code>; dashed chips do not.
+                Copying a dashed chip creates an entry with the same text as a temporary
+                name, without changing the style.
+              </>
+            ) : (
+              <>Choose or create a palette to turn direct colours into reusable entries.</>
+            )}
+          </p>
+        ) : null}
         {inUse.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {inUse.map((colour) => {
@@ -371,15 +400,15 @@ export function PaletteEditor({
               );
               const shape =
                 "inline-flex items-center gap-1.5 rounded border px-1.5 py-0.5 text-xs";
-              // Already named, or nowhere to put it: a label, not a control.
+              // Already matched, or nowhere to copy it: a label, not a control.
               if (colour.fromPalette || !active) {
                 return (
                   <span
                     key={colour.token}
                     title={
                       colour.fromPalette
-                        ? `${colour.token} — from the active palette`
-                        : `${colour.token} — written out in full`
+                        ? `${colour.token} — matches the active palette`
+                        : `${colour.token} — written directly in a style`
                     }
                     className={`${shape} ${
                       colour.fromPalette
@@ -395,11 +424,9 @@ export function PaletteEditor({
                 <button
                   key={colour.token}
                   type="button"
-                  // Named explicitly: the visible text is a hex or a bare
-                  // word, which says nothing about what pressing it does.
-                  aria-label={`Add ${colour.token} to ${active}`}
-                  title={`Add ${colour.token} to ${active}`}
-                  onClick={() => onName(colour.token)}
+                  aria-label={`Copy ${colour.token} into ${active} as a palette entry`}
+                  title={`Copy ${colour.token} into ${active} as a palette entry`}
+                  onClick={() => copyIntoPalette(colour.token)}
                   className={`${shape} cursor-pointer border-dashed border-white/20 text-neutral-400 transition hover:border-accent-400 hover:text-accent-200`}
                 >
                   {chip}
@@ -415,8 +442,13 @@ export function PaletteEditor({
 
       {active ? (
         <div className="flex flex-col gap-1.5">
+          <p className="text-xs leading-relaxed text-neutral-500">
+            A palette name changes only styles that use it. Copying or renaming a
+            palette entry does not update existing styles; choose that name in their
+            style pickers.
+          </p>
           {entries.length > 0 ? (
-            <div className="flex items-center gap-2 text-xs text-neutral-500">
+            <div className="hidden items-center gap-2 text-xs text-neutral-500 sm:flex">
               <span className="w-6" />
               <span className="w-36">Name — what a style says</span>
               <span className="min-w-0 flex-1">Colour — hex, an ANSI name, or 0-255</span>
@@ -438,23 +470,25 @@ export function PaletteEditor({
               took the focus with it — so the field accepted exactly one
               character at a time.
             */
-            <div key={index} className="flex items-center gap-2">
+            <div key={index} className="flex items-start gap-2 sm:items-center">
               <StyleSwatch style={value} theme={theme} palette={current} />
-              <input
-                aria-label={`Name of colour ${name}`}
-                value={name}
-                onChange={(event) => renameEntry(name, event.target.value)}
-                placeholder="name it"
-                className={`${INPUT} nerd-font w-36`}
-              />
-              <input
-                aria-label={`Value of colour ${name}`}
-                value={value}
-                onChange={(event) => setEntries({ ...current, [name]: event.target.value })}
-                spellCheck={false}
-                placeholder="#rrggbb, a colour name, or 0-255"
-                className={`${INPUT} nerd-font min-w-0 flex-1`}
-              />
+              <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row">
+                <input
+                  aria-label={`Name of colour ${name}`}
+                  value={name}
+                  onChange={(event) => renameEntry(name, event.target.value)}
+                  placeholder="name it"
+                  className={`${INPUT} nerd-font sm:max-w-36 sm:shrink-0`}
+                />
+                <input
+                  aria-label={`Value of colour ${name}`}
+                  value={value}
+                  onChange={(event) => setEntries({ ...current, [name]: event.target.value })}
+                  spellCheck={false}
+                  placeholder="#rrggbb, a colour name, or 0-255"
+                  className={`${INPUT} nerd-font min-w-0 flex-1`}
+                />
+              </div>
               <ColorField
                 label={`Pick a colour for ${name}`}
                 value={asHex(value, current, theme)}

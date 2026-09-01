@@ -744,7 +744,12 @@ test.describe("builder", () => {
     const card = page.locator("[data-section='palettes']");
     await activate(card.locator("summary"));
 
-    await card.getByLabel("Curated palettes").selectOption("gruvbox_dark");
+    await activate(card.getByRole("button", { name: "Choose a curated palette" }));
+    await activate(
+      page
+        .locator("[aria-label='Curated palettes']")
+        .getByRole("button", { name: "gruvbox_dark", exact: true }),
+    );
     await expect(card).toContainText("not defined by gruvbox_dark");
     await expect(card.getByLabel("Active palette")).toHaveValue("catppuccin_mocha");
     await activate(card.getByRole("button", { name: /Switch & remap/ }));
@@ -792,7 +797,7 @@ test.describe("builder", () => {
     await expect(page.getByLabel("starship.toml")).toHaveValue(/\[x\]\(peach\)/);
   });
 
-  test("naming a colour from the prompt takes one click", async ({ page }) => {
+  test("a direct colour can be copied into the active palette", async ({ page }) => {
     await page.goto("./");
     const card = page.locator("[data-section='palettes']");
     await activate(card.locator("summary"));
@@ -810,13 +815,27 @@ test.describe("builder", () => {
         "",
       ].join("\n"),
     );
-    const chip = card.getByRole("button", { name: "Add #ff00ff to mine" });
+    await expect(card).toContainText("1 colour is not in mine");
+    await expect(card).toContainText(
+      "Copying or renaming a palette entry does not update existing styles",
+    );
+
+    const chip = card.getByRole("button", {
+      name: "Copy #ff00ff into mine as a palette entry",
+    });
     await expect(chip).toBeVisible();
 
     await activate(chip);
-    // Now a palette entry, so it can be renamed and reused.
+    // It is now an editable palette entry, but the direct use is unchanged.
     await expect(card.getByLabel("Name of colour #ff00ff")).toHaveValue("#ff00ff");
-    await expect(card.getByRole("button", { name: "Add #ff00ff to mine" })).toHaveCount(0);
+    await expect(page.getByLabel("starship.toml")).toHaveValue(
+      /format = "\[\$directory\]\(fg:#ff00ff\)\$character"/,
+    );
+    await expect(
+      card.getByRole("button", {
+        name: "Copy #ff00ff into mine as a palette entry",
+      }),
+    ).toHaveCount(0);
   });
 
   test("a colour name survives being typed", async ({ page }) => {
@@ -852,18 +871,20 @@ test.describe("builder", () => {
     await activate(card.locator("summary"));
 
     // The default preset paints itself entirely from its own palette.
-    const chips = card.locator("span[title$='from the active palette']");
+    const chips = card.locator("span[title$='matches the active palette']");
     await expect(chips.first()).toBeVisible();
     const named = await chips.count();
 
-    // A colour written out in full is called out as such: it is the one that
-    // will not follow the palette when it changes.
+    // A colour written directly in a style is called out as such: copying it
+    // into a palette does not silently rewrite the style that uses it.
     await openToml(page);
     await page.getByLabel("starship.toml").fill(
       'format = "[$directory](fg:#ff00ff)$character"\n',
     );
     await expect(
-      card.locator("span[title$='written out in full']").filter({ hasText: "#ff00ff" }),
+      card
+        .locator("span[title$='written directly in a style']")
+        .filter({ hasText: "#ff00ff" }),
     ).toBeVisible();
     expect(named).toBeGreaterThan(0);
   });
@@ -1211,17 +1232,18 @@ test.describe("builder", () => {
     await page.goto("./");
     const palettes = page.locator("[data-section='palettes']");
     await activate(palettes.locator("summary").first());
+    await activate(palettes.getByRole("button", { name: "Choose a curated palette" }));
+    const panel = page.locator("[aria-label='Curated palettes']");
 
-    // The colours are the part of a theme its authors are known for, so the
-    // panel handing them out says whose they are — and links the notices.
-    await expect(palettes).toContainText("Palettes belong to their projects");
-    await expect(palettes).toContainText("catppuccin/starship");
-    await expect(palettes.getByRole("link", { name: "Full notices" })).toBeVisible();
-
-    // And each entry names its project, not just the preset it came from.
-    await expect(palettes.getByLabel("Curated palettes")).toContainText(
-      "from Rosé Pine (rose-pine/starship)",
+    // The attribution now travels with the option it describes rather than
+    // sitting in a detached note beneath the control.
+    await expect(
+      panel.getByRole("button", { name: "rose-pine", exact: true }),
+    ).toHaveAccessibleDescription(
+      /7 colours.*Rosé Pine.*rose-pine\/starship · MIT/,
     );
+    await expect(palettes).not.toContainText("Palettes belong to their projects");
+    await expect(palettes.getByRole("link", { name: "Full notices" })).toHaveCount(0);
   });
 
   test("a community preset loads like any other", async ({ page }) => {
@@ -2070,6 +2092,18 @@ test.describe("builder", () => {
 
     await openToml(page);
     await expect(page.getByLabel("starship.toml")).toHaveValue(/palette = "mine"/);
+  });
+
+  test("palette colour values remain readable at every layout", async ({ page }) => {
+    await page.goto("./");
+    const card = page.locator("[data-section='palettes']");
+    await activate(card.locator("summary"));
+
+    const value = card.getByLabel(/^Value of colour /).first();
+    await expect(value).toBeVisible();
+    const box = await value.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThanOrEqual(120);
   });
 
   test("the collapse control ends a prompt-format row", async ({ page }) => {
