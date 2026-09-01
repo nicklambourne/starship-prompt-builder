@@ -2237,6 +2237,12 @@ test.describe("builder", () => {
   test("terminal appearance options preview their colors and fonts", async ({ page }) => {
     await page.goto("./");
 
+    const selectedThemeSwatch = page
+      .getByLabel("Terminal color scheme")
+      .locator('[data-theme-swatch="tokyo-night"]');
+    await expect(selectedThemeSwatch).toBeVisible();
+    await expect(selectedThemeSwatch.locator(":scope > span")).toHaveCount(16);
+
     await activate(page.getByLabel("Terminal color scheme"));
     const themes = page.getByRole("dialog", { name: "Terminal color schemes" });
     await expect(themes.locator("[data-theme-swatch]")).toHaveCount(TERMINAL_THEMES.length);
@@ -2244,6 +2250,15 @@ test.describe("builder", () => {
       swatches.map((swatch) => swatch.children.length),
     );
     expect(colorCounts.every((count) => count === 16)).toBe(true);
+    const colorRows = await themes.locator("[data-theme-swatch]").evaluateAll((swatches) =>
+      swatches.map(
+        (swatch) =>
+          new Set(
+            Array.from(swatch.children, (color) => color.getBoundingClientRect().top),
+          ).size,
+      ),
+    );
+    expect(colorRows.every((rows) => rows === 1)).toBe(true);
 
     const tokyoNight = themes.getByRole("button", { name: "Tokyo Night", exact: true });
     await expect(tokyoNight).toHaveAttribute("aria-pressed", "true");
@@ -2253,7 +2268,13 @@ test.describe("builder", () => {
     expect(swatchBox).not.toBeNull();
     expect(swatchBox!.x).toBeGreaterThan(nameBox!.x + nameBox!.width);
 
-    await page.keyboard.press("Escape");
+    await themes.getByRole("button", { name: "Gruvbox Dark", exact: true }).click();
+    await expect(
+      page
+        .getByLabel("Terminal color scheme")
+        .locator('[data-theme-swatch="gruvbox-dark"]'),
+    ).toBeVisible();
+
     await activate(page.getByLabel("Terminal font"));
     const fonts = page.getByRole("dialog", { name: "Terminal fonts" });
     await expect(fonts.locator("[data-font-sample]")).toHaveCount(TERMINAL_FONTS.length);
