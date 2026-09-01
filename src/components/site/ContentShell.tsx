@@ -46,6 +46,7 @@ export function ContentShell({
   path,
   parent,
   parentHref,
+  showBreadcrumb = true,
   kind = "TechArticle",
   children,
 }: {
@@ -54,6 +55,7 @@ export function ContentShell({
   path: string;
   parent?: string;
   parentHref?: string;
+  showBreadcrumb?: boolean;
   kind?: "TechArticle" | "CollectionPage";
   children: React.ReactNode;
 }) {
@@ -73,36 +75,38 @@ export function ContentShell({
   return (
     <>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-8 sm:py-12">
-        <nav aria-label="Breadcrumb">
-          <ol className="flex flex-wrap items-center gap-2 text-sm text-neutral-500">
-            <li>
-              <Link
-                href="/"
-                aria-label="Builder"
-                title="Builder"
-                className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
-              >
-                <Logo size={16} />
-              </Link>
-            </li>
-            {parent && parentHref ? (
-              <>
-                <li aria-hidden="true">/</li>
-                <li>
-                  <Link href={parentHref} className={CONTENT_LINK}>
-                    {parent}
-                  </Link>
-                </li>
-              </>
-            ) : null}
-            {parent ? (
-              <>
-                <li aria-hidden="true">/</li>
-                <li aria-current="page">{title}</li>
-              </>
-            ) : null}
-          </ol>
-        </nav>
+        {showBreadcrumb ? (
+          <nav aria-label="Breadcrumb">
+            <ol className="flex flex-wrap items-center gap-2 text-sm text-neutral-500">
+              <li>
+                <Link
+                  href="/"
+                  aria-label="Builder"
+                  title="Builder"
+                  className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+                >
+                  <Logo size={16} />
+                </Link>
+              </li>
+              {parent && parentHref ? (
+                <>
+                  <li aria-hidden="true">/</li>
+                  <li>
+                    <Link href={parentHref} className={CONTENT_LINK}>
+                      {parent}
+                    </Link>
+                  </li>
+                </>
+              ) : null}
+              {parent ? (
+                <>
+                  <li aria-hidden="true">/</li>
+                  <li aria-current="page">{title}</li>
+                </>
+              ) : null}
+            </ol>
+          </nav>
+        ) : null}
 
         <header className="max-w-3xl">
           <h1 className="text-3xl font-semibold tracking-tight text-neutral-100 sm:text-4xl">

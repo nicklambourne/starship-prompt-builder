@@ -20,6 +20,7 @@ export default function GuidesPage() {
       title="Guides"
       description="Build a prompt from scratch, bring an existing config with you, or learn the two compact languages—format and style strings—that make Starship flexible."
       path="/guides/"
+      showBreadcrumb={false}
       kind="CollectionPage"
     >
       <ul className="grid gap-4 md:grid-cols-2">
