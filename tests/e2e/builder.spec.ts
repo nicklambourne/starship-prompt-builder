@@ -908,7 +908,17 @@ test.describe("builder", () => {
     // focus after one character.
     const name = card.getByLabel(/^Name of colour /).first();
     await name.click();
-    await name.press("End");
+    /*
+      The caret goes to the end without a key for it: `End` moves the caret in
+      a text input on Linux and Windows but not in Chromium on macOS, where it
+      scrolls the document instead — so the typing landed wherever the click
+      had put the caret, and this failed for everyone developing on a Mac while
+      CI stayed green. Whether the caret can be moved is not what is under test;
+      whether three keystrokes in a row all reach the field is.
+    */
+    await name.evaluate((field: HTMLInputElement) =>
+      field.setSelectionRange(field.value.length, field.value.length),
+    );
     await page.keyboard.type("xyz");
     await expect(name).toHaveValue(/xyz$/);
   });
