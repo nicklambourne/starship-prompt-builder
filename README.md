@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="src/app/icon.svg" alt="Starship Prompt Builder logo" width="96" height="96">
+
 # Starship Prompt Builder
 
 **A visual editor for `starship.toml`.**
