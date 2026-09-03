@@ -318,10 +318,36 @@ export function PaletteEditor({
                           requestSwitch(palette.name, palette.colours);
                           setCuratedOpen(false);
                         }}
-                        className="flex flex-col gap-0.5 rounded border border-transparent px-2 py-1.5 text-left transition hover:border-accent-400/40 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400"
+                        className="flex flex-col gap-1 rounded border border-transparent px-2 py-1.5 text-left transition hover:border-accent-400/40 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400"
                       >
                         <span id={labelId} className="font-mono text-sm text-neutral-100">
                           {palette.name}
+                        </span>
+                        {/*
+                          The colours are what is being copied, so the row
+                          shows them: a name and a count describe a palette
+                          about as well as a filename describes a photograph.
+                          Hidden from assistive tech — the count beneath says
+                          the same thing in words, and 26 unnameable squares
+                          read out one by one say nothing.
+                        */}
+                        <span
+                          aria-hidden="true"
+                          data-palette-preview={palette.name}
+                          className="flex w-full flex-wrap gap-0.5"
+                        >
+                          {Object.entries(palette.colours).map(([colour, value]) => (
+                            <span
+                              key={colour}
+                              title={`${colour} · ${value}`}
+                              className="size-3.5 rounded-[2px] border border-black/25"
+                              style={{
+                                // Resolved against the palette itself: an entry
+                                // can name another entry rather than a colour.
+                                backgroundColor: asHex(value, palette.colours, theme),
+                              }}
+                            />
+                          ))}
                         </span>
                         <span
                           id={descriptionId}
