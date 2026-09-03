@@ -71,16 +71,17 @@ export function PreviewPane({
       />
 
       {/*
-        Two columns on a phone, three once there is room: the size is a stepper
-        a few characters wide, and giving it a third of a narrow screen would
-        squeeze the two controls whose names need the width.
+        One control per row on a phone, three columns once there is room. The
+        font control is a name, an info button and a download button; sharing a
+        narrow screen with the colour scheme left the name as "Hack…", and the
+        point of the picker is reading which font is selected.
       */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_1fr_auto]">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
         <TerminalThemePicker value={themeId} onChange={onThemeChange} />
 
         <TerminalFontPicker value={fontId} onChange={onFontChange} />
 
-        <div className="col-span-2 flex flex-col gap-1 sm:col-span-1">
+        <div className="flex flex-col gap-1">
           <label htmlFor="font-size" className="text-xs text-neutral-400">
             Font size
           </label>
