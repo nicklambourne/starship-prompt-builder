@@ -1275,6 +1275,30 @@ test.describe("builder", () => {
     }
   });
 
+  test("the curated palette list shows the colours on offer", async ({ page }) => {
+    await page.goto("./");
+    const palettes = page.locator("[data-section='palettes']");
+    await activate(palettes.locator("summary").first());
+    await activate(palettes.getByRole("button", { name: "Choose a curated palette" }));
+
+    // A name and a count describe a palette about as well as a filename
+    // describes a photograph, so every entry draws what it holds.
+    const strips = page.locator("[data-palette-preview]");
+    await expect(strips.first()).toBeVisible();
+    expect(await strips.count()).toBe(
+      await page.locator("[aria-label='Curated palettes'] button").count(),
+    );
+
+    // The palette's own colours, not a placeholder: Gruvbox Dark's ten.
+    const gruvbox = page.locator("[data-palette-preview='gruvbox_dark'] span");
+    await expect(gruvbox).toHaveCount(10);
+    const painted = await gruvbox.evaluateAll((chips) =>
+      chips.map((chip) => getComputedStyle(chip).backgroundColor),
+    );
+    expect(new Set(painted).size).toBeGreaterThan(4);
+    expect(painted).toContain("rgb(251, 241, 199)"); // gruvbox_dark's `color_fg0`
+  });
+
   test("the palette panel credits whose palettes they are", async ({ page }) => {
     await page.goto("./");
     const palettes = page.locator("[data-section='palettes']");
