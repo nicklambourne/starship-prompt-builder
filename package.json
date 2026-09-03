@@ -8,10 +8,10 @@
     "dev:stack": "tools/dev/dev-stack.sh",
     "build": "next build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:parity": "vitest run --config vitest.parity.mts",
-    "test:e2e": "playwright test",
+    "test": "vitest run --config tools/test/vitest.config.mts",
+    "test:watch": "vitest --config tools/test/vitest.config.mts",
+    "test:parity": "vitest run --config tools/test/vitest.parity.mts",
+    "test:e2e": "playwright test --config tools/test/playwright.config.ts",
     "serve:export": "node scripts/serve-export.mjs",
     "sync:schema": "curl -fsSL https://starship.rs/config-schema.json -o data/config-schema.json",
     "sync:docs": "curl -fsSL https://raw.githubusercontent.com/starship/starship/master/docs/config/README.md -o data/config-docs.md",
@@ -24,8 +24,8 @@
     "build:og": "node scripts/build-og-image.mjs",
     "build:screenshots": "node scripts/build-screenshots.mjs",
     "build:demo": "node scripts/build-demo.mjs",
-    "lint": "eslint . --max-warnings 0",
-    "deadcode": "knip"
+    "lint": "eslint . --config tools/quality/eslint.config.mjs --max-warnings 0",
+    "deadcode": "knip --config tools/quality/knip.json"
   },
   "dependencies": {
     "@heroui/styles": "^3.2.1",

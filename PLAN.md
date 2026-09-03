@@ -351,7 +351,7 @@ parity + Playwright on PRs touching the engine and on `main`; Pages deploy on
 | Sharing      | lz-string                         | URL-fragment compression, tiny               |
 | Tests        | vitest, Playwright                | fast unit runner; e2e against prod build     |
 | Hosting      | GitHub Pages (`basePath: /starship-prompt-builder`) | free, static, fits goal 4         |
-| Dev env      | nix + direnv (`shell.nix`)        | pinned node/pnpm, no global installs         |
+| Dev env      | nix + direnv (`tools/nix/shell.nix`) | pinned node/pnpm, no global installs      |
 
 ---
 

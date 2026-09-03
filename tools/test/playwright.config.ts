@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { resolve } from "node:path";
 
 /**
  * E2E runs against the PRODUCTION static export, not the dev server.
@@ -11,7 +12,7 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = 4321;
 
 export default defineConfig({
-  testDir: "./tests/e2e",
+  testDir: "../../tests/e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -33,6 +34,7 @@ export default defineConfig({
   webServer: {
     // `serve-export` publishes out/ under the base path the site really uses.
     command: "pnpm build && pnpm serve:export",
+    cwd: resolve(__dirname, "../.."),
     url: `http://127.0.0.1:${PORT}/`,
     // Never reuse: a stale server silently tests the previous build.
     reuseExistingServer: false,
