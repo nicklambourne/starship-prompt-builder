@@ -2,7 +2,9 @@
 
 import { useState, type CSSProperties, type ReactNode } from "react";
 
-import { CheckIcon, ChevronIcon, DownloadIcon } from "@/components/ui/icons";
+import Link from "next/link";
+
+import { CheckIcon, ChevronIcon, DownloadIcon, InfoIcon } from "@/components/ui/icons";
 import { Popover } from "@/components/ui/Popover";
 import { TERMINAL_FONTS, type TerminalFont } from "@/lib/fonts";
 import { TERMINAL_THEMES, type TerminalTheme } from "@/lib/terminalThemes";
@@ -159,6 +161,10 @@ export function TerminalThemePicker({
   );
 }
 
+/** The two controls beside the font picker are the same button. */
+const ADORNMENT =
+  "inline-flex shrink-0 items-center rounded border border-white/10 p-1.5 text-neutral-300 transition hover:border-accent-400 hover:text-accent-200";
+
 function fontStyle(font: TerminalFont): CSSProperties {
   return { fontFamily: font.stack };
 }
@@ -207,16 +213,35 @@ export function TerminalFontPicker({
       )}
       endAdornment={
         selected.source ? (
-          <a
-            href={selected.source}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`Download ${selected.label} from Nerd Fonts`}
-            title={`Download ${selected.label}`}
-            className="inline-flex shrink-0 items-center rounded border border-white/10 p-1.5 text-neutral-300 transition hover:border-accent-400 hover:text-accent-200"
-          >
-            <DownloadIcon />
-          </a>
+          <>
+            {/*
+              The download hands over 1.2 MB of somebody else's typeface; this
+              is the button for finding out whose, and under what terms, before
+              doing that. It links the family's own entry rather than the top of
+              the page, since the list runs to twelve.
+            */}
+            <Link
+              href={`/licences#font-${selected.id}`}
+              target="_blank"
+              rel="noreferrer noopener"
+              prefetch={false}
+              aria-label={`About ${selected.label}: source and licence`}
+              title={`About ${selected.label}`}
+              className={ADORNMENT}
+            >
+              <InfoIcon />
+            </Link>
+            <a
+              href={selected.source}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Download ${selected.label} from Nerd Fonts`}
+              title={`Download ${selected.label}`}
+              className={ADORNMENT}
+            >
+              <DownloadIcon />
+            </a>
+          </>
         ) : null
       }
     />

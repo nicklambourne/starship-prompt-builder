@@ -480,6 +480,36 @@ test.describe("builder", () => {
     );
   });
 
+  test("the font picker explains the font before offering the download", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    const info = page.getByRole("link", { name: /^About .*: source and licence$/ });
+    const download = page.getByRole("link", { name: /^Download .* from Nerd Fonts$/ });
+
+    // Between the dropdown and the download: the order in which someone would
+    // want them, since the download hands over somebody else's typeface.
+    await expect(info).toBeVisible();
+    const [infoBox, downloadBox] = [await info.boundingBox(), await download.boundingBox()];
+    expect(infoBox!.x).toBeLessThan(downloadBox!.x);
+
+    // It points at the family in hand, not the top of a twelve-family list.
+    await expect(info).toHaveAttribute("href", /\/licences\/?#font-hack$/);
+    await pickTerminalOption(
+      page,
+      "Terminal font",
+      "Terminal fonts",
+      "JetBrainsMono Nerd Font",
+    );
+    await expect(info).toHaveAttribute("href", /#font-jetbrains-mono$/);
+
+    // And the notice it names is really there, with the family's own heading.
+    await page.goto("./licences");
+    const notice = page.locator("#font-jetbrains-mono");
+    await expect(notice).toContainText("JetBrainsMono Nerd Font");
+    await expect(notice).toContainText("SIL OFL 1.1");
+  });
+
   test("the font picker links to the font it has selected", async ({ page }) => {
     await page.goto("./");
     const link = page.getByRole("link", { name: /^Download .* from Nerd Fonts$/ });
@@ -627,16 +657,22 @@ test.describe("builder", () => {
     const bigger = Number.parseFloat(await size());
     expect(bigger).toBeGreaterThan(Number.parseFloat(before));
 
-    // Where it sits: beside the other two where there is room, wrapped below
-    // them on a phone rather than squeezing the names that need the width.
+    // Where it sits: beside the other two where there is room, and one to a
+    // row on a phone rather than squeezing the names that need the width —
+    // the font control is a name plus two buttons, and sharing a narrow screen
+    // with the colour scheme left it reading "Hack…".
     const rows = await page.evaluate(() => {
       const top = (id: string) =>
         Math.round(document.getElementById(id)!.getBoundingClientRect().top);
       return { theme: top("theme-picker"), font: top("font-picker"), size: top("font-size") };
     });
-    expect(rows.theme).toBe(rows.font);
-    if (info.project.name === "mobile") expect(rows.size).toBeGreaterThan(rows.font);
-    else expect(rows.size).toBe(rows.font);
+    if (info.project.name === "mobile") {
+      expect(rows.font).toBeGreaterThan(rows.theme);
+      expect(rows.size).toBeGreaterThan(rows.font);
+    } else {
+      expect(rows.theme).toBe(rows.font);
+      expect(rows.size).toBe(rows.font);
+    }
 
     // It is a preview setting like the theme and the font, so it is kept.
     await page.reload();

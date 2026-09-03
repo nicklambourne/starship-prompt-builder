@@ -196,7 +196,12 @@ export default function LicencesPage() {
             {BUNDLED.map((font) => {
               const notice = NOTICES[font.id];
               return (
-                <li key={font.id} className={CARD}>
+                /*
+                  Anchored: the font picker's info button links straight to the
+                  family in hand, and landing at the top of a twelve-family list
+                  would leave the reader to find it themselves.
+                */
+                <li key={font.id} id={`font-${font.id}`} className={`${CARD} scroll-mt-4`}>
                   <h3 className="text-sm font-semibold text-neutral-100">
                     {font.label}
                   </h3>
