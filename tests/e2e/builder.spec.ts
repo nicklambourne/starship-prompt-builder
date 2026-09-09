@@ -452,7 +452,7 @@ test.describe("builder", () => {
 
     // The header's other control still collapses the card, and the download
     // button is not what a click on the title hits.
-    const toggle = preview.getByRole("button", { name: "Preview" });
+    const toggle = preview.getByRole("button", { name: "Preview", exact: true });
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
