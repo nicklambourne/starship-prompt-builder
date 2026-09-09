@@ -17,6 +17,10 @@ interface PickerOption {
 interface CardPickerProps<T extends PickerOption> {
   id: string;
   label: string;
+  help?: {
+    label: string;
+    text: string;
+  };
   panelLabel: string;
   options: readonly T[];
   value: string;
@@ -32,6 +36,7 @@ const TRIGGER_CLASS =
 function CardPicker<T extends PickerOption>({
   id,
   label,
+  help,
   panelLabel,
   options,
   value,
@@ -43,12 +48,36 @@ function CardPicker<T extends PickerOption>({
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const selected = options.find((option) => option.id === value) ?? options[0];
+  const helpId = `${id}-help`;
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <label htmlFor={id} className="text-xs text-neutral-400">
-        {label}
-      </label>
+      <div className="relative flex items-center gap-1">
+        <label htmlFor={id} className="text-xs text-neutral-400">
+          {label}
+        </label>
+        {help ? (
+          <span className="group inline-flex">
+            <button
+              type="button"
+              aria-label={help.label}
+              aria-describedby={helpId}
+              className="rounded text-neutral-400 transition hover:text-accent-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-400"
+            >
+              <InfoIcon className="h-3.5 w-3.5" />
+            </button>
+            <span
+              id={helpId}
+              role="tooltip"
+              className="invisible absolute bottom-full left-0 z-50 w-72 max-w-[calc(100vw-4rem)] pb-1 text-xs leading-relaxed opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+            >
+              <span className="block rounded-md border border-white/15 bg-neutral-900 p-2 text-neutral-200 shadow-lg">
+                {help.text}
+              </span>
+            </span>
+          </span>
+        ) : null}
+      </div>
       <div className="flex items-center gap-1.5">
         <button
           ref={setAnchor}
@@ -136,6 +165,10 @@ export function TerminalThemePicker({
     <CardPicker
       id="theme-picker"
       label="Terminal color scheme"
+      help={{
+        label: "About preview color schemes",
+        text: "This only changes the preview. It is not included in starship.toml. Choose the matching color scheme separately in your terminal settings.",
+      }}
       panelLabel="Terminal color schemes"
       options={TERMINAL_THEMES}
       value={value}
