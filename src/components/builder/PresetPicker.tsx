@@ -28,19 +28,61 @@ interface PresetPickerProps {
   fontStack: string;
 }
 
-/** Grouped in the order the panel shows them: starship's own first. */
+const DISPLAY_GROUPS = [
+  {
+    key: "inspired",
+    heading: "Inspired by Powerlevel10k",
+    ids: [
+      "powerlevel10k-rainbow-1-line",
+      "powerlevel10k-rainbow-2-lines",
+      "powerlevel10k-classic-1-line",
+      "powerlevel10k-classic-2-lines",
+      "powerlevel10k-lean-1-line",
+      "powerlevel10k-lean-2-lines",
+    ],
+  },
+  {
+    key: "catppuccin",
+    heading: "Catppuccin",
+    ids: ["catppuccin-powerline", "catppuccin"],
+  },
+  {
+    key: "colourful",
+    heading: "Colourful themes",
+    ids: [
+      "gruvbox-rainbow",
+      "pastel-powerline",
+      "jetpack",
+      "tokyo-night",
+      "dracula",
+      "rose-pine",
+      "rose-pine-moon",
+      "rose-pine-dawn",
+    ],
+  },
+] as const;
+
+/** Grouped by visual impact while keeping theme families together. */
 function group(presets: readonly Preset[]) {
-  const official = presets.filter((preset) => preset.source.project === "starship");
-  const inspired = presets.filter(
-    (preset) => preset.source.project === "romkatv/powerlevel10k",
-  );
-  const community = presets.filter(
-    (preset) => !["starship", "romkatv/powerlevel10k"].includes(preset.source.project),
-  );
+  const byId = new Map(presets.map((preset) => [preset.id, preset]));
+  const shown = new Set<string>(DISPLAY_GROUPS.flatMap((section) => section.ids));
+  const ordered = (ids: readonly string[]) =>
+    ids.flatMap((id) => {
+      const preset = byId.get(id);
+      return preset ? [preset] : [];
+    });
+
   return [
-    { key: "starship", heading: "From starship", presets: official },
-    { key: "community", heading: "From palette projects", presets: community },
-    { key: "inspired", heading: "Inspired by Powerlevel10k", presets: inspired },
+    ...DISPLAY_GROUPS.map(({ key, heading, ids }) => ({
+      key,
+      heading,
+      presets: ordered(ids),
+    })),
+    {
+      key: "minimal",
+      heading: "Minimal & compatibility",
+      presets: presets.filter((preset) => !shown.has(preset.id)),
+    },
   ].filter((section) => section.presets.length > 0);
 }
 

@@ -1296,6 +1296,17 @@ test.describe("builder", () => {
     await activate(page.getByRole("button", { name: "Start from a preset" }));
     const panel = page.locator("[aria-label='Presets']");
 
+    await expect(panel.locator("section > h3")).toHaveText([
+      "Inspired by Powerlevel10k",
+      "Catppuccin",
+      "Colourful themes",
+      "Minimal & compatibility",
+    ]);
+    const options = panel.locator("section > button");
+    await expect(options.nth(0)).toHaveAccessibleName("Powerlevel10k Rainbow · 1 line");
+    await expect(options.nth(6)).toHaveAccessibleName("Catppuccin Powerline");
+    await expect(options.nth(7)).toHaveAccessibleName("Catppuccin");
+
     // Names alone say nothing — "Jetpack" and "No Empty Icons" mean
     // something only to someone who has already seen them.
     await expect(panel.getByRole("button", { name: "Jetpack", exact: true })).toHaveAccessibleDescription(
