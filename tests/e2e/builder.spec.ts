@@ -2305,6 +2305,20 @@ test.describe("builder", () => {
   }) => {
     await page.goto("./");
     await expect(page.getByLabel("Terminal color scheme")).toBeVisible();
+
+    await page.getByRole("button", { name: "About preview color schemes" }).focus();
+    const tooltip = page.getByRole("tooltip");
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toHaveCSS("opacity", "1");
+    await expect(tooltip).toContainText("not included in starship.toml");
+    await expect(tooltip).toContainText("terminal settings");
+
+    const tooltipBox = await tooltip.boundingBox();
+    const viewport = page.viewportSize();
+    expect(tooltipBox).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    expect(tooltipBox!.y).toBeGreaterThanOrEqual(0);
+    expect(tooltipBox!.y + tooltipBox!.height).toBeLessThanOrEqual(viewport!.height);
   });
 
   test("terminal appearance options preview their colors and fonts", async ({ page }) => {
