@@ -41,7 +41,7 @@ interface PreviewPaneProps {
 }
 
 const SELECT_CLASS =
-  "rounded border border-white/10 bg-neutral-950 px-2 py-1.5 text-base text-neutral-100 focus:border-accent-400 focus:outline-none";
+  "h-8 rounded border border-white/10 bg-neutral-950 px-2 py-1 text-sm text-neutral-100 focus:border-accent-400 focus:outline-none";
 
 export function PreviewPane({
   lines,
