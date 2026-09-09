@@ -661,18 +661,21 @@ test.describe("builder", () => {
     // row on a phone rather than squeezing the names that need the width —
     // the font control is a name plus two buttons, and sharing a narrow screen
     // with the colour scheme left it reading "Hack…".
-    const rows = await page.evaluate(() => {
-      const top = (id: string) =>
-        Math.round(document.getElementById(id)!.getBoundingClientRect().top);
-      return { theme: top("theme-picker"), font: top("font-picker"), size: top("font-size") };
+    const controls = await page.evaluate(() => {
+      const rect = (id: string) => {
+        const { top, height } = document.getElementById(id)!.getBoundingClientRect();
+        return { top: Math.round(top), height: Math.round(height) };
+      };
+      return { theme: rect("theme-picker"), font: rect("font-picker"), size: rect("font-size") };
     });
     if (info.project.name === "mobile") {
-      expect(rows.font).toBeGreaterThan(rows.theme);
-      expect(rows.size).toBeGreaterThan(rows.font);
+      expect(controls.font.top).toBeGreaterThan(controls.theme.top);
+      expect(controls.size.top).toBeGreaterThan(controls.font.top);
     } else {
-      expect(rows.theme).toBe(rows.font);
-      expect(rows.size).toBe(rows.font);
+      expect(controls.theme.top).toBe(controls.font.top);
+      expect(controls.size.top).toBe(controls.font.top);
     }
+    expect(controls.size.height).toBe(controls.font.height);
 
     // It is a preview setting like the theme and the font, so it is kept.
     await page.reload();
