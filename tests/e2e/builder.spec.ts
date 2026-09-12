@@ -348,6 +348,35 @@ test.describe("builder", () => {
     await expect(terminal).not.toContainText("feat/live-preview");
   });
 
+  test("git am operations expose and render their progress", async ({ page }) => {
+    await page.goto("./");
+    await openToml(page);
+    await page
+      .getByLabel("starship.toml")
+      .fill('format = "$git_state"\nadd_newline = false\n');
+    await openEnvSection(page, "Version control");
+
+    const operation = page.getByLabel("Git operation in progress");
+    await operation.selectOption("APPLY_MAILBOX");
+    await expect(page.getByLabel("Current step")).toHaveValue("1");
+    await expect(page.getByLabel("Total steps")).toHaveValue("1");
+
+    const terminal = page.getByLabel("Simulated terminal prompt");
+    await expect(terminal).toContainText("(AM 1/1)");
+
+    await page.getByLabel("Current step").fill("2");
+    await page.getByLabel("Total steps").fill("5");
+    await expect(terminal).toContainText("(AM 2/5)");
+
+    await operation.selectOption("APPLY_MAILBOX_REBASE");
+    await expect(terminal).toContainText("(AM/REBASE 2/5)");
+
+    await operation.selectOption("MERGING");
+    await expect(page.getByLabel("Current step")).toHaveCount(0);
+    await expect(page.getByLabel("Total steps")).toHaveCount(0);
+    await expect(terminal).toContainText("(MERGING)");
+  });
+
   test("a failing exit code flips the character module", async ({ page }) => {
     await page.goto("./");
     await openEnvSection(page, "Last command");

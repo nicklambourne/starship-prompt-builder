@@ -22,7 +22,7 @@ const MODULE_DESCRIPTIONS: Record<string, string> = {
   fossil_metrics: "Will show the number of added and deleted lines in the check-out in your current directory",
   git_branch: "Shows the active branch of the repo in your current directory",
   git_commit: "Shows the current commit hash and also the tag (if any) of the repo in your current directory",
-  git_state: "Shows what operation is in progress — rebase, merge, cherry-pick, bisect or revert",
+  git_state: "Shows what operation is in progress — rebase, merge, cherry-pick, bisect, revert or git am",
   git_metrics: "Will show the number of added and deleted lines in the current git repository",
   git_status: "Shows symbols representing the state of the repo in your current directory",
   hg_branch: "Shows the active branch and topic of the repo in your current directory",

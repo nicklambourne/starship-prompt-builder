@@ -40,7 +40,7 @@ jobs:
           # starship release cannot redden a PR that has nothing to do with
           # it. Scheduled and manually dispatched runs deliberately track the
           # newest release instead.
-          PINNED_TAG: "v1.25.1"
+          PINNED_TAG: "v1.26.0"
         run: |
           set -euo pipefail
           archive="starship-x86_64-unknown-linux-musl.tar.gz"

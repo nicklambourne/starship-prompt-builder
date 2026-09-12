@@ -19,7 +19,12 @@ import { TOOL_ICONS, ToolIcon } from "@/components/ui/toolIcons";
 
 import { Toggle } from "@/components/ui/Toggle";
 import { VERSIONED_MODULE_NAMES } from "@/lib/engine/modules/language";
-import type { GitState, OsType, Scenario } from "@/lib/scenarios/types";
+import {
+  gitStateHasProgress,
+  type GitState,
+  type OsType,
+  type Scenario,
+} from "@/lib/scenarios/types";
 
 interface EnvironmentPanelProps {
   scenario: Scenario;
@@ -255,6 +260,7 @@ function PairEditor({
 
 export function EnvironmentPanel({ scenario, onChange }: EnvironmentPanelProps) {
   const git = scenario.git;
+  const gitShowsProgress = gitStateHasProgress(git?.state);
   const namespaceId = useId();
   const namespaceNoteId = useId();
   // starship's kubernetes module returns nothing without a context, so the
@@ -438,14 +444,23 @@ export function EnvironmentPanel({ scenario, onChange }: EnvironmentPanelProps) 
                     className={`${INPUT} font-mono`}
                   />
                 </Field>
+              </div>
+              <div
+                className={`grid gap-2 ${gitShowsProgress ? "sm:grid-cols-3" : ""}`}
+              >
                 <Field label="Git operation in progress">
                   <select
                     value={git.state ?? ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const state = (e.target.value ||
+                        undefined) as GitState["state"];
                       setGit({
-                        state: (e.target.value || undefined) as GitState["state"],
-                      })
-                    }
+                        state,
+                        stateProgress: gitStateHasProgress(state)
+                          ? (git.stateProgress ?? { current: 1, total: 1 })
+                          : undefined,
+                      });
+                    }}
                     className={INPUT}
                   >
                     <option value="">none</option>
@@ -454,8 +469,48 @@ export function EnvironmentPanel({ scenario, onChange }: EnvironmentPanelProps) 
                     <option value="CHERRY_PICKING">cherry-picking</option>
                     <option value="BISECTING">bisecting</option>
                     <option value="REVERTING">reverting</option>
+                    <option value="APPLY_MAILBOX">git am</option>
+                    <option value="APPLY_MAILBOX_REBASE">
+                      git am during rebase
+                    </option>
                   </select>
                 </Field>
+                {gitShowsProgress ? (
+                  <>
+                    <Field label="Current step">
+                      <input
+                        type="number"
+                        min={1}
+                        value={git.stateProgress?.current ?? 1}
+                        onChange={(e) =>
+                          setGit({
+                            stateProgress: {
+                              current: Number(e.target.value),
+                              total: git.stateProgress?.total ?? 1,
+                            },
+                          })
+                        }
+                        className={NUMBER}
+                      />
+                    </Field>
+                    <Field label="Total steps">
+                      <input
+                        type="number"
+                        min={1}
+                        value={git.stateProgress?.total ?? 1}
+                        onChange={(e) =>
+                          setGit({
+                            stateProgress: {
+                              current: git.stateProgress?.current ?? 1,
+                              total: Number(e.target.value),
+                            },
+                          })
+                        }
+                        className={NUMBER}
+                      />
+                    </Field>
+                  </>
+                ) : null}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {(

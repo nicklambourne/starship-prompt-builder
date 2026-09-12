@@ -4,6 +4,23 @@
  * and the preview is deterministic.
  */
 
+export type GitOperation =
+  | "REBASING"
+  | "MERGING"
+  | "CHERRY_PICKING"
+  | "BISECTING"
+  | "REVERTING"
+  | "APPLY_MAILBOX"
+  | "APPLY_MAILBOX_REBASE";
+
+export function gitStateHasProgress(state: GitOperation | undefined): boolean {
+  return (
+    state === "REBASING" ||
+    state === "APPLY_MAILBOX" ||
+    state === "APPLY_MAILBOX_REBASE"
+  );
+}
+
 export interface GitState {
   /** Current branch name, or undefined when detached. */
   branch?: string;
@@ -12,9 +29,9 @@ export interface GitState {
   /** Tag pointing at HEAD, if any. */
   tag?: string;
   detached: boolean;
-  /** In-progress operation: REBASING, MERGING, CHERRY-PICKING, BISECTING, REVERTING. */
-  state?: "REBASING" | "MERGING" | "CHERRY_PICKING" | "BISECTING" | "REVERTING";
-  /** Progress through a multi-step operation, e.g. rebase 2/5. */
+  /** In-progress git operation, including rebase and patch-application states. */
+  state?: GitOperation;
+  /** Progress through a rebase or patch-application operation, e.g. 2/5. */
   stateProgress?: { current: number; total: number };
   ahead: number;
   behind: number;
