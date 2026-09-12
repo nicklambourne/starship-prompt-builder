@@ -223,6 +223,46 @@ add_newline = false
     ],
   },
   {
+    id: "git-state-am-progress",
+    config: `
+format = "$git_state"
+add_newline = false
+`,
+    scenario: scenario("git-state-am-progress", {
+      git: {
+        branch: "main",
+        commit: "0000000",
+        detached: false,
+        state: "APPLY_MAILBOX",
+        stateProgress: { current: 1, total: 1 },
+        ahead: 0,
+        behind: 0,
+        staged: 0,
+        modified: 0,
+        deleted: 0,
+        renamed: 0,
+        untracked: 1,
+        conflicted: 1,
+        stashed: 0,
+        root: "",
+        hasRemote: false,
+      },
+    }),
+    setup: [
+      ...GIT_INIT,
+      "git switch -q -c patch",
+      "printf 'from patch\\n' > tracked.txt",
+      "git add tracked.txt",
+      "git -c commit.gpgsign=false commit -q -m patch",
+      "git format-patch -1 --stdout > change.patch",
+      "git switch -q main",
+      "printf 'from main\\n' > tracked.txt",
+      "git add tracked.txt",
+      "git -c commit.gpgsign=false commit -q -m main",
+      "git am change.patch || test -d .git/rebase-apply",
+    ],
+  },
+  {
     id: "cmd-duration",
     config: `
 format = "$cmd_duration"
