@@ -61,12 +61,6 @@ it.
 
 </div>
 
-<div align="center">
-
-<img src="docs/images/mobile.png" alt="The builder on a phone" width="300">
-
-</div>
-
 ## Development
 
 With [nix](https://nixos.org) + [direnv](https://direnv.net), which pin node
