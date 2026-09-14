@@ -61,14 +61,7 @@ it.
 
 </div>
 
-It follows your system's colour scheme, works on a phone — including dragging
-to reorder — and passes WCAG 2.1 AA in both themes.
-
 <div align="center">
-
-| Dark | Light |
-| --- | --- |
-| ![The builder in its dark theme](docs/images/builder-dark.png) | ![The builder in its light theme](docs/images/builder-light.png) |
 
 <img src="docs/images/mobile.png" alt="The builder on a phone" width="300">
 
