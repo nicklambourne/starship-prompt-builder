@@ -26,7 +26,7 @@ async function ready(page) {
 const browser = await chromium.launch();
 await mkdir(OUT, { recursive: true });
 
-async function shot(name, { width, height, scheme, prepare }) {
+async function shot(name, { width, height, scheme, prepare, capture }) {
   const context = await browser.newContext({
     viewport: { width, height },
     deviceScaleFactor: 2,
@@ -36,9 +36,21 @@ async function shot(name, { width, height, scheme, prepare }) {
   await page.goto(URL, { waitUntil: "networkidle" });
   await ready(page);
   if (prepare) await prepare(page);
-  await writeFile(`${OUT}/${name}.png`, await page.screenshot());
+  const screenshot = capture ? await capture(page) : await page.screenshot();
+  await writeFile(`${OUT}/${name}.png`, screenshot);
   await context.close();
   console.log(`  ${name}.png`);
+}
+
+async function sectionShot(page, section, maxHeight) {
+  const card = page.locator(`[data-section='${section}']`);
+  if (maxHeight) {
+    await card.evaluate((element, height) => {
+      element.style.maxHeight = `${height}px`;
+      element.style.overflow = "hidden";
+    }, maxHeight);
+  }
+  return card.screenshot();
 }
 
 console.log("screenshots:");
@@ -57,6 +69,7 @@ await shot("module-settings", {
     await page.getByRole("button", { name: /^Expand \$directory/ }).first().click();
     await page.waitForTimeout(500);
   },
+  capture: (page) => sectionShot(page, "format", 600),
 });
 
 await shot("environment", {
@@ -72,6 +85,7 @@ await shot("environment", {
     await section.scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
   },
+  capture: (page) => sectionShot(page, "environment"),
 });
 
 await browser.close();
