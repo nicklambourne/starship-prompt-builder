@@ -61,6 +61,29 @@ it.
 
 </div>
 
+## Terminal app
+
+The same rendering engine is available as an interactive terminal UI. It can
+open an existing config or a bundled preset, preview changes against simulated
+shell environments, edit module options, reorder the prompt, and save through
+an atomic write with conflict detection and a `.bak` copy of the previous file.
+
+```sh
+pnpm install
+pnpm cli --preset plain-text-symbols
+
+# Headless commands for scripts and quick checks
+pnpm cli preview ~/.config/starship.toml --no-color
+pnpm cli validate ~/.config/starship.toml
+pnpm cli export ~/.config/starship.toml --full
+```
+
+Inside the app, use the arrow keys or `j`/`k` to navigate, Enter to edit,
+Space to toggle, `a` to add, `m` to move, Ctrl+Z/Ctrl+Y to undo/redo, and
+Ctrl+S to review and save. Run `pnpm build:cli` to produce the distributable
+`packages/cli/dist/index.js` executable; the package also exposes
+`starship-builder` and `spb` binary names when installed.
+
 ## Development
 
 With [nix](https://nixos.org) + [direnv](https://direnv.net), which pin node
@@ -88,7 +111,8 @@ stack; [AGENTS.md](AGENTS.md) documents the handoff procedure.
 
 ```sh
 pnpm typecheck     # tsc --noEmit
-pnpm test          # unit tests
+pnpm test          # web and CLI unit/integration tests
+pnpm test:cli:package # pack, freshly install, and run the CLI binary
 pnpm test:e2e      # browser tests, against the built export
 pnpm test:parity   # engine vs the real starship binary (needs it installed)
 ```

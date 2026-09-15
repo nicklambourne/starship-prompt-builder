@@ -38,11 +38,11 @@ The cluster's own `arc.tf` already encodes the same conclusion for the public
 
 ## What runs where
 
-| Workflow     | Runner          | Notes                                     |
-| ------------ | --------------- | ----------------------------------------- |
-| `ci.yml`     | `ubuntu-latest` | typecheck, unit tests, build              |
-| `parity.yml` | `ubuntu-latest` | installs real starship, compares raw ANSI |
-| `deploy.yml` | `ubuntu-latest` | builds the export, publishes to Pages     |
+| Workflow     | GitHub-hosted runners   | Notes                                      |
+| ------------ | ----------------------- | ------------------------------------------ |
+| `ci.yml`     | Ubuntu, macOS, Windows  | web checks; Node 20 CLI and package matrix |
+| `parity.yml` | Ubuntu                  | installs Starship, compares raw ANSI       |
+| `deploy.yml` | Ubuntu                  | builds the export, publishes to Pages      |
 
 Toolchains come from `actions/setup-node`, with pnpm resolved through corepack
 from the `packageManager` field. There is no job `container:` — that existed
