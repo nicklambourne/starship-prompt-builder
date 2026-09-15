@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Box, Text, useApp, useInput, useStdin, useStdout } from "ink";
 import { TextInput } from "@inkjs/ui";
 
@@ -204,6 +204,10 @@ export function BuilderApp({
   const [timeline, setTimeline] = useState(() => createTimeline(loaded.config, loaded.source === "file"));
   const [scenario, setScenario] = useState(() => getScenario(scenarioId));
   const [view, setView] = useState<View>("format");
+  const viewRef = useRef(view);
+  useLayoutEffect(() => {
+    viewRef.current = view;
+  }, [view]);
   const [previousView, setPreviousView] = useState<View>("format");
   const [formatSelection, setFormatSelection] = useState(0);
   const [settingsSelection, setSettingsSelection] = useState(0);
@@ -264,7 +268,8 @@ export function BuilderApp({
   };
 
   const openView = (next: View) => {
-    setPreviousView(view === "help" || view === "save" || view === "add" ? previousView : view);
+    const currentView = viewRef.current;
+    setPreviousView(currentView === "help" || currentView === "save" || currentView === "add" ? previousView : currentView);
     setView(next);
     setQuery("");
     setSearching(false);
@@ -341,6 +346,7 @@ export function BuilderApp({
   };
 
   useInput((input, key) => {
+    const currentView = viewRef.current;
     if (saving) return;
     if (edit) {
       if (key.escape) setEdit(null);
@@ -398,12 +404,12 @@ export function BuilderApp({
     if (input === "1") { openView("format"); return; }
     if (input === "2") { openView("environment"); return; }
     if (input === "3") { openView("output"); return; }
-    if (key.escape && (view === "settings" || view === "add" || view === "help" || view === "save")) {
-      setView(view === "settings" || view === "add" ? "format" : previousView);
+    if (key.escape && (currentView === "settings" || currentView === "add" || currentView === "help" || currentView === "save")) {
+      setView(currentView === "settings" || currentView === "add" ? "format" : previousView);
       return;
     }
 
-    if (view === "format") {
+    if (currentView === "format") {
       if (key.upArrow || input === "k") setFormatSelection((current) => clampSelection(current - 1, formatEntries.length));
       else if (key.downArrow || input === "j") setFormatSelection((current) => clampSelection(current + 1, formatEntries.length));
       else if (input === "/") setSearching(true);
@@ -431,7 +437,7 @@ export function BuilderApp({
       return;
     }
 
-    if (view === "settings") {
+    if (currentView === "settings") {
       if (!selectedDefinition || !selectedOption) return;
       if (key.upArrow || input === "k") setSettingsSelection((current) => clampSelection(current - 1, moduleOptions.length));
       else if (key.downArrow || input === "j") setSettingsSelection((current) => clampSelection(current + 1, moduleOptions.length));
@@ -449,7 +455,7 @@ export function BuilderApp({
       return;
     }
 
-    if (view === "environment") {
+    if (currentView === "environment") {
       const selected = ENVIRONMENT_FIELDS[clampSelection(environmentSelection, ENVIRONMENT_FIELDS.length)];
       if (key.upArrow || input === "k") setEnvironmentSelection((current) => clampSelection(current - 1, ENVIRONMENT_FIELDS.length));
       else if (key.downArrow || input === "j") setEnvironmentSelection((current) => clampSelection(current + 1, ENVIRONMENT_FIELDS.length));
@@ -464,7 +470,7 @@ export function BuilderApp({
       return;
     }
 
-    if (view === "output") {
+    if (currentView === "output") {
       const lineCount = serialised.split("\n").length;
       if (key.upArrow || input === "k") setOutputScroll((current) => Math.max(0, current - 1));
       else if (key.downArrow || input === "j") setOutputScroll((current) => Math.min(Math.max(0, lineCount - contentHeight), current + 1));
@@ -475,7 +481,7 @@ export function BuilderApp({
       return;
     }
 
-    if (view === "add") {
+    if (currentView === "add") {
       const present = new Set(collectModuleNames(items));
       const candidates = definitions.filter((definition) => !present.has(definition.name) && (!normalizedQuery || definition.name.includes(normalizedQuery)));
       const selection = clampSelection(addSelection, candidates.length);
@@ -494,7 +500,7 @@ export function BuilderApp({
       return;
     }
 
-    if (view === "save") {
+    if (currentView === "save") {
       if (key.return) void doSave();
       else if (input === "a") {
         setEdit({

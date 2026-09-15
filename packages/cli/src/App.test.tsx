@@ -33,10 +33,9 @@ afterEach(async () => {
 });
 
 async function renderInput() {
-  // Ink can paint a frame before its useInput subscription has committed.
-  // A small event-loop gap models separate human keypresses and ensures the
-  // following key is handled by the view visible in lastFrame().
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  // Flush the rendered frame without adding a human-scale key delay. The next
+  // key must be handled by the view that is already visible.
+  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 describe("terminal builder", () => {

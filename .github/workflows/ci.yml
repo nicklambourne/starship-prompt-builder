@@ -62,17 +62,29 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          # pnpm 11 requires Node 22. Install the workspace with its declared
+          # toolchain, then switch to Node 20 to test the CLI runtime floor.
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm typecheck:cli
 
-      # Interaction tests run against the supported Node floor on each OS.
-      - run: pnpm test:cli
-
       # Pack and install into an empty consumer project, then invoke the
       # installed binary. This catches missing runtime dependencies and broken
       # bin metadata that a workspace invocation can mask.
       - run: pnpm test:cli:package
+
+      - name: Select supported Node floor
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 20
+
+      - name: Test and build under Node 20
+        run: |
+          node --version
+          node node_modules/typescript/bin/tsc --noEmit -p packages/cli/tsconfig.json
+          node node_modules/vitest/vitest.mjs run --config packages/cli/vitest.config.mts
+          node packages/cli/scripts/build.mjs
+          node packages/cli/dist/index.js preview --preset plain-text-symbols --scenario simple --no-color
