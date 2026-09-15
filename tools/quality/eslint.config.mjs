@@ -11,5 +11,5 @@ export default defineConfig([
       "@next/next/no-assign-module-variable": "off",
     },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([".next/**", "out/**", "build/**", "packages/cli/dist/**", "next-env.d.ts"]),
 ]);

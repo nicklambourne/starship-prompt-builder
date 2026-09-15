@@ -4,6 +4,7 @@ node_modules/
 # next.js
 .next/
 out/
+packages/cli/dist/
 next-env.d.ts
 
 # misc
