@@ -16,9 +16,13 @@ import type { Scenario } from "@/lib/scenarios/types";
 import { DEFAULT_SCENARIO_ID, getScenario } from "@/lib/scenarios";
 import { DEFAULT_PRESET_ID, getPreset } from "@/lib/config/presets";
 import { parseConfig } from "@/lib/config/toml";
-import { namedModuleIdentity } from "@/lib/engine/modules";
 import { DEFAULT_FONT_SIZE, TERMINAL_FONTS, clampFontSize } from "@/lib/fonts";
 import { DEFAULT_THEME_ID } from "@/lib/terminalThemes";
+import {
+  withModuleOption,
+  withoutModuleOption,
+  withRootOption,
+} from "@/lib/config/mutations";
 
 const HISTORY_LIMIT = 100;
 
@@ -116,58 +120,6 @@ function initialConfig(): StarshipConfig {
 
 const EMPTY_CONFIG: StarshipConfig = initialConfig();
 
-function withModuleOption(
-  config: StarshipConfig,
-  module: string,
-  key: string,
-  value: unknown,
-): StarshipConfig {
-  const identity = namedModuleIdentity(module);
-  if (identity) {
-    const family = (config[identity.kind] as Record<string, unknown> | undefined) ?? {};
-    const existing = (family[identity.instance] as Record<string, unknown> | undefined) ?? {};
-    return {
-      ...config,
-      [identity.kind]: {
-        ...family,
-        [identity.instance]: { ...existing, [key]: value },
-      },
-    };
-  }
-  const existing = (config[module] as Record<string, unknown> | undefined) ?? {};
-  return { ...config, [module]: { ...existing, [key]: value } };
-}
-
-function withoutModuleOption(
-  config: StarshipConfig,
-  module: string,
-  key: string,
-): StarshipConfig {
-  const identity = namedModuleIdentity(module);
-  if (identity) {
-    const family = config[identity.kind] as Record<string, unknown> | undefined;
-    const existing = family?.[identity.instance] as Record<string, unknown> | undefined;
-    if (!family || !existing) return config;
-    const next = { ...existing };
-    delete next[key];
-    // An empty named table still declares an instance whose defaults matter.
-    return {
-      ...config,
-      [identity.kind]: { ...family, [identity.instance]: next },
-    };
-  }
-  const existing = config[module] as Record<string, unknown> | undefined;
-  if (!existing) return config;
-  const next = { ...existing };
-  delete next[key];
-  if (Object.keys(next).length === 0) {
-    const copy = { ...config };
-    delete copy[module];
-    return copy;
-  }
-  return { ...config, [module]: next };
-}
-
 export const useBuilderStore = create<BuilderState>((set, get) => ({
   config: EMPTY_CONFIG,
   scenario: getScenario(DEFAULT_SCENARIO_ID),
@@ -231,10 +183,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   },
 
   setRootOption(key, value) {
-    const config = { ...get().config };
-    if (value === undefined) delete config[key];
-    else config[key] = value;
-    get().setConfig(config);
+    get().setConfig(withRootOption(get().config, key, value));
   },
 
   selectModule(name) {

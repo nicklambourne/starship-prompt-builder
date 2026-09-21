@@ -43,3 +43,48 @@ jobs:
       # Playwright builds and serves the production static export itself. This
       # covers the build as well as the desktop, mobile and axe suites.
       - run: pnpm test:e2e
+
+  cli-platforms:
+    name: CLI · Node 20 · ${{ matrix.os }}
+    # All matrix values below are GitHub-hosted. Public pull requests must not
+    # execute attacker-authored code on the self-hosted cluster.
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # pnpm 11 requires Node 22. Install the workspace with its declared
+          # toolchain, then switch to Node 20 to test the CLI runtime floor.
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck:cli
+
+      # Pack and install into an empty consumer project, then invoke the
+      # installed binary. This catches missing runtime dependencies and broken
+      # bin metadata that a workspace invocation can mask.
+      - run: pnpm test:cli:package
+
+      - name: Select supported Node floor
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 20
+
+      - name: Test and build under Node 20
+        run: |
+          node --version
+          node node_modules/typescript/bin/tsc --noEmit -p packages/cli/tsconfig.json
+          node node_modules/vitest/vitest.mjs run --config packages/cli/vitest.config.mts
+          node packages/cli/scripts/build.mjs
+          node packages/cli/dist/index.js preview --preset plain-text-symbols --scenario simple --no-color
