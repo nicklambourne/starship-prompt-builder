@@ -221,6 +221,15 @@ export function BuilderApp({
   const [fullToml, setFullToml] = useState(false);
   const [outputScroll, setOutputScroll] = useState(0);
   const [message, setMessage] = useState(loaded.source === "preset" ? `Started from ${loaded.sourceLabel}` : `Loaded ${loaded.sourceLabel}`);
+  const [messageIsError, setMessageIsError] = useState(false);
+  const announce = (text: string) => {
+    setMessage(text);
+    setMessageIsError(false);
+  };
+  const fail = (text: string) => {
+    setMessage(text);
+    setMessageIsError(true);
+  };
   const [writePath, setWritePath] = useState(loaded.writePath);
   const [displayPath, setDisplayPath] = useState(loaded.displayPath);
   const [expectedHash, setExpectedHash] = useState(loaded.expectedHash);
@@ -263,7 +272,7 @@ export function BuilderApp({
 
   const commit = (next: StarshipConfig, confirmation?: string) => {
     setTimeline((current) => changeConfig(current, next));
-    if (confirmation) setMessage(confirmation);
+    if (confirmation) announce(confirmation);
     setQuitArmed(false);
   };
 
@@ -290,7 +299,7 @@ export function BuilderApp({
           commit(withModuleOption(config, selectedDefinition.name, option.key, parsed), `Changed ${selectedDefinition.name}.${option.key}`);
           setEdit(null);
         } catch (error) {
-          setMessage((error as Error).message);
+          fail((error as Error).message);
         }
       },
     });
@@ -307,10 +316,10 @@ export function BuilderApp({
         try {
           const parsed = field.kind === "number" ? parseEditedValue("number", value) : value;
           setScenario((existing) => field.set(existing, parsed));
-          setMessage(`Changed simulated ${field.label.toLowerCase()}`);
+          announce(`Changed simulated ${field.label.toLowerCase()}`);
           setEdit(null);
         } catch (error) {
-          setMessage((error as Error).message);
+          fail((error as Error).message);
         }
       },
     });
@@ -321,9 +330,9 @@ export function BuilderApp({
     try {
       const result = await editConfigExternally(config);
       if (result.ok) commit(result.config, "Applied configuration from external editor");
-      else setMessage(result.error);
+      else fail(result.error);
     } catch (error) {
-      setMessage(`External editor failed: ${(error as Error).message}`);
+      fail(`External editor failed: ${(error as Error).message}`);
     } finally {
       if (isRawModeSupported) setRawMode(true);
     }
@@ -336,10 +345,10 @@ export function BuilderApp({
       const result = await saveConfig({ path: writePath, content: serialiseConfig(config, { defaults }), expectedHash });
       setExpectedHash(result.hash);
       setTimeline((current) => markSaved(current));
-      setMessage(result.backupPath ? `Saved ${displayPath}; backup: ${result.backupPath}` : `Saved ${displayPath}`);
+      announce(result.backupPath ? `Saved ${displayPath}; backup: ${result.backupPath}` : `Saved ${displayPath}`);
       setView("output");
     } catch (error) {
-      setMessage((error as Error).message);
+      fail((error as Error).message);
     } finally {
       setSaving(false);
     }
@@ -359,7 +368,7 @@ export function BuilderApp({
     if (moving) {
       if (key.escape) {
         setMoving(null);
-        setMessage("Move cancelled");
+        announce("Move cancelled");
       } else if (key.return) {
         commit(withFormatItems(config, moving.items), "Reordered prompt format");
         setMoving(null);
@@ -380,13 +389,19 @@ export function BuilderApp({
       return;
     }
     if (key.ctrl && input === "z") {
-      setTimeline(undoConfig);
-      setMessage("Undid last configuration change");
+      const undone = undoConfig(timeline);
+      if (undone !== timeline) {
+        setTimeline(undone);
+        announce("Undid last configuration change");
+      }
       return;
     }
     if (key.ctrl && input === "y") {
-      setTimeline(redoConfig);
-      setMessage("Redid configuration change");
+      const redone = redoConfig(timeline);
+      if (redone !== timeline) {
+        setTimeline(redone);
+        announce("Redid configuration change");
+      }
       return;
     }
     if (input === "?") {
@@ -397,7 +412,7 @@ export function BuilderApp({
       if (!dirty || quitArmed) exit();
       else {
         setQuitArmed(true);
-        setMessage("Unsaved changes. Press q again to quit, or Ctrl+S to save.");
+        announce("Unsaved changes. Press q again to quit, or Ctrl+S to save.");
       }
       return;
     }
@@ -418,7 +433,7 @@ export function BuilderApp({
         openView("add");
       } else if (input === "m" && selectedEntry && !normalizedQuery) {
         setMoving({ items: baseItems, index: selectedEntry.index });
-        setMessage("Move mode: arrows reposition, Enter commits, Esc cancels");
+        announce("Move mode: arrows reposition, Enter commits, Esc cancels");
       } else if ((input === "x" || key.delete) && selectedEntry) {
         const next = items.filter((_, index) => index !== selectedEntry.index);
         commit(withFormatItems(config, next), `Removed ${itemLabel(selectedEntry.item)} from the format`);
@@ -461,7 +476,7 @@ export function BuilderApp({
       else if (key.downArrow || input === "j") setEnvironmentSelection((current) => clampSelection(current + 1, ENVIRONMENT_FIELDS.length));
       else if (input === "p") {
         setScenario(getScenario("dirty-repo"));
-        setMessage("Restored the dirty git repository scenario");
+        announce("Restored the dirty git repository scenario");
       } else if (selected && (key.return || input === " ")) {
         if (selected.kind === "boolean") {
           setScenario((current) => selected.set(current, !selected.get(current)));
@@ -514,7 +529,7 @@ export function BuilderApp({
               setDisplayPath(next);
               setWritePath(next);
             }
-            setMessage(`Save destination: ${next}`);
+            announce(`Save destination: ${next}`);
             setEdit(null);
           },
         });
@@ -529,6 +544,8 @@ export function BuilderApp({
   const presentModules = new Set(collectModuleNames(items));
   const addCandidates = definitions.filter((definition) => !presentModules.has(definition.name) && (!normalizedQuery || definition.name.includes(normalizedQuery)));
   const addWindow = visibleWindow(addCandidates, clampSelection(addSelection, addCandidates.length), contentHeight);
+  const selectedEnvironmentIndex = clampSelection(environmentSelection, ENVIRONMENT_FIELDS.length);
+  const environmentWindow = visibleWindow(ENVIRONMENT_FIELDS, selectedEnvironmentIndex, contentHeight);
 
   if (columns < 60) {
     return (
@@ -609,7 +626,7 @@ export function BuilderApp({
 
       {view === "environment" ? (
         <Panel title="SIMULATED ENVIRONMENT" hint="p reset scenario">
-          {visibleWindow(ENVIRONMENT_FIELDS, environmentSelection, contentHeight).items.map((field, offset) => <Row key={field.key} selected={visibleWindow(ENVIRONMENT_FIELDS, environmentSelection, contentHeight).start + offset === environmentSelection} label={field.label} value={displayValue(field.get(scenario), Math.max(18, Math.floor(columns / 2)))} />)}
+          {environmentWindow.items.map((field, offset) => <Row key={field.key} selected={environmentWindow.start + offset === selectedEnvironmentIndex} label={field.label} value={displayValue(field.get(scenario), Math.max(18, Math.floor(columns / 2)))} />)}
         </Panel>
       ) : null}
 
@@ -650,7 +667,7 @@ export function BuilderApp({
       {edit ? <InputBar edit={edit} /> : null}
       <Box paddingX={1} justifyContent={narrow ? undefined : "space-between"} flexDirection={narrow ? "column" : "row"}>
         <Box minWidth={0} flexGrow={1}>
-          <Text color={message.toLowerCase().includes("error") || message.includes("changed after") ? "red" : "gray"} wrap="truncate-end">{message}</Text>
+          <Text color={messageIsError ? "red" : "gray"} wrap="truncate-end">{message}</Text>
         </Box>
         <Box flexShrink={0}><Text dimColor>{moving ? "MOVE" : "↑↓ navigate · Ctrl+S save · ? help · q quit"}</Text></Box>
       </Box>

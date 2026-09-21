@@ -107,21 +107,16 @@ async function main() {
       modules: definitions,
       defaultOrder: PROMPT_ORDER,
     });
+    const color = !parsed.values["no-color"] && process.env.NO_COLOR === undefined;
     if (rendered.leadingNewline) process.stdout.write("\n");
     rendered.lines.forEach((line, index) => {
-      let output = segmentsToAnsi(line);
-      if (index === rendered.lines.length - 1 && rendered.right.length > 0) {
-        const gap = Math.max(1, width - plainWidth(segmentsText(line)) - plainWidth(segmentsText(rendered.right)));
-        output += `${" ".repeat(gap)}${segmentsToAnsi(rendered.right)}`;
-      }
-      if (parsed.values["no-color"]) {
-        output = segmentsText(line);
-        if (index === rendered.lines.length - 1 && rendered.right.length > 0) {
-          const gap = Math.max(1, width - plainWidth(output) - plainWidth(segmentsText(rendered.right)));
-          output += `${" ".repeat(gap)}${segmentsText(rendered.right)}`;
-        }
-      }
-      process.stdout.write(`${output}\n`);
+      const isLast = index === rendered.lines.length - 1 && rendered.right.length > 0;
+      const plain = segmentsText(line);
+      const gap = isLast
+        ? Math.max(1, width - plainWidth(plain) - plainWidth(segmentsText(rendered.right)))
+        : 0;
+      const right = isLast ? `${" ".repeat(gap)}${color ? segmentsToAnsi(rendered.right) : segmentsText(rendered.right)}` : "";
+      process.stdout.write(`${color ? segmentsToAnsi(line) : plain}${right}\n`);
     });
     for (const warning of rendered.warnings) process.stderr.write(`warning: ${warning}\n`);
     return;

@@ -9,6 +9,8 @@ starship-builder ~/.config/starship.toml
 starship-builder --preset plain-text-symbols
 starship-builder preview ~/.config/starship.toml --no-color
 starship-builder validate ~/.config/starship.toml
+starship-builder export ~/.config/starship.toml --full
+starship-builder presets
 ```
 
 Use arrow keys or `j`/`k` to navigate, Enter to edit, Space to toggle, `a` to

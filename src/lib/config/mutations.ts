@@ -55,6 +55,7 @@ export function withoutModuleOption(
 
     const next = { ...existing };
     delete next[key];
+    // An empty named table still declares an instance whose defaults matter.
     return {
       ...config,
       [identity.kind]: { ...family, [identity.instance]: next },
