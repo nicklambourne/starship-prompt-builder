@@ -1,3 +1,4 @@
+/** Pure option shape helpers shared by the browser and terminal editors. */
 export type StructuredEditor =
   | "battery-display"
   | "kubernetes-contexts"

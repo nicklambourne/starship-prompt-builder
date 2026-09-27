@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addNamedModule,
+  duplicateNamedModule,
   namedModuleReferenceCount,
   removeNamedModule,
   renameNamedModule,
@@ -21,6 +22,14 @@ describe("named module config edits", () => {
     expect(addNamedModule(config, "env_var", "SHELL", "$directory")).toBe(config);
     expect(addNamedModule(config, "env_var", "bad name", "$directory")).toBe(config);
     expect(renameNamedModule(config, "env_var.SHELL", "bad.name")).toBe(config);
+  });
+
+  it("duplicates a named module with its options and a new prompt reference", () => {
+    const config = { format: "${custom.project}", custom: { project: { command: "echo hello", symbol: "★ " } } };
+    expect(duplicateNamedModule(config, "custom.project", "project_copy", config.format)).toEqual({
+      format: "${custom.project}${custom.project_copy}",
+      custom: { project: { command: "echo hello", symbol: "★ " }, project_copy: { command: "echo hello", symbol: "★ " } },
+    });
   });
 
   it("renames the table and every prompt-level module reference", () => {

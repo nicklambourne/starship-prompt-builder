@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -40,6 +40,26 @@ describe("config files", () => {
     expect(loaded.displayPath).toBe(link);
     expect(loaded.writePath).toBe(await realpath(target));
     expect(loaded.expectedHash).toBe(hashContent(content));
+    await saveConfig({ path: link, content: "add_newline = true\n", expectedHash: loaded.expectedHash });
+    expect(await realpath(link)).toBe(await realpath(target));
+    expect(await readFile(target, "utf8")).toBe("add_newline = true\n");
+  });
+
+  it("rejects a broken symlink without replacing it", async () => {
+    const directory = await temporaryDirectory();
+    const link = join(directory, "starship.toml");
+    await symlink(join(directory, "missing.toml"), link);
+    await expect(loadConfig({ path: link })).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(saveConfig({ path: link, content: "", expectedHash: null })).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("keeps the original file if backup creation fails", async () => {
+    const directory = await temporaryDirectory();
+    const path = join(directory, "starship.toml");
+    await writeFile(path, "add_newline = false\n");
+    await mkdir(`${path}.bak`);
+    await expect(saveConfig({ path, content: "add_newline = true\n", expectedHash: hashContent("add_newline = false\n") })).rejects.toThrow();
+    expect(await readFile(path, "utf8")).toBe("add_newline = false\n");
   });
 
   it("writes atomically and keeps the previous content as a backup", async () => {
@@ -72,5 +92,24 @@ describe("config files", () => {
       content: "add_newline = false\n",
       expectedHash: hashContent(before),
     })).rejects.toBeInstanceOf(ConfigConflictError);
+  });
+
+  it("does not replace a missing explicitly requested input with a preset", async () => {
+    const directory = await temporaryDirectory();
+    await expect(loadConfig({ path: join(directory, "missing.toml"), requireFile: true }))
+      .rejects.toThrow(/does not exist/);
+  });
+
+  it("leaves an unchanged file and its comments untouched", async () => {
+    const directory = await temporaryDirectory();
+    const path = join(directory, "starship.toml");
+    const content = "# personal choice\r\nadd_newline = false\r\n";
+    await writeFile(path, content);
+
+    const saved = await saveConfig({ path, content, expectedHash: hashContent(content) });
+
+    expect(saved.backupPath).toBeNull();
+    expect(await readFile(path, "utf8")).toBe(content);
+    await expect(readFile(`${path}.bak`, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
   });
 });

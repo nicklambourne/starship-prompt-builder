@@ -1,5 +1,5 @@
 import { expandAll } from "@/lib/config/defaultFormat";
-import { fromItems, toItems, type FormatItem } from "@/lib/config/formatItems";
+import { toItems, type FormatItem } from "@/lib/config/formatItems";
 import { moduleMeta, optionKind, type OptionKind } from "@/lib/config/meta";
 import { optionEnum } from "@/lib/config/optionEnums";
 import { moduleOptionsForConfig, type ModuleDefinition } from "@/lib/engine/modules";
@@ -73,13 +73,6 @@ export function editableFormatItems(config: StarshipConfig): FormatItem[] {
   const format = typeof config.format === "string" ? config.format : DEFAULT_FORMAT;
   const expanded = expandAll(format, PROMPT_ORDER);
   return toItems(expanded) ?? [{ kind: "raw", source: expanded }];
-}
-
-export function withFormatItems(
-  config: StarshipConfig,
-  items: FormatItem[],
-): StarshipConfig {
-  return { ...config, format: fromItems(items) };
 }
 
 export function optionsForModule(

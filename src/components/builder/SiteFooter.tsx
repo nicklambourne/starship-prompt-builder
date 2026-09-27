@@ -31,6 +31,10 @@ export function SiteFooter() {
           Module reference
         </Link>
         {" · "}
+        <Link href="/terminal" className={LINK}>
+          Terminal app
+        </Link>
+        {" · "}
         <Link href="/licences" className={LINK}>
           Licences
         </Link>
