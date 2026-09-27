@@ -7,6 +7,11 @@ for (const width of [390, 1280]) {
     await page.goto("./terminal");
     await expect(page.getByRole("heading", { name: "Build your prompt in the terminal" })).toBeVisible();
     await expect(page.getByText("The CLI package is not yet published to npm.", { exact: false })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Build with an agent" })).toBeVisible();
+    await expect(page.getByLabel("Agent guide command")).toContainText("agent-guide");
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.getByRole("button", { name: "Copy starter prompt" }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("starship-builder agent-guide");
     expect(await page.evaluate(() => window.innerWidth)).toBe(width);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
 
