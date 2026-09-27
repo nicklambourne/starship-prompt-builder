@@ -117,6 +117,22 @@ export function addNamedModule(
   };
 }
 
+/** Duplicates an instance's options and adds a new explicit prompt reference. */
+export function duplicateNamedModule(
+  config: StarshipConfig,
+  name: string,
+  nextInstance: string,
+  effectiveFormat: string,
+): StarshipConfig {
+  const identity = namedModuleIdentity(name);
+  if (!identity || !isValidNamedModuleInstance(nextInstance)) return config;
+  const family = config[identity.kind];
+  if (!isTable(family) || !isTable(family[identity.instance]) || isTable(family[nextInstance])) return config;
+  const next = addNamedModule(config, identity.kind, nextInstance, effectiveFormat);
+  return { ...next, [identity.kind]: { ...(next[identity.kind] as Record<string, unknown>),
+    [nextInstance]: structuredClone(family[identity.instance]) } };
+}
+
 /** Renames a nested table without moving it, then updates module references. */
 export function renameNamedModule(
   config: StarshipConfig,

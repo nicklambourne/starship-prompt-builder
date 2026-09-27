@@ -70,7 +70,7 @@ import { PRESETS } from "@/lib/config/presets";
 import { encodeShare } from "@/lib/config/share";
 import { parseConfig, serialiseConfig } from "@/lib/config/toml";
 import { MODULE_DEFAULTS } from "@/lib/config/rescue";
-import { structuredEditorFor } from "./structuredOptions";
+import { structuredEditorFor } from "@/lib/config/structuredOptions";
 import { CustomPreviewControls } from "./CustomPreviewControls";
 import { selectedVcsFormat } from "@/lib/engine/modules/vcs";
 import { TERMINAL_FONTS } from "@/lib/fonts";

@@ -28,7 +28,7 @@ import type { TerminalTheme } from "@/lib/terminalThemes";
 import type { DocumentationLink } from "@/lib/config/documentation";
 import type { OptionChoice } from "@/lib/config/optionEnums";
 import { StructuredOptionEditor } from "./StructuredOptionEditor";
-import type { StructuredEditor } from "./structuredOptions";
+import type { StructuredEditor } from "@/lib/config/structuredOptions";
 
 export interface OptionDescriptor {
   key: string;

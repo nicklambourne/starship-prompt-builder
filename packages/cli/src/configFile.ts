@@ -19,6 +19,7 @@ import type { StarshipConfig } from "@/lib/engine/prompt";
 
 export interface LoadedConfig {
   config: StarshipConfig;
+  originalContent?: string | null;
   displayPath: string;
   writePath: string;
   expectedHash: string | null;
@@ -60,22 +61,30 @@ async function readIfPresent(path: string): Promise<string | null> {
 }
 
 async function targetPath(path: string): Promise<string> {
+  let details;
   try {
-    const details = await lstat(path);
-    return details.isSymbolicLink() ? await realpath(path) : path;
+    details = await lstat(path);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return path;
     throw error;
   }
+  // A broken symlink is not an empty destination: refusing it avoids replacing
+  // the link itself with a regular file during Save As or first-run editing.
+  return details.isSymbolicLink() ? await realpath(path) : path;
 }
 
 export async function loadConfig(options: {
   path?: string;
   preset?: string;
+  requireFile?: boolean;
 } = {}): Promise<LoadedConfig> {
   const displayPath = options.path ? expandPath(options.path) : defaultConfigPath();
   const writePath = await targetPath(displayPath);
   const existing = await readIfPresent(writePath);
+
+  if (options.requireFile && !options.preset && existing === null) {
+    throw new Error(`${displayPath} does not exist.`);
+  }
 
   if (!options.preset && existing !== null) {
     const parsed = parseConfig(existing);
@@ -85,6 +94,7 @@ export async function loadConfig(options: {
     }
     return {
       config: parsed.config,
+      originalContent: existing,
       displayPath,
       writePath,
       expectedHash: hashContent(existing),
@@ -101,6 +111,7 @@ export async function loadConfig(options: {
 
   return {
     config: parsed.config,
+    originalContent: null,
     displayPath,
     writePath,
     expectedHash: existing === null ? null : hashContent(existing),
@@ -114,23 +125,28 @@ export async function saveConfig(options: {
   content: string;
   expectedHash: string | null;
 }): Promise<{ hash: string; backupPath: string | null }> {
-  const current = await readIfPresent(options.path);
+  const path = await targetPath(options.path);
+  const current = await readIfPresent(path);
   const currentHash = current === null ? null : hashContent(current);
-  if (currentHash !== options.expectedHash) throw new ConfigConflictError(options.path);
+  if (currentHash !== options.expectedHash) throw new ConfigConflictError(path);
 
-  await mkdir(dirname(options.path), { recursive: true });
-  const backupPath = current === null ? null : `${options.path}.bak`;
-  if (backupPath) await copyFile(options.path, backupPath);
+  if (current !== null && current === options.content) {
+    return { hash: currentHash as string, backupPath: null };
+  }
 
-  const mode = current === null ? 0o600 : (await stat(options.path)).mode & 0o777;
+  await mkdir(dirname(path), { recursive: true });
+  const backupPath = current === null ? null : `${path}.bak`;
+  if (backupPath) await copyFile(path, backupPath);
+
+  const mode = current === null ? 0o600 : (await stat(path)).mode & 0o777;
   const temporary = join(
-    dirname(options.path),
+    dirname(path),
     `.${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}.tmp`,
   );
 
   try {
     await writeFile(temporary, options.content, { encoding: "utf8", flag: "wx", mode });
-    await rename(temporary, options.path);
+    await rename(temporary, path);
   } catch (error) {
     try {
       await unlink(temporary);

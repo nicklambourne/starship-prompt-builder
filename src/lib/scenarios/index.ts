@@ -199,6 +199,10 @@ const SCENARIOS: Scenario[] = [
 
 export const DEFAULT_SCENARIO_ID = "dirty-repo";
 
+export function listScenarios(): readonly Scenario[] {
+  return SCENARIOS;
+}
+
 export function getScenario(id: string): Scenario {
   return SCENARIOS.find((s) => s.id === id) ?? SCENARIOS[0];
 }

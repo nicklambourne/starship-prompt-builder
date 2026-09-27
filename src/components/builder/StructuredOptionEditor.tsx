@@ -14,7 +14,7 @@ import {
   substitutionRows,
   type StructuredEditor,
   type SubstitutionRow,
-} from "./structuredOptions";
+} from "@/lib/config/structuredOptions";
 
 interface Props {
   editor: StructuredEditor;

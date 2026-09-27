@@ -8,6 +8,7 @@
     "build:cli": "pnpm --dir packages/cli build",
     "test:cli": "pnpm --dir packages/cli test",
     "test:cli:package": "pnpm --dir packages/cli test:package",
+    "test:cli:pty": "pnpm --dir packages/cli test:pty",
     "typecheck:cli": "pnpm --dir packages/cli typecheck",
     "dev": "next dev",
     "dev:stack": "tools/dev/dev-stack.sh",

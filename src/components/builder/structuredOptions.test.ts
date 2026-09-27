@@ -4,7 +4,7 @@ import {
   commandRows,
   structuredEditorFor,
   substitutionRows,
-} from "./structuredOptions";
+} from "@/lib/config/structuredOptions";
 
 describe("structured option editors", () => {
   it("routes every complex Starship option to a purpose-built editor", () => {

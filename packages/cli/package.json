@@ -19,24 +19,26 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
     "start": "pnpm build && node dist/index.js",
     "test": "vitest run --config vitest.config.mts",
     "test:package": "pnpm build && node scripts/test-package.mjs",
+    "test:pty": "pnpm build && node scripts/test-terminal.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@inkjs/ui": "^2.0.0",
     "ink": "^6.3.1",
-    "react": "19.2.8"
+    "react": "19.3.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.8",
+    "@types/react": "^19.3.0",
     "esbuild": "^0.28.1",
     "ink-testing-library": "^4.0.0",
+    "node-pty": "^1.1.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }

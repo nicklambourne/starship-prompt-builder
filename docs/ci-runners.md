@@ -40,7 +40,7 @@ The cluster's own `arc.tf` already encodes the same conclusion for the public
 
 | Workflow     | GitHub-hosted runners   | Notes                                      |
 | ------------ | ----------------------- | ------------------------------------------ |
-| `ci.yml`     | Ubuntu, macOS, Windows  | web checks; Node 20 CLI and package matrix |
+| `ci.yml`     | Ubuntu, macOS, Windows  | web checks; Node 22/24 CLI, fresh package and PTY/ConPTY matrix |
 | `parity.yml` | Ubuntu                  | installs Starship, compares raw ANSI       |
 | `deploy.yml` | Ubuntu                  | builds the export, publishes to Pages      |
 

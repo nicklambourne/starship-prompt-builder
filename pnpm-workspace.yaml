@@ -4,5 +4,6 @@ packages:
 
 allowBuilds:
   esbuild: true
+  node-pty: true
   sharp: false
   unrs-resolver: true
