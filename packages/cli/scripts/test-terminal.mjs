@@ -100,6 +100,17 @@ try {
   } finally { interrupted.close(); }
 
   process.stdout.write(`Verified ${process.platform} PTY/ConPTY open → edit → save → quit, resize, and Ctrl+C.\n`);
+} catch (error) {
+  process.stderr.write(`${error instanceof Error ? error.stack : String(error)}\n`);
+  process.exitCode = 1;
 } finally {
-  await rm(directory, { recursive: true, force: true });
+  try {
+    await rm(directory, { recursive: true, force: true });
+  } catch (error) {
+    process.stderr.write(`Cannot remove PTY test directory: ${error}\n`);
+    process.exitCode = 1;
+  }
+  // node-pty's ConPTY worker can keep the test runner alive after onExit.
+  // All assertions and cleanup have finished; preserve their result explicitly.
+  if (process.platform === "win32") process.exit(process.exitCode ?? 0);
 }
