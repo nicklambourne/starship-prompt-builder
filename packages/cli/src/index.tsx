@@ -20,6 +20,7 @@ import { renderPrompt } from "@/lib/engine/prompt";
 import { PROMPT_ORDER } from "@/lib/engine/promptOrder";
 import { segmentsText } from "@/lib/engine/types";
 import { getScenario } from "@/lib/scenarios";
+import { AGENT_GUIDE } from "@/lib/agentGuide";
 
 declare const __CLI_VERSION__: string;
 const VERSION = __CLI_VERSION__;
@@ -33,6 +34,7 @@ Usage:
   starship-builder export [path] [--full]
   starship-builder share [path]
   starship-builder presets
+  starship-builder agent-guide
   starship-builder completions <bash|zsh|fish>
 
 Examples:
@@ -40,6 +42,7 @@ Examples:
   starship-builder preview - --width 100 --no-color < starship.toml
   starship-builder validate - --json < starship.toml
   starship-builder share starship.toml
+  starship-builder agent-guide
 
 Options:
   -c, --config <path>     Config to open (default: $STARSHIP_CONFIG or ~/.config/starship.toml)
@@ -111,7 +114,7 @@ async function main() {
     return;
   }
 
-  const knownCommands = new Set(["edit", "preview", "validate", "export", "share", "presets", "completions"]);
+  const knownCommands = new Set(["edit", "preview", "validate", "export", "share", "presets", "agent-guide", "completions"]);
   const first = parsed.positionals[0];
   const command = first && knownCommands.has(first) ? first : "edit";
   const path = parsed.values.config
@@ -119,6 +122,10 @@ async function main() {
 
   if (command === "presets") {
     for (const preset of PRESETS) process.stdout.write(`${preset.id.padEnd(34)} ${preset.label}\n`);
+    return;
+  }
+  if (command === "agent-guide") {
+    process.stdout.write(AGENT_GUIDE);
     return;
   }
   if (command === "completions") {

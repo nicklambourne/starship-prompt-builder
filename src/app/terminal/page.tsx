@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/builder/SiteFooter";
+import { AgentPromptCopy } from "./AgentPromptCopy";
 
 export const metadata = {
   title: "Terminal app — Starship Prompt Builder",
@@ -30,6 +31,14 @@ export default function TerminalPage() {
           <h2 className="text-xl font-semibold text-neutral-100">First run</h2>
           <pre className={CODE} tabIndex={0} aria-label="First-run commands">{`node packages/cli/dist/index.js edit ~/.config/starship.toml\nnode packages/cli/dist/index.js preview ~/.config/starship.toml --scenario cloud --no-color\nnode packages/cli/dist/index.js validate ~/.config/starship.toml --json`}</pre>
           <p>If the default config does not exist, interactive mode starts from a preset. Explicit files for preview, validation, and export must exist. Use <code>?</code> for keys or <code>:</code> for searchable actions. Press <code>Ctrl+S</code> to review the exact regenerated file before saving. A changed disk file cannot be silently overwritten.</p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold text-neutral-100">Build with an agent</h2>
+          <p>An agent can edit a candidate TOML file and use the CLI to validate and preview it without driving the TUI. The versioned guide tells it to show your current prompt first, label simulated previews, and review changes before touching your live config.</p>
+          <pre className={CODE} tabIndex={0} aria-label="Agent guide command">node packages/cli/dist/index.js agent-guide</pre>
+          <p>After installation, use <code>starship-builder agent-guide</code>. Copy the starter prompt into a chat with your agent. For ongoing use, you can add it to your existing <code>AGENTS.md</code> or equivalent agent instructions; do not replace instructions already there.</p>
+          <AgentPromptCopy className={CODE} />
         </section>
 
         <section className="space-y-3">

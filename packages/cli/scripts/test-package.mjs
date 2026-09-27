@@ -75,6 +75,17 @@ try {
     throw new Error(`Installed binary reported ${version}; expected ${installedManifest.version}`);
   }
 
+  const help = runPnpm(["exec", "starship-builder", "--help"], consumer);
+  if (!help.includes("starship-builder agent-guide")) {
+    throw new Error("Installed binary does not advertise its agent guide");
+  }
+  const agentGuide = runPnpm(["exec", "starship-builder", "agent-guide"], consumer);
+  if (!agentGuide.includes("Agent guide v1") ||
+      !agentGuide.includes("validate <config-path> --json") ||
+      !agentGuide.includes("preview <config-path> --scenario dirty-repo --width 100 --no-color")) {
+    throw new Error("Installed binary is missing the versioned, non-interactive agent workflow");
+  }
+
   const validation = runPnpm([
     "exec",
     "starship-builder",

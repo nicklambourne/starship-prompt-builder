@@ -1,4 +1,4 @@
-const COMMANDS = "edit preview validate export share presets completions";
+const COMMANDS = "edit preview validate export share presets agent-guide completions";
 const OPTIONS = "--config --preset --scenario --width --json --strict --no-color --full --from-share --help --version";
 
 export function shellCompletion(shell: string): string {

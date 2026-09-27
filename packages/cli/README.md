@@ -19,6 +19,7 @@ cat ~/.config/starship.toml | starship-builder validate - --strict
 starship-builder export ~/.config/starship.toml --full
 starship-builder share ~/.config/starship.toml
 starship-builder presets
+starship-builder agent-guide
 starship-builder completions bash  # also zsh and fish
 ```
 
@@ -28,6 +29,16 @@ silently become presets. A validation failure exits 2; file, parse, and usage
 errors exit 1. `--strict` makes unknown/future-option warnings fail validation.
 `--json` writes diagnostics only to stdout; errors go to stderr. `--from-share`
 imports a browser share link as the starting config for any command.
+
+## Working with an agent
+
+Run `starship-builder agent-guide` for the versioned, non-interactive workflow.
+It works without a config file or TTY. The [terminal guide](https://starship.ndl.au/terminal/)
+has a starter prompt you can copy into an agent chat or append to your existing
+`AGENTS.md` (or equivalent) for repeated use. An agent should show the current
+simulated preview, edit a separate candidate, validate and compare it, and only
+change the live config when requested. Direct file edits do not inherit the
+TUI's conflict and backup safeguards.
 
 Inside the TUI, use arrows or `j`/`k` to navigate, Enter to edit, Space to
 toggle, `a` to add, `m` to move, and `Tab` to switch left/right formats. Press
