@@ -86,7 +86,10 @@ try {
     if (result.exitCode !== 0) throw new Error(`CLI exited with ${result.exitCode}`);
     const saved = await readFile(configPath, "utf8");
     if (!saved.includes("add_newline = false")) throw new Error("Interactive edit was not saved");
-    if (/\x1b\[[0-9;]*m/.test(session.output())) throw new Error("--no-color emitted ANSI styling in interactive mode");
+    // ConPTY can emit a bare SGR reset (ESC[m) even when the child uses no colors.
+    const colorSgr = [...session.output().matchAll(/\x1b\[([0-9;]*)m/g)].find(([, params]) =>
+      params.split(";").some((code) => /^(?:3[0-8]|4[0-8]|9[0-7]|10[0-7])$/.test(code)));
+    if (colorSgr) throw new Error(`--no-color emitted ANSI color in interactive mode: ${JSON.stringify(colorSgr[0])}`);
   } finally { session.close(); }
 
   const interrupted = start(["edit", configPath, "--no-color"]);
