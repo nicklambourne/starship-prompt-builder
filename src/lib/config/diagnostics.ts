@@ -64,7 +64,7 @@ export function validateConfig(config: StarshipConfig): ConfigDiagnostic[] {
       const parsed = tryParseFormatString(value);
       if (!parsed.ok) {
         add({ code: "format", severity: "error", path, message: parsed.error, index: parsed.index });
-      } else if (key === "format" || key === "right_format") {
+      } else if (!moduleName && (key === "format" || key === "right_format")) {
         for (const variable of collectVariables(parsed.elements)) {
           if (variable === "all" || variable === "line_break" || variable === "fill") continue;
           const [family, instance] = variable.split(".");

@@ -44,4 +44,8 @@ describe("configuration diagnostics", () => {
       custom: { project: { command: "printf hello", os: "unix" } },
     })).toEqual([]);
   });
+
+  it("treats variables in module formats as local, not module references", () => {
+    expect(validateConfig({ dotnet: { format: "[$symbol$version $tfm]($style)" } })).toEqual([]);
+  });
 });

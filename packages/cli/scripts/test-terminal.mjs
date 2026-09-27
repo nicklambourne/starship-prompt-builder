@@ -21,6 +21,10 @@ if (process.platform !== "win32") {
 
 function start(args) {
   const env = { ...process.env, TERM: "xterm-256color" };
+  // Ink suppresses live frames when CI is set, even inside a real PTY.
+  // Exercise the same interactive rendering path users see in a terminal.
+  delete env.CI;
+  delete env.CONTINUOUS_INTEGRATION;
   delete env.NO_COLOR;
   delete env.FORCE_COLOR;
   const terminal = pty.spawn(process.execPath, [cli, ...args], {
