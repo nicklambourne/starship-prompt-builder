@@ -14,16 +14,18 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { DownloadIcon, CheckIcon } from "@/components/ui/icons";
 import { rescueToml } from "@/lib/config/rescue";
+import { resetSessionForReload } from "@/lib/config/session";
 import { useBuilderStore } from "@/state/builderStore";
 
 export default function BuilderError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [resetError, setResetError] = useState(false);
   // Read once, not as a subscription: this component must not re-render off
   // the same state that just brought the page down.
   const [toml] = useState(() => rescueToml(useBuilderStore.getState().config));
@@ -93,7 +95,7 @@ export default function BuilderError({
       <div className="flex flex-wrap gap-2 border-t border-white/10 pt-4">
         <button
           type="button"
-          onClick={reset}
+          onClick={retry}
           className="rounded border border-white/15 px-3 py-2 text-sm text-neutral-200 transition hover:border-accent-400 hover:text-accent-200"
         >
           Try again
@@ -101,15 +103,19 @@ export default function BuilderError({
         <button
           type="button"
           onClick={() => {
-            // The share fragment can itself be what broke the render, so
-            // starting over drops it.
-            window.location.href = window.location.pathname;
+            if (!resetSessionForReload()) {
+              setResetError(true);
+              return;
+            }
+            window.location.replace(window.location.pathname);
           }}
           className="rounded border border-white/15 px-3 py-2 text-sm text-neutral-200 transition hover:border-accent-400 hover:text-accent-200"
         >
           Start over with the default prompt
         </button>
       </div>
+
+      {resetError ? <p role="alert" className="text-sm text-neutral-300">Browser storage could not be cleared. Save your config, then clear this site’s storage in your browser settings before reloading.</p> : null}
 
       <p className="text-xs leading-relaxed text-neutral-500">
         If it keeps happening,{" "}

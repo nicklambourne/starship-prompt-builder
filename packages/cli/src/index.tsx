@@ -52,7 +52,7 @@ Options:
   -c, --config <path>     Config to open (default: $STARSHIP_CONFIG or ~/.config/starship.toml)
   -p, --preset <id>       Start from a bundled preset
   -s, --scenario <id>     Preview scenario (default: dirty-repo)
-      --width <columns>   Preview width for preview, state, and apply (minimum 20)
+      --width <columns>   Preview width for preview, state, and apply (20–500)
       --json              JSON output for validate, state, and apply
       --strict            Treat validation warnings as failures
       --from <path|->     Candidate TOML for apply (file or stdin)
@@ -98,10 +98,10 @@ function plainPreview(config: StarshipConfig, scenarioId: string, widthOption?: 
   const scenario = getScenario(scenarioId);
   if (scenario.id !== scenarioId) throw new Error(`Unknown scenario: ${scenarioId}`);
   const requestedWidth = widthOption === undefined ? undefined : Number(widthOption);
-  if (requestedWidth !== undefined && (!Number.isInteger(requestedWidth) || requestedWidth < 20)) {
-    throw new Error("--width must be an integer of at least 20 columns.");
+  if (requestedWidth !== undefined && (!Number.isInteger(requestedWidth) || requestedWidth < 20 || requestedWidth > 500)) {
+    throw new Error("--width must be an integer from 20 to 500 columns.");
   }
-  const width = requestedWidth ?? Math.max(20, process.stdout.columns ?? scenario.terminalWidth);
+  const width = requestedWidth ?? Math.max(20, Math.min(500, process.stdout.columns ?? scenario.terminalWidth));
   const rendered = renderPrompt({
     config,
     scenario: { ...scenario, terminalWidth: width },
@@ -301,10 +301,10 @@ async function main() {
 
   if (command === "preview") {
     const requestedWidth = parsed.values.width === undefined ? undefined : Number(parsed.values.width);
-    if (requestedWidth !== undefined && (!Number.isInteger(requestedWidth) || requestedWidth < 20)) {
-      throw new Error("--width must be an integer of at least 20 columns.");
+    if (requestedWidth !== undefined && (!Number.isInteger(requestedWidth) || requestedWidth < 20 || requestedWidth > 500)) {
+      throw new Error("--width must be an integer from 20 to 500 columns.");
     }
-    const width = requestedWidth ?? Math.max(20, process.stdout.columns ?? scenario.terminalWidth);
+    const width = requestedWidth ?? Math.max(20, Math.min(500, process.stdout.columns ?? scenario.terminalWidth));
     const rendered = renderPrompt({
       config: loaded.config,
       scenario: { ...scenario, terminalWidth: width },

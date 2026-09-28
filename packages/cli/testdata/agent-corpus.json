@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "scope": "Synthetic deterministic validation contracts; no model calls or telemetry",
+  "tasks": [
+    { "id": "empty-default", "toml": "", "valid": true },
+    { "id": "scalar-python-command", "toml": "[python]\npython_binary = 'python3'\n", "valid": true },
+    { "id": "bare-and-named-env", "toml": "[env_var]\nvariable = 'SYNTHETIC'\n[env_var.demo]\ndefault = 'demo'\n", "valid": true },
+    { "id": "invalid-array-item", "toml": "[nodejs]\ndetect_files = [123]\n", "valid": false },
+    { "id": "invalid-nested-palette", "toml": "[palettes.demo]\nred = 123\n", "valid": false },
+    { "id": "invalid-integer", "toml": "[directory]\ntruncation_length = 1.5\n", "valid": false },
+    { "id": "preserve-future-option", "toml": "future_option = 'preserved'\n", "valid": true }
+  ]
+}

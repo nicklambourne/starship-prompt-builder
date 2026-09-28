@@ -32,8 +32,8 @@ export function parseWorkspace(text: string): PortableWorkspace {
   if (!parsed.ok) throw new Error(`Invalid workspace TOML: ${parsed.error}`);
   const scenario = parseScenarioFile(JSON.stringify({ version: 1, scenario: data.scenario }));
   const previewWidth = data.previewWidth;
-  if (previewWidth !== undefined && (!Number.isInteger(previewWidth) || (previewWidth as number) < 20)) {
-    throw new Error("Workspace previewWidth must be an integer of at least 20.");
+  if (previewWidth !== undefined && (!Number.isInteger(previewWidth) || (previewWidth as number) < 20 || (previewWidth as number) > 500)) {
+    throw new Error("Workspace previewWidth must be an integer from 20 to 500.");
   }
   return { config: parsed.config, scenario, previewWidth: previewWidth as number | undefined };
 }

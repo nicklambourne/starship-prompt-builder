@@ -1,4 +1,4 @@
-import { chmod, readFile } from "node:fs/promises";
+import { chmod, copyFile, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 import { build } from "esbuild";
@@ -24,3 +24,4 @@ await build({
 });
 
 await chmod(outfile, 0o755);
+await copyFile(new URL("../../../public/licences/regex-validation.txt", import.meta.url), new URL("../dist/THIRD_PARTY.txt", import.meta.url));

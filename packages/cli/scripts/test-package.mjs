@@ -61,6 +61,7 @@ try {
   }
   const installedRoot = join(consumer, "node_modules", "starship-prompt-builder-cli");
   await stat(join(installedRoot, "dist", "index.js"));
+  await stat(join(installedRoot, "dist", "THIRD_PARTY.txt"));
   await stat(join(installedRoot, "LICENSE"));
   await stat(join(installedRoot, "README.md"));
   try {
@@ -129,6 +130,13 @@ try {
   }
 
   const target = join(consumer, "agent.toml");
+  const corpus = JSON.parse(await readFile(join(packageRoot, "testdata", "agent-corpus.json"), "utf8"));
+  for (const task of corpus.tasks) {
+    const result = runPnpmResult(["exec", "starship-builder", "validate", "-", "--json"], consumer, task.toml);
+    if (result.status !== (task.valid ? 0 : 2) || JSON.parse(result.stdout).valid !== task.valid) {
+      throw new Error(`Agent corpus v${corpus.version} failed: ${task.id}`);
+    }
+  }
   const original = '# keep until applied\nformat = "$directory$character"\n';
   const candidate = 'format = "$directory$git_branch$character"\n';
   await writeFile(target, original);

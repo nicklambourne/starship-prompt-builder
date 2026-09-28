@@ -6,6 +6,11 @@ import { parseConfig } from "./toml";
 import type { StarshipConfig } from "@/lib/engine/prompt";
 
 describe("encodeShare / decodeShare", () => {
+  it("round-trips the empty no-overrides config", () => {
+    expect(decodeShare(encodeShare({}))).toEqual({});
+    expect(decodeShare("#config=" + encodeShare({}))).toEqual({});
+    expect(decodeShare("Qjunk")).toBeNull();
+  });
   it("round-trips a simple config", () => {
     const config: StarshipConfig = { add_newline: false, aws: { style: "bold red" } };
     expect(decodeShare(encodeShare(config))).toEqual(config);

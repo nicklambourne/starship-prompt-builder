@@ -134,3 +134,9 @@ browsers only ever fetching the hashed copies.
 
 The licence texts stay in `public/fonts/licences/` on purpose: those are meant
 to be served at a stable, linkable URL.
+
+## Validation generator
+
+Ajv 8.20.0 generates the standalone structural validator under the MIT licence.
+Its notice is in [public/licences/regex-validation.txt](public/licences/regex-validation.txt)
+and is copied into the packaged CLI's third-party notice.
