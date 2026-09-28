@@ -8,6 +8,7 @@ async function loadModule(page: Page, name: string, config: string) {
   await page.goto("./");
   await page.locator('[data-section="toml"] button[aria-expanded]').press("Enter");
   await page.getByLabel("starship.toml").fill(config);
+  await page.getByRole("button", { name: /^Apply draft/ }).click();
   await page.getByRole("button", { name: `Expand $${name}`, exact: true }).press("Enter");
   await page.getByRole("button", { name: "Expand format", exact: true }).press("Enter");
   return page.locator('[data-option="format"]');
