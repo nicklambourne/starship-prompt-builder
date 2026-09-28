@@ -66,7 +66,7 @@ it.
 The same rendering engine is available as an interactive terminal UI. It can
 open an existing config or a bundled preset, preview changes against simulated
 shell environments, edit module options, reorder the prompt, and save through
-an atomic write with conflict detection and a `.bak` copy of the previous file.
+a coordinated save with conflict checks and a unique private `.bak` copy of the previous file.
 
 ```sh
 pnpm install
@@ -92,8 +92,8 @@ JSON shape, and write semantics.
 
 ## Development
 
-With [nix](https://nixos.org) + [direnv](https://direnv.net), which pin node
-and pnpm:
+With [nix](https://nixos.org) + [direnv](https://direnv.net), which select tools
+from your nixpkgs environment (not a locked nixpkgs revision):
 
 ```sh
 direnv allow
@@ -101,9 +101,9 @@ pnpm install
 pnpm dev
 ```
 
-Or bring your own Node ≥ 20 with pnpm. The site is a fully static Next.js
-export (`pnpm build` → `out/`), served under the `/starship-prompt-builder`
-base path.
+Or bring Node.js 22 or 24 (the CI-tested versions) with pnpm. The site is a
+fully static Next.js export (`pnpm build` → `out/`), served at the root of
+https://starship.ndl.au/ with no base-path prefix.
 
 For a long-lived local handoff, use the fixed loopback development stack:
 
