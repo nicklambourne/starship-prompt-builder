@@ -21,10 +21,10 @@ export function changedPaths(before: StarshipConfig, after: StarshipConfig): str
   return changes;
 }
 
-/** Exact old and proposed file bodies; line prefixes deliberately show regeneration. */
-export function reviewLines(before: string | null, after: string): string[] {
+/** Exact old and proposed file bodies with visible line prefixes. */
+export function reviewLines(before: string | null, after: string, proposedLabel = "proposed file (regenerated TOML)"): string[] {
   if (before === after) return ["No file changes. The original bytes will be kept."];
-  const lines = [`--- ${before === null ? "(new file)" : "current file"}`, "+++ proposed file (regenerated TOML)"];
+  const lines = [`--- ${before === null ? "(new file)" : "current file"}`, `+++ ${proposedLabel}`];
   const append = (content: string, marker: string) => {
     const split = content.split("\n");
     if (content.endsWith("\n")) split.pop();
