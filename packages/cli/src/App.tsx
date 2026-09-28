@@ -1,7 +1,8 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { readFile } from "node:fs/promises";
-import { Box, Text, useApp, useInput, useStdin, useStdout } from "ink";
-import { TextInput } from "@inkjs/ui";
+import { Box, useApp, useInput, useStdin, useStdout } from "ink";
+import { Text } from "./safeText";
+import { TextInput } from "./TextInput";
 
 import { expandPath, hashContent, loadConfig, type LoadedConfig } from "./configFile";
 import { saveReviewDecision, saveReviewedDocument } from "./saveReview";

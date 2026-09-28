@@ -10,6 +10,7 @@ import { ConfigConflictError, expandPath, hashContent, loadConfig, saveConfig, t
 import { shellCompletion } from "./completions";
 import { changedPaths, reviewLines } from "./documentReview";
 import { rightPromptGap } from "./terminalWidth";
+import { safeTerminalText, safeSegments } from "./safeText";
 import { validateConfig, type ConfigDiagnostic } from "@/lib/config/diagnostics";
 import { PRESETS } from "@/lib/config/presets";
 import { resolveDefaults } from "@/lib/config/defaults";
@@ -83,10 +84,6 @@ async function readStdin(maxBytes = 2 * 1024 * 1024): Promise<string> {
     chunks.push(buffer);
   }
   return Buffer.concat(chunks).toString("utf8");
-}
-
-function safeTerminalText(value: string): string {
-  return value.replace(/[\x00-\x1f\x7f-\x9f]/g, "?");
 }
 
 function printDiagnostic(item: ConfigDiagnostic): void {
@@ -241,8 +238,8 @@ async function main() {
       candidateDiagnostics.forEach(printDiagnostic);
       report.warnings.forEach((warning) => process.stderr.write(`warning: ${safeTerminalText(warning)}\n`));
       process.stdout.write(`${report.review.join("\n")}\n`);
-      if (preview) process.stdout.write(`Preview (${preview.scenario}, ${preview.width} columns):\n${preview.text.replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, "?")}`);
-      if (report.applied) process.stdout.write(`Applied ${report.target}${report.backupPath ? `; backup: ${report.backupPath}` : ""}\n`);
+      if (preview) process.stdout.write(`Preview (${safeTerminalText(preview.scenario)}, ${preview.width} columns):\n${safeTerminalText(preview.text, true)}`);
+      if (report.applied) process.stdout.write(`Applied ${safeTerminalText(report.target)}${report.backupPath ? `; backup: ${safeTerminalText(report.backupPath)}` : ""}\n`);
       else if (valid && report.changed && !parsed.values.yes) process.stdout.write("No file written. Re-run with --yes to apply this candidate.\n");
     }
     if (!valid) process.exitCode = 2;
@@ -255,7 +252,7 @@ async function main() {
       process.stdout.write(`${JSON.stringify({ valid: !failed, diagnostics })}\n`);
     } else {
       diagnostics.forEach(printDiagnostic);
-      if (!failed) process.stdout.write(`Valid Starship configuration: ${loaded.sourceLabel}\n`);
+      if (!failed) process.stdout.write(`Valid Starship configuration: ${safeTerminalText(loaded.sourceLabel)}\n`);
     }
     if (failed) process.exitCode = 2;
     return;
@@ -313,14 +310,16 @@ async function main() {
     });
     const color = !parsed.values["no-color"] && process.env.NO_COLOR === undefined;
     if (rendered.leadingNewline) process.stdout.write("\n");
-    rendered.lines.forEach((line, index) => {
+    const safeRight = safeSegments(rendered.right);
+    rendered.lines.forEach((unsafeLine, index) => {
+      const line = safeSegments(unsafeLine);
       const isLast = index === rendered.lines.length - 1 && rendered.right.length > 0;
       const plain = segmentsText(line);
-      const gap = isLast ? rightPromptGap(plain, segmentsText(rendered.right), width) : null;
-      const right = gap === null ? "" : `${" ".repeat(gap)}${color ? segmentsToAnsi(rendered.right) : segmentsText(rendered.right)}`;
+      const gap = isLast ? rightPromptGap(plain, segmentsText(safeRight), width) : null;
+      const right = gap === null ? "" : `${" ".repeat(gap)}${color ? segmentsToAnsi(safeRight) : segmentsText(safeRight)}`;
       process.stdout.write(`${color ? segmentsToAnsi(line) : plain}${right}\n`);
     });
-    for (const warning of rendered.warnings) process.stderr.write(`warning: ${warning}\n`);
+    for (const warning of rendered.warnings) process.stderr.write(`warning: ${safeTerminalText(warning)}\n`);
     return;
   }
 
@@ -339,6 +338,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  process.stderr.write(`starship-builder: ${(error as Error).message}\n`);
+  process.stderr.write(`starship-builder: ${safeTerminalText((error as Error).message)}\n`);
   process.exitCode = 1;
 });

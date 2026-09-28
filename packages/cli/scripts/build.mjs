@@ -17,7 +17,7 @@ await build({
   tsconfig: fileURLToPath(new URL("../../../tsconfig.json", import.meta.url)),
   banner: { js: "#!/usr/bin/env node" },
   define: { __CLI_VERSION__: JSON.stringify(manifest.version) },
-  external: ["@inkjs/ui", "ink", "react"],
+  external: ["ink", "react"],
   sourcemap: true,
   logLevel: "info",
   absWorkingDir: packageRoot,

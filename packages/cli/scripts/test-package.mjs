@@ -130,6 +130,17 @@ try {
   }
 
   const target = join(consumer, "agent.toml");
+  // Capture hostile control bytes in subprocess pipes; never emit them into a
+  // human terminal. Human output is safe, machine JSON remains faithful.
+  const hostile = 'format = "$env_var"\n[env_var]\nvariable = "PARITY_ABSENT_CONTROL_TEST"\ndefault = "\\u001b]52;c;synthetic\\u0007\\u009b2J"\n';
+  const safePreview = runPnpmResult(["exec", "starship-builder", "preview", "-", "--no-color"], consumer, hostile);
+  if (safePreview.status !== 0 || /[\x00-\x09\x0b-\x1f\x7f-\x9f]/.test(safePreview.stdout + safePreview.stderr)) {
+    throw new Error("Human preview exposed unsafe terminal control bytes");
+  }
+  const faithfulState = runPnpmResult(["exec", "starship-builder", "state", "-", "--json"], consumer, hostile);
+  if (faithfulState.status !== 0 || !JSON.parse(faithfulState.stdout).config.env_var.default.includes("\u001b")) {
+    throw new Error("Machine state did not preserve the control-byte source value");
+  }
   const corpus = JSON.parse(await readFile(join(packageRoot, "testdata", "agent-corpus.json"), "utf8"));
   for (const task of corpus.tasks) {
     const result = runPnpmResult(["exec", "starship-builder", "validate", "-", "--json"], consumer, task.toml);
