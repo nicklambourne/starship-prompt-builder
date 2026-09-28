@@ -1,7 +1,7 @@
 name: Parity
 
 # Compares the TypeScript engine against the real starship binary. Runs on
-# every PR touching the engine, on main, and weekly against whatever starship
+# every PR and main revision through CI, and weekly against whatever starship
 # has released since — upstream drift is the failure mode this exists to catch,
 # and it does not announce itself.
 #
@@ -10,21 +10,14 @@ name: Parity
 # weekly run takes the newest one so that drift shows up on its own schedule
 # rather than in someone else's review.
 on:
-  pull_request:
-    paths:
-      - "src/lib/engine/**"
-      - "src/lib/config/**"
-      - "tests/parity/**"
-      - ".github/workflows/parity.yml"
-  push:
-    branches: [main]
+  workflow_call:
   schedule:
     # 04:20 UTC Mondays (~14:20 AEST), well clear of the weekday deploy window.
     - cron: "20 4 * * 1"
   workflow_dispatch:
 
 concurrency:
-  group: parity-${{ github.ref }}
+  group: parity-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -38,13 +31,14 @@ jobs:
         env:
           # Pull requests and pushes compare against a pinned release, so a
           # starship release cannot redden a PR that has nothing to do with
-          # it. Scheduled and manually dispatched runs deliberately track the
-          # newest release instead.
+          # it. Only standalone Parity scheduled/manual runs track latest;
+          # a manually dispatched CI run still uses the pin.
           PINNED_TAG: "v1.26.0"
+          TRACK_LATEST: ${{ github.workflow == 'Parity' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
         run: |
           set -euo pipefail
           archive="starship-x86_64-unknown-linux-musl.tar.gz"
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "$TRACK_LATEST" = "true" ]; then
             echo "tracking the latest starship release"
             release_base="https://github.com/starship/starship/releases/latest/download"
           else

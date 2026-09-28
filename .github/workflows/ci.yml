@@ -4,13 +4,17 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  check:
+  web-check:
     # GitHub-hosted, always. This repository is public: a pull request from a
     # fork is attacker-authored code, and it must never run on a self-hosted
     # runner sitting on a home LAN. See docs/ci-runners.md.
@@ -33,6 +37,8 @@ jobs:
 
       - run: pnpm deadcode
 
+      - run: pnpm check:generated
+
       - name: Install browser engines
         run: pnpm exec playwright install --with-deps chromium firefox webkit
 
@@ -43,6 +49,12 @@ jobs:
       # Playwright builds and serves the production static export itself. This
       # covers the build as well as the desktop, mobile and axe suites.
       - run: pnpm test:e2e
+
+      - name: Preserve the tested main artifact
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: out
 
   cli-platforms:
     name: CLI · Node ${{ matrix.node }} · ${{ matrix.os }}
@@ -83,3 +95,28 @@ jobs:
       - run: pnpm build:cli
 
       - run: node packages/cli/dist/index.js preview --preset plain-text-symbols --scenario simple --no-color
+
+  parity:
+    uses: ./.github/workflows/parity.yml
+
+  check:
+    name: check
+    if: always()
+    needs: [web-check, cli-platforms, parity]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every quality dependency to succeed
+        env:
+          WEB: ${{ needs.web-check.result }}
+          CLI: ${{ needs.cli-platforms.result }}
+          PARITY: ${{ needs.parity.result }}
+        run: test "$WEB" = success && test "$CLI" = success && test "$PARITY" = success
+
+  deploy:
+    if: github.repository == 'nicklambourne/starship-prompt-builder' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: check
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
