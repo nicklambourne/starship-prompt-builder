@@ -21,6 +21,23 @@ export function changedPaths(before: StarshipConfig, after: StarshipConfig): str
   return changes;
 }
 
+/** Values for a compact agent review; the complete file remains in reviewLines. */
+export function changedValues(before: StarshipConfig, after: StarshipConfig): Array<{ path: string; before?: unknown; after?: unknown }> {
+  const changes: Array<{ path: string; before?: unknown; after?: unknown }> = [];
+  function visit(left: unknown, right: unknown, path: string) {
+    if (JSON.stringify(left) === JSON.stringify(right)) return;
+    if (isTable(left) && isTable(right)) {
+      for (const key of new Set([...Object.keys(left), ...Object.keys(right)])) {
+        visit(left[key], right[key], path ? `${path}.${key}` : key);
+      }
+    } else {
+      changes.push({ path: path || "(root)", before: left, after: right });
+    }
+  }
+  visit(before, after, "");
+  return changes;
+}
+
 /** Exact old and proposed file bodies with visible line prefixes. */
 export function reviewLines(before: string | null, after: string, proposedLabel = "proposed file (regenerated TOML)"): string[] {
   if (before === after) return ["No file changes. The original bytes will be kept."];

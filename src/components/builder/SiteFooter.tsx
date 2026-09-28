@@ -32,7 +32,7 @@ export function SiteFooter() {
         </Link>
         {" · "}
         <Link href="/terminal" className={LINK}>
-          Terminal app
+          Terminal & AI
         </Link>
         {" · "}
         <Link href="/licences" className={LINK}>

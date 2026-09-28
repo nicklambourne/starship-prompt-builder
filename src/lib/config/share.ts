@@ -14,6 +14,7 @@ import {
 } from "lz-string";
 import { parseConfig, serialiseConfig } from "./toml";
 import type { StarshipConfig } from "@/lib/engine/prompt";
+import type { Scenario } from "@/lib/scenarios/types";
 
 export const SHARE_LIMITS = {
   payloadCharacters: 64 * 1024,
@@ -30,6 +31,78 @@ export function encodeShare(config: StarshipConfig): string {
   return compressToEncodedURIComponent(
     serialiseConfig(config, { header: false }),
   );
+}
+
+export interface ReviewShare {
+  config: StarshipConfig;
+  scenario: Scenario;
+  themeId: string;
+  fontId: string;
+  fontSize: number;
+}
+
+function validReviewScenario(value: unknown): value is Scenario {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const scenario = value as Record<string, unknown>;
+  const record = (item: unknown): item is Record<string, unknown> =>
+    typeof item === "object" && item !== null && !Array.isArray(item);
+  const stringMap = (item: unknown) => record(item) && Object.entries(item).every(([key, entry]) =>
+    !["__proto__", "constructor", "prototype"].includes(key) && typeof entry === "string");
+  const strings = ["id", "label", "description", "path", "home", "username", "hostname", "shell", "keymap", "time"];
+  const booleans = ["readOnly", "ssh", "isRoot"];
+  const numbers = ["status", "cmdDurationMs", "jobs"];
+  const git = scenario.git;
+  return strings.every((key) => typeof scenario[key] === "string") &&
+    booleans.every((key) => typeof scenario[key] === "boolean") &&
+    numbers.every((key) => typeof scenario[key] === "number" && Number.isFinite(scenario[key])) &&
+    Number.isInteger(scenario.terminalWidth) && (scenario.terminalWidth as number) >= 20 &&
+    (scenario.terminalWidth as number) <= 500 &&
+    Array.isArray(scenario.files) && scenario.files.every((file) => typeof file === "string") &&
+    stringMap(scenario.env) && stringMap(scenario.toolVersions) &&
+    record(scenario.os) && typeof scenario.os.name === "string" && typeof scenario.os.type === "string" &&
+    (git === undefined || record(git) &&
+      typeof git.commit === "string" && typeof git.root === "string" &&
+      typeof git.detached === "boolean" && typeof git.hasRemote === "boolean" &&
+      ["ahead", "behind", "staged", "modified", "deleted", "renamed", "untracked", "conflicted", "stashed"]
+        .every((key) => typeof git[key] === "number" && Number.isFinite(git[key]))) &&
+    (scenario.custom === undefined || record(scenario.custom) &&
+      Object.values(scenario.custom).every((entry) => record(entry) &&
+        typeof entry.output === "string" && typeof entry.when === "boolean"));
+}
+
+/** A separate, versioned link for reviewing the same visual context together. */
+export function encodeReviewShare(value: ReviewShare): string {
+  const document = {
+    version: 1,
+    configToml: serialiseConfig(value.config, { header: false }),
+    scenario: value.scenario,
+    themeId: value.themeId,
+    fontId: value.fontId,
+    fontSize: value.fontSize,
+  };
+  return `review=${compressToEncodedURIComponent(JSON.stringify(document))}`;
+}
+
+export function decodeReviewShare(fragment: string): ReviewShare | null {
+  const text = fragment.startsWith("#") ? fragment.slice(1) : fragment;
+  if (!text.startsWith("review=") || text.length > SHARE_LIMITS.payloadCharacters + SHARE_FRAGMENT_OVERHEAD) return null;
+  try {
+    const expanded = decompressFromEncodedURIComponent(text.slice("review=".length));
+    if (!expanded || expanded.length > SHARE_LIMITS.tomlCharacters) return null;
+    const data: unknown = JSON.parse(expanded);
+    if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+    const record = data as Record<string, unknown>;
+    const scenario = record.scenario;
+    if (record.version !== 1 || typeof record.configToml !== "string" ||
+      typeof record.themeId !== "string" || typeof record.fontId !== "string" ||
+      typeof record.fontSize !== "number" || !Number.isFinite(record.fontSize) ||
+      !validReviewScenario(scenario)) return null;
+    const parsed = parseConfig(record.configToml);
+    if (!parsed.ok || !withinShareLimits(parsed.config)) return null;
+    return { config: parsed.config, scenario, themeId: record.themeId, fontId: record.fontId, fontSize: record.fontSize };
+  } catch {
+    return null;
+  }
 }
 
 /**

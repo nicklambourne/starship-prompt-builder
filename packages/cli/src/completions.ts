@@ -1,5 +1,5 @@
-const COMMANDS = "edit preview validate state apply export share presets completions";
-const OPTIONS = "--config --preset --scenario --width --json --strict --no-color --full --from --yes --expect-hash --from-share --help --version";
+const COMMANDS = "edit preview validate state apply compare capabilities agent-guide export share presets completions";
+const OPTIONS = "--config --preset --scenario --scenario-file --width --json --compact --strict --no-color --full --from --yes --expect-hash --review-hash --scenarios --widths --html --theme --from-share --help --version";
 
 export function shellCompletion(shell: string): string {
   if (shell === "bash") return `# bash completion for starship-builder and spb\n_spb_complete() {\n  local current="${"${COMP_WORDS[COMP_CWORD]}"}"\n  COMPREPLY=( $(compgen -W '${COMMANDS} ${OPTIONS}' -- "$current") )\n}\ncomplete -F _spb_complete starship-builder spb\n`;
