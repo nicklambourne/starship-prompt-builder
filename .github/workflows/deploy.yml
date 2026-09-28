@@ -1,9 +1,9 @@
-name: Deploy to GitHub Pages
+name: Deploy verified artifact to GitHub Pages
 
+# Called only after CI's aggregate check. No rebuild, cross-run download, or
+# independent manual path: the artifact belongs to this exact checked run/SHA.
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -15,29 +15,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Enable pnpm
-        run: corepack enable
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm build
-
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: out
-
   deploy:
-    needs: build
+    if: github.repository == 'nicklambourne/starship-prompt-builder' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

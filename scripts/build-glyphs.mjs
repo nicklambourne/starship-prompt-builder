@@ -23,7 +23,7 @@ import { bundledCodepoints } from "./font-coverage.mjs";
 /** The Nerd Fonts release `src/assets/fonts` was taken from. */
 const VERSION = "v3.5.0";
 const SOURCE = `https://raw.githubusercontent.com/ryanoasis/nerd-fonts/${VERSION}/glyphnames.json`;
-const INPUT = process.argv[2] ?? "/tmp/glyphnames.json";
+const INPUT = process.argv[2] ?? "data/glyphnames.source.json";
 const OUTPUT = "data/glyphs.generated.json";
 
 /**

@@ -1,6 +1,6 @@
 # Vendored data
 
-Everything here except [`presets-community/`](presets-community) and
+Everything here except the Nerd Fonts glyph input (`glyphnames.source.json`), [`presets-community/`](presets-community) and
 [`presets-inspired/`](presets-inspired) comes from
 [starship](https://github.com/starship/starship), © the Starship contributors
 and [ISC licensed](https://github.com/starship/starship/blob/master/LICENSE);
@@ -11,6 +11,21 @@ translated presets are maintained here as project source.
 
 `*.generated.json` artefacts are committed so the app builds without a codegen
 step. Regenerate them with `pnpm build:data` after any upstream sync.
+
+`pnpm check:generated` rebuilds offline and fails if an artifact was stale.
+`provenance.generated.json` records hashes of the actual schema, docs, presets,
+glyph-name input and bundled font files. Source versions and license notes are
+recorded there and in THIRD_PARTY.md; hashes do not imply that community presets
+share Starship's revision. Regeneration never fetches upstream data implicitly.
+
+The full standalone validator is generated in `src/lib/config/validation.generated.mjs`.
+It retains nested types, unions and numeric bounds; `schema.generated.json`
+remains intentionally lossy editor metadata. The env_var bare/named compatibility
+adjustment follows Starship 1.26.0, and 64-bit values are restricted to JS-safe integers.
+
+The glyph input is pinned to Nerd Fonts v3.5.0. Update it explicitly from
+`https://raw.githubusercontent.com/ryanoasis/nerd-fonts/v3.5.0/glyphnames.json`,
+then regenerate and review the input, output, hash and license diffs together.
 
 ## `config-schema.json` — synced
 

@@ -407,10 +407,10 @@ export function BuilderApp({
     modules: definitions,
     defaultOrder: PROMPT_ORDER,
   }), [columns, config, definitions, scenario]);
-  const comparison = useMemo(() => listScenarios().map((candidate) => ({
+  const comparison = useMemo(() => view !== "compare" ? [] : listScenarios().map((candidate) => ({
     scenario: candidate,
     preview: renderPrompt({ config, scenario: candidate, modules: definitions, defaultOrder: PROMPT_ORDER }),
-  })), [config, definitions]);
+  })), [config, definitions, view]);
   const visibilityRows = useMemo(() => {
     if (view !== "visibility") return [];
     const referenced = new Set(collectModuleNames([...formatItems(config, "left"), ...formatItems(config, "right")]));
