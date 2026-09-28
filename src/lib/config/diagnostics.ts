@@ -3,6 +3,7 @@ import { collectVariables, tryParseFormatString } from "@/lib/engine/formatStrin
 import type { StarshipConfig } from "@/lib/engine/prompt";
 import { isFormatOption } from "./meta";
 import { optionEnum } from "./optionEnums";
+import validateSchema from "./validation.generated.mjs";
 import {
   getModuleSchema,
   getRootOption,
@@ -22,20 +23,16 @@ function isTable(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function typeMatches(type: OptionSchema["type"], value: unknown): boolean {
-  switch (type) {
-    case "string": return typeof value === "string";
-    case "boolean": return typeof value === "boolean";
-    case "number": return typeof value === "number" && Number.isFinite(value);
-    case "array": return Array.isArray(value);
-    case "object": return isTable(value);
-    case "unknown": return true;
-  }
-}
-
 /** Unknown keys are warnings: a newer Starship may already support them. */
 export function validateConfig(config: StarshipConfig): ConfigDiagnostic[] {
   const diagnostics: ConfigDiagnostic[] = [];
+  if (!validateSchema(config)) {
+    for (const error of validateSchema.errors ?? []) {
+      if (error.keyword === "additionalProperties" || error.keyword === "anyOf" || error.keyword === "oneOf") continue;
+      const path = error.instancePath.slice(1).split("/").map((part) => part.replaceAll("~1", "/").replaceAll("~0", "~")).join(".");
+      diagnostics.push({ code: error.keyword === "enum" ? "enum" : "type", severity: "error", path, message: error.message ?? "Invalid configuration value." });
+    }
+  }
   const add = (item: ConfigDiagnostic) => { diagnostics.push(item); };
   const palettes = isTable(config.palettes) ? config.palettes : {};
 
@@ -47,10 +44,6 @@ export function validateConfig(config: StarshipConfig): ConfigDiagnostic[] {
   ) => {
     if (!schema) {
       add({ code: "unknown-option", severity: "warning", path, message: "Unknown option; kept for newer Starship versions." });
-      return;
-    }
-    if (!typeMatches(schema.type, value)) {
-      add({ code: "type", severity: "error", path, message: `Expected ${schema.type}.` });
       return;
     }
     const key = schema.key;
@@ -109,7 +102,9 @@ export function validateConfig(config: StarshipConfig): ConfigDiagnostic[] {
         add({ code: "type", severity: "error", path: key, message: "Expected named module tables." });
       } else {
         for (const [instance, options] of Object.entries(value)) {
-          validateModule(key, options, `${key}.${instance}`);
+          if (key === "env_var" && !isTable(options)) {
+            validateOption(`env_var.${instance}`, options, getModuleSchema("env_var")?.options.find((option) => option.key === instance), "env_var");
+          } else validateModule(key, options, `${key}.${instance}`);
         }
       }
       continue;

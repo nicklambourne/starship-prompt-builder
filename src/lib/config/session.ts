@@ -13,6 +13,8 @@
 
 import type { StarshipConfig } from "@/lib/engine/prompt";
 import type { Scenario } from "@/lib/scenarios/types";
+import { isScenario } from "@/lib/scenarios/validation";
+import validateSchema from "./validation.generated.mjs";
 
 const KEY = "starship-prompt-builder.session";
 
@@ -21,6 +23,8 @@ const KEY = "starship-prompt-builder.session";
  * dropped rather than migrated: it is a convenience, not a document.
  */
 const VERSION = 1;
+const MAX_CHARS = 2 * 1024 * 1024;
+let resetting = false;
 
 export interface PersistedSession {
   version: number;
@@ -42,19 +46,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isSession(value: unknown): value is PersistedSession {
   if (!isRecord(value)) return false;
   if (value.version !== VERSION) return false;
-  if (!isRecord(value.config) || !isRecord(value.scenario)) return false;
+  if (!isRecord(value.config) || !isScenario(value.scenario)) return false;
+  if (!validateSchema(value.config) && validateSchema.errors?.some((error) => error.keyword !== "additionalProperties")) return false;
   if (typeof value.themeId !== "string" || typeof value.fontId !== "string") return false;
-  // A scenario missing its basics would render a broken preview; take the
-  // default instead.
-  const scenario = value.scenario;
-  return typeof scenario.path === "string" && typeof scenario.shell === "string";
+  if (value.fontSize !== undefined && (typeof value.fontSize !== "number" || !Number.isFinite(value.fontSize))) return false;
+  return value.appTheme === undefined || value.appTheme === "dark" || value.appTheme === "light";
 }
 
 export function loadSession(): PersistedSession | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return null;
+    if (!raw || raw.length > MAX_CHARS) return null;
     const parsed: unknown = JSON.parse(raw);
     return isSession(parsed) ? parsed : null;
   } catch {
@@ -65,7 +68,7 @@ export function loadSession(): PersistedSession | null {
 }
 
 export function saveSession(session: Omit<PersistedSession, "version">): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || resetting) return;
   try {
     window.localStorage.setItem(KEY, JSON.stringify({ ...session, version: VERSION }));
   } catch {
@@ -73,11 +76,19 @@ export function saveSession(session: Omit<PersistedSession, "version">): void {
   }
 }
 
-export function clearSession(): void {
-  if (typeof window === "undefined") return;
+export function clearSession(): boolean {
+  if (typeof window === "undefined") return false;
   try {
     window.localStorage.removeItem(KEY);
+    return true;
   } catch {
-    // As above.
+    return false;
   }
+}
+
+/** Suppress pending lifecycle flushes until the reset navigation finishes. */
+export function resetSessionForReload(): boolean {
+  if (!clearSession()) return false;
+  resetting = true;
+  return true;
 }

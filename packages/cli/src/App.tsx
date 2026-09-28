@@ -96,7 +96,7 @@ interface EnvironmentField {
 const ENVIRONMENT_FIELDS: EnvironmentField[] = [
   { key: "path", label: "Directory", kind: "string", get: (s) => s.path, set: (s, value) => ({ ...s, path: String(value) }) },
   { key: "home", label: "Home directory", kind: "string", get: (s) => s.home, set: (s, value) => ({ ...s, home: String(value) }) },
-  { key: "terminalWidth", label: "Prompt width", kind: "number", get: (s) => s.terminalWidth, set: (s, value) => ({ ...s, terminalWidth: Math.max(20, Number(value)) }) },
+  { key: "terminalWidth", label: "Prompt width", kind: "number", get: (s) => s.terminalWidth, set: (s, value) => ({ ...s, terminalWidth: Math.max(20, Math.min(500, Math.round(Number(value)))) }) },
   { key: "status", label: "Last exit status", kind: "number", get: (s) => s.status, set: (s, value) => ({ ...s, status: Number(value) }) },
   { key: "cmdDurationMs", label: "Command duration (ms)", kind: "number", get: (s) => s.cmdDurationMs, set: (s, value) => ({ ...s, cmdDurationMs: Math.max(0, Number(value)) }) },
   { key: "username", label: "Username", kind: "string", get: (s) => s.username, set: (s, value) => ({ ...s, username: String(value) }) },

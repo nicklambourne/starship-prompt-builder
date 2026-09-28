@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearSession, loadSession, saveSession } from "./session";
+import { getScenario } from "@/lib/scenarios";
 
 const store = new Map<string, string>();
 
@@ -17,12 +18,36 @@ beforeEach(() => {
 
 const session = {
   config: { add_newline: false },
-  scenario: { path: "/tmp", shell: "zsh" },
+  scenario: getScenario("simple"),
   themeId: "tokyo-night",
   fontId: "hack",
-} as never;
+};
 
 describe("session storage", () => {
+  it("clears only our session and suppresses lifecycle writes during reset", async () => {
+    vi.resetModules();
+    const resettingSession = await import("./session");
+    store.set("unrelated-app", "keep");
+    resettingSession.saveSession(session);
+    expect(resettingSession.resetSessionForReload()).toBe(true);
+    resettingSession.saveSession(session);
+    expect(resettingSession.loadSession()).toBeNull();
+    expect(store.get("unrelated-app")).toBe("keep");
+    vi.resetModules();
+    expect((await import("./session")).loadSession()).toBeNull();
+  });
+  it("does not suppress future saves when storage refuses a reset", async () => {
+    vi.resetModules();
+    const resettingSession = await import("./session");
+    window.localStorage.removeItem = () => { throw new Error("blocked"); };
+    expect(resettingSession.resetSessionForReload()).toBe(false);
+    resettingSession.saveSession(session);
+    expect(resettingSession.loadSession()).not.toBeNull();
+  });
+  it("rejects an incomplete scenario that would crash the builder", () => {
+    saveSession({ ...session, scenario: { path: "/tmp", shell: "zsh" } as never });
+    expect(loadSession()).toBeNull();
+  });
   it("round-trips what was saved", () => {
     saveSession(session);
     expect(loadSession()).toMatchObject({ themeId: "tokyo-night", fontId: "hack" });

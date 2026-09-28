@@ -62,7 +62,10 @@ export function decodeShare(fragment: string): StarshipConfig | null {
   // lz-string signals failure by returning null or an empty string rather than
   // throwing, and happily produces mojibake for arbitrary input — so the TOML
   // parse below is the real validation step.
-  if (!toml || toml.length > SHARE_LIMITS.tomlCharacters) return null;
+  if (toml === null || toml.length > SHARE_LIMITS.tomlCharacters) return null;
+  // lz-string also yields "" for some junk. Only the canonical empty document
+  // is a legitimate no-overrides config.
+  if (toml === "" && payload !== compressToEncodedURIComponent("")) return null;
 
   const result = parseConfig(toml);
   if (!result.ok || !withinShareLimits(result.config)) return null;
