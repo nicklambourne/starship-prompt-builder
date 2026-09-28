@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -94,7 +94,9 @@ describe("terminal builder", () => {
 
     expect(app.lastFrame()).toContain("Saved ");
     expect(app.lastFrame()).toContain("✓ saved");
-    expect(await readFile(`${path}.bak`, "utf8")).toBe(original);
+    const backup = (await readdir(directory)).find((name) => name.endsWith(".bak"));
+    expect(backup).toBeDefined();
+    expect(await readFile(join(directory, backup!), "utf8")).toBe(original);
     expect(await readFile(path, "utf8")).toContain("[username]");
   });
 

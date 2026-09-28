@@ -49,8 +49,14 @@ overwriting a file changed since its `state` snapshot, pass that snapshot's
 `source.hash` as `--expect-hash`; use `none` if the target did not exist.
 Validation errors (or warnings with `--strict`) block writes with exit 2.
 Applied bytes are the candidate's exact bytes, without TUI regeneration;
-the previous file is copied to `.bak` and the target is replaced atomically.
-An on-disk change during apply is also detected before replacement. Both
+the previous file is copied to a unique `<target>.<random-id>.bak` (0600 on POSIX).
+Cooperating writers use an exclusive per-target `.lock`; new files are published
+without clobbering a competing creation. Existing files use a final identity/hash
+check and atomic rename, **not universal filesystem compare-and-swap**: an external
+editor can still write between that check and rename. Parent directories must be
+trusted. Lock contention fails immediately; inspect the lock and ensure no writer
+is active before manually removing a stale lock. The result includes cleanup
+`warnings`; a cleanup warning does not mean the save failed. Both
 `state` and `apply --json` may expose values from your configuration, so review
 their output before sharing it outside your machine.
 
@@ -64,9 +70,8 @@ The action search offers alternatives for shortcuts a terminal intercepts.
 Save review shows the full current and proposed file, semantic changes,
 diagnostics, destination, and backup plan. **An edited save regenerates TOML**:
 comments, whitespace, and source formatting may change. An unchanged loaded
-file is kept byte-for-byte. A file changed on disk cannot be silently
-overwritten; reload or Save As instead. The prior file is copied to `.bak`
-before replacement. Unsaved edits create a private recovery draft keyed by
+file is kept byte-for-byte. Detected disk changes block replacement; reload or
+Save As instead. The same lock/backup limitations described above apply. Unsaved edits create a private recovery draft keyed by
 the destination, separate from the real config. Recovery never overwrites a
 newer disk file without an explicit new decision.
 

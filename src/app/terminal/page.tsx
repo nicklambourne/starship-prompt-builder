@@ -29,7 +29,7 @@ export default function TerminalPage() {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold text-neutral-100">First run</h2>
           <pre className={CODE} tabIndex={0} aria-label="First-run commands">{`node packages/cli/dist/index.js edit ~/.config/starship.toml\nnode packages/cli/dist/index.js preview ~/.config/starship.toml --scenario cloud --no-color\nnode packages/cli/dist/index.js validate ~/.config/starship.toml --json`}</pre>
-          <p>If the default config does not exist, interactive mode starts from a preset. Explicit files for preview, validation, and export must exist. Use <code>?</code> for keys or <code>:</code> for searchable actions. Press <code>Ctrl+S</code> to review the exact regenerated file before saving. A changed disk file cannot be silently overwritten.</p>
+          <p>If the default config does not exist, interactive mode starts from a preset. Explicit files for preview, validation, and export must exist. Use <code>?</code> for keys or <code>:</code> for searchable actions. Press <code>Ctrl+S</code> to review the exact regenerated file before saving. Detected disk changes block saving. Saves coordinate with this CLI, but external editors can still race an existing-file replacement.</p>
         </section>
 
         <section className="space-y-3">

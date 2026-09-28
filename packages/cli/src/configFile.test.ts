@@ -53,13 +53,14 @@ describe("config files", () => {
     await expect(saveConfig({ path: link, content: "", expectedHash: null })).rejects.toMatchObject({ code: "ENOENT" });
   });
 
-  it("keeps the original file if backup creation fails", async () => {
+  it("preserves a pre-existing backup directory", async () => {
     const directory = await temporaryDirectory();
     const path = join(directory, "starship.toml");
     await writeFile(path, "add_newline = false\n");
     await mkdir(`${path}.bak`);
-    await expect(saveConfig({ path, content: "add_newline = true\n", expectedHash: hashContent("add_newline = false\n") })).rejects.toThrow();
-    expect(await readFile(path, "utf8")).toBe("add_newline = false\n");
+    const result = await saveConfig({ path, content: "add_newline = true\n", expectedHash: hashContent("add_newline = false\n") });
+    expect(result.backupPath).not.toBe(`${path}.bak`);
+    expect(await readFile(result.backupPath!, "utf8")).toBe("add_newline = false\n");
   });
 
   it("writes atomically and keeps the previous content as a backup", async () => {
@@ -76,7 +77,7 @@ describe("config files", () => {
     });
 
     expect(await readFile(path, "utf8")).toBe(after);
-    expect(await readFile(`${path}.bak`, "utf8")).toBe(before);
+    expect(await readFile(saved.backupPath!, "utf8")).toBe(before);
     expect(saved.hash).toBe(hashContent(after));
   });
 

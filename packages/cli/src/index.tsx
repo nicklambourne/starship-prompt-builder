@@ -228,15 +228,18 @@ async function main() {
       review: reviewLines(before, candidate, "candidate TOML (verbatim)"),
       preview,
       backupPath: null as string | null,
+      warnings: [] as string[],
     };
     if (valid && parsed.values.yes && report.changed) {
-      const saved = await saveConfig({ path: loaded.writePath, content: candidate, expectedHash: loaded.expectedHash });
+      const saved = await saveConfig({ path: loaded.displayPath, expectedWritePath: loaded.writePath, content: candidate, expectedHash: loaded.expectedHash });
       report.applied = true;
       report.backupPath = saved.backupPath;
+      report.warnings = saved.warnings;
     }
     if (parsed.values.json) process.stdout.write(`${JSON.stringify(report)}\n`);
     else {
       candidateDiagnostics.forEach(printDiagnostic);
+      report.warnings.forEach((warning) => process.stderr.write(`warning: ${safeTerminalText(warning)}\n`));
       process.stdout.write(`${report.review.join("\n")}\n`);
       if (preview) process.stdout.write(`Preview (${preview.scenario}, ${preview.width} columns):\n${preview.text.replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, "?")}`);
       if (report.applied) process.stdout.write(`Applied ${report.target}${report.backupPath ? `; backup: ${report.backupPath}` : ""}\n`);
