@@ -1,4 +1,5 @@
 import type { StarshipConfig } from "@/lib/engine/prompt";
+import { safeTerminalText } from "./safeText";
 
 function isTable(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -28,7 +29,7 @@ export function reviewLines(before: string | null, after: string, proposedLabel 
   const append = (content: string, marker: string) => {
     const split = content.split("\n");
     if (content.endsWith("\n")) split.pop();
-    for (const line of split) lines.push(`${marker} ${line.replace(/\r/g, "␍").replace(/\t/g, "⇥").replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, "?")}`);
+    for (const line of split) lines.push(`${marker} ${safeTerminalText(line.replace(/\r/g, "␍").replace(/\t/g, "⇥"))}`);
     if (!content.endsWith("\n")) lines.push(`${marker} [no final newline]`);
   };
   if (before !== null) append(before, "-");
