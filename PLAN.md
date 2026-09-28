@@ -2,12 +2,13 @@
 
 A live, in-browser configurator for the [Starship](https://starship.rs) cross-shell
 prompt. Point, click, and preview your prompt in a simulated terminal — then export
-a `starship.toml` that reproduces exactly what you saw.
+a `starship.toml` for your real shell. The preview is simulated; tool versions,
+runtime state, regex limits and font widths can differ from your terminal.
 
 - **Live site:** https://starship.ndl.au/
 - **Repo:** https://github.com/nicklambourne/starship-prompt-builder
 - **Status:** M0–M4 complete. All 102 starship modules implemented, the parity
-  harness is green against real starship, and the builder is live. M5 (polish,
+  harness checks an explicit subset against real starship, and the builder is live. M5 (polish,
   a11y audit, launch) is what remains.
 
 ---
@@ -304,11 +305,11 @@ back to a raw TOML value editor, so the full config surface is always reachable.
 
 The parity harness runs two sets of cases: hand-written fixtures for the
 formatter's hard parts (conditionals, escapes, nested groups, palettes), and a
-generated sweep with one case per module — 41 of them — pinning each module's
-defaults against the real binary. Modules that depend on hardware, the clock,
-the network or an installed toolchain cannot have a deterministic fixture;
-they are listed with reasons in `tests/parity/sweep.ts` and printed by the
-suite rather than quietly omitted.
+generated sweep checking module defaults and detection against the real binary.
+The current suite has 95 output fixtures, including right prompts, named modules,
+regex aliases and Unicode fill. Every registered module has a fixture reference
+or an explicit exclusion/backlog reason checked by the inventory test. A listed
+backlog item is unverified, not proof that a deterministic fixture is impossible.
 
 Per the repo owner's standing rules: verification means real exit codes, tests
 that fail without the fix, and looking at the actual UI — not just green suites.
@@ -316,7 +317,7 @@ that fail without the fix, and looking at the actual UI — not just green suite
 1. **Unit (vitest)** — exhaustive table-driven tests for the format-string and
    style-string parsers (escaping, nesting, conditionals, palettes) and for each
    module's `evaluate` against scenario fixtures.
-2. **Parity harness (the flagship)** — a CI job that installs *real* starship
+2. **Parity harness (the flagship; broader target below)** — a CI job that installs *real* starship
    on the runner, materialises each bundled scenario as an actual directory
    (git repo with the right dirty state, `package.json`, mocked `PATH` shims so
    `node --version` etc. answer with the scenario's versions), then runs
@@ -333,9 +334,12 @@ that fail without the fix, and looking at the actual UI — not just green suite
 4. **Visual/manual** — every UI milestone verified in the browser at ~390 px and
    desktop widths before merge; screenshots in PRs.
 
-CI (GitHub Actions, hosted runners): `typecheck` + `unit` + `build` on every PR;
-parity + Playwright on PRs touching the engine and on `main`; Pages deploy on
-`main` after checks pass.
+CI (GitHub-hosted runners only): the aggregate `check` depends on web checks,
+the complete Node 22/24 Linux/macOS/Windows CLI matrix, and pinned parity on
+every PR/main push. CI manual dispatch uses the same gates. Pages deployment
+consumes the same run's tested main artifact; it does not rebuild independently.
+Branch-protection enforcement still requires an administrator to verify the
+required check and bypass policy after workflow rollout.
 
 ---
 
@@ -350,8 +354,8 @@ parity + Playwright on PRs touching the engine and on `main`; Pages deploy on
 | TOML         | smol-toml                         | parse + stringify, small, maintained         |
 | Sharing      | lz-string                         | URL-fragment compression, tiny               |
 | Tests        | vitest, Playwright                | fast unit runner; e2e against prod build     |
-| Hosting      | GitHub Pages (`basePath: /starship-prompt-builder`) | free, static, fits goal 4         |
-| Dev env      | nix + direnv (`tools/nix/shell.nix`) | pinned node/pnpm, no global installs      |
+| Hosting      | GitHub Pages (`https://starship.ndl.au/`, no base path) | free, static, fits goal 4         |
+| Dev env      | nix + direnv (`tools/nix/shell.nix`) | tools from selected nixpkgs; pnpm version in packageManager |
 
 ---
 
@@ -410,7 +414,8 @@ file. The ones worth knowing:
   `force_display` honoured exactly.
 - **`git_status`** carries aggregate counts only, so worktree-versus-index
   sub-counts follow the aggregates and typechanges are always zero.
-- **`custom`** cannot execute commands, so `$output` is always empty.
+- **`custom`** never executes commands; explicit scenario results can provide
+  simulated `$output` and `when` values.
 - **`memory_usage`**, **`localip`**, **`sudo`** and **`battery`** use fixed
   plausible readings, chosen so that editing their thresholds still visibly
   flips them on and off.

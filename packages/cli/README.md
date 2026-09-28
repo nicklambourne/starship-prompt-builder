@@ -36,8 +36,9 @@ imports a browser share link as the starting config for read-only commands or th
 For an agent, `state --json` is a single read-only snapshot of the config on disk:
 schema version, source path and SHA-256 hash, parsed config, validation diagnostics,
 and a plain-text preview for the selected simulated scenario and width. It does
-not include unsaved edits in a running TUI. `preview.text` matches `preview
---no-color` for the same inputs. Invalid options produce JSON with
+not include unsaved edits in a running TUI. `preview.text` preserves source text;
+human `preview --no-color` replaces unsafe terminal controls with visible question
+marks. Invalid options produce JSON with
 `validation.valid: false`, a null preview, and exit 2.
 
 `apply` takes an explicit target path and candidate TOML from `--from <file>`
@@ -74,6 +75,20 @@ file is kept byte-for-byte. Detected disk changes block replacement; reload or
 Save As instead. The same lock/backup limitations described above apply. Unsaved edits create a private recovery draft keyed by
 the destination, separate from the real config. Recovery never overwrites a
 newer disk file without an explicit new decision.
+
+Preview widths are integers from 20 to 500 cells. Ambiguous Unicode widths still
+depend on the physical terminal and font; the shared layout is a simulation.
+Config-controlled regex uses linear-time RE2 matching, not JavaScript backtracking.
+Patterns are limited to 1,024 characters, conservative repetition expansion and
+4,096 compiled instructions; inputs, replacements and outputs to 65,536 characters;
+and matching to two million input-character/instruction units. Each alias table
+is limited to 128 rules. Unsupported syntax (including lookaround/backreferences)
+or budgets produce preview warnings; no unsafe fallback is used. These are preview
+limits, not claims that a configuration is invalid in Starship.
+
+JSON and generated TOML exports preserve values and can contain control characters.
+Treat them as data: redirect them to files or parse them, rather than writing raw
+decoded strings to an interactive terminal.
 
 The Environment pane edits only simulated data. Press `p` to choose a built-in
 scenario, `o`/`s` to load/save a versioned scenario JSON file, `c` to compare

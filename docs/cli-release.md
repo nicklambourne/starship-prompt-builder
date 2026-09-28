@@ -15,16 +15,23 @@ Before publishing:
    `packages/cli/package.json`. Run `pnpm install --lockfile-only` and verify
    `starship-builder --version` from a freshly packed install.
 3. Require green `pnpm lint`, `pnpm deadcode`, `pnpm test`, `pnpm build`,
-   `pnpm test:e2e`, `pnpm test:cli:package`, and `pnpm test:cli:pty`. The PR
+   `pnpm check:generated`, `pnpm test:parity`, `pnpm test:e2e`, `pnpm test:cli:package`, and `pnpm test:cli:pty`. The PR
    workflow runs package and PTY/ConPTY journeys on GitHub-hosted Linux,
    macOS, and Windows runners under both Node.js 22 and 24. Inspect the
    completed job metadata to confirm the actual runner for each job.
 4. Run `pnpm --dir packages/cli pack`, inspect tarball contents and size,
    then use `npm publish --dry-run` from the package directory. Verify that
    the runtime bundle, README, license, and binary are present.
-5. Publish manually only after the above review, then install into a new
+5. Obtain explicit publication approval for the exact SHA/version. Publish manually only after the above review, then install into a new
    consumer directory and compare the published package version and behavior
    with the release artifact.
+
+Do not enable a packaged-install website CTA until its exact public artifact
+has passed a clean consumer install. An unpublished feature branch is not a
+release. Keep source-build instructions as the default until then. If a release
+is broken, withdraw its CTA and publish a new immutable version; do not silently
+replace an existing version. The aggregate CI check must be required in branch
+protection; verify the actual setting rather than inferring it from YAML.
 
 Platform claims are limited to configurations actually checked by CI. The
 interactive journey covers open → edit → review → save → quit, resize, and

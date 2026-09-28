@@ -29,3 +29,21 @@ After changing the edge rule, verify the response rather than only the HTML:
 Then run the browser and accessibility suite. The document metadata also emits
 the referrer policy so direct copies of the export retain that protection, but
 the Cloudflare response header remains the production source of truth.
+
+## Verification and ownership
+
+Run `pnpm check:headers`. It checks root, guide, module, asset and 404 responses
+with curl, without following redirects or collecting response bodies. On
+2026-09-29 this check still failed for all four required headers in production.
+The app-side check is implemented; the edge deployment is **not complete**.
+
+The infrastructure maintainer must locate the existing Response Header Transform
+Ruleset for the `ndl.au` zone and scope the approved rule to
+`http.host eq "starship.ndl.au"`. Preserve existing HSTS and unrelated rules.
+Save the current ruleset for rollback, test the policy in a controlled environment
+(or CSP report-only first), then apply through the infrastructure repository.
+Never claim completion from this document or an HTML meta tag alone.
+
+After rollout, test hydration, font requests, both themes, sharing and downloads,
+then run the smoke check. If blocked, restore the previous edge rule through that
+same reviewed infrastructure workflow. No edge credentials belong in this repo.

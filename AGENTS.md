@@ -5,8 +5,8 @@ Conventions for agents (and humans) working in this repository. Read
 
 ## Repository shape
 
-Fully static Next.js app, exported to GitHub Pages under the `/starship-prompt-builder`
-base path. Everything runs client-side; there is no backend.
+Fully static Next.js app, exported to GitHub Pages at the root of
+`https://starship.ndl.au/` with no base-path prefix. Everything runs client-side; there is no backend.
 
 - `src/lib/engine/` — the rendering engine. **Pure TypeScript, no React
   imports.** This is the part that must stay faithful to real starship.
@@ -67,9 +67,9 @@ silently unless pinned. When changing anything under `src/lib/engine/`:
 - Module defaults must match starship **byte for byte**, including Nerd Font
   glyphs and trailing spaces in format strings.
 - Add a parity case (`tests/parity/`) for anything the harness does not already
-  cover. The sweep in `tests/parity/sweep.ts` gives most modules one already;
-  a module that cannot have a deterministic fixture belongs in `UNSWEEPABLE`
-  with the reason, not left out.
+  cover. `tests/unit/parity-inventory.test.ts` requires each registered module
+  to have a fixture or an explicit `UNSWEEPABLE` reason. Backlog exclusions
+  are unverified, not evidence that a deterministic fixture is impossible.
 - Parity runs against a **pinned** starship on pull requests and the **latest**
   release on its weekly schedule. When the weekly run fails, the engine is
   behind upstream: fix it and move the pin in `.github/workflows/parity.yml`.

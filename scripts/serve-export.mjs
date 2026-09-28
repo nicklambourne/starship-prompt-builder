@@ -1,11 +1,6 @@
 /**
- * Serves the static export under the same base path GitHub Pages uses.
- *
- * `next build` writes `out/`, but the deployed site lives at
- * the same paths the deployed site uses. Serving them any other way would let
- * path bugs
- * (absolute asset URLs, in particular) pass locally and fail in production, so
- * this mounts the export at the real prefix.
+ * Serve `out/` at the origin root, matching the custom-domain deployment.
+ * Production paths matter: testing a different prefix can hide asset bugs.
  */
 
 import { createReadStream, statSync } from "node:fs";
