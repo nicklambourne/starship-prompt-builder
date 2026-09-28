@@ -8,11 +8,12 @@
  * the deprecated `context_aliases` / `user_aliases` tables applied on top.
  * Both accept either a literal name or a regular expression that is anchored
  * with `^…$`, with `$1`-style capture references usable in the replacement.
- * Starship compiles those with Rust's `regex` crate; the builder uses
- * JavaScript's `RegExp`, so exotic patterns may differ in dialect.
+ * Starship uses Rust's `regex` crate; this preview uses bounded, linear-time
+ * RE2 matching. Unsupported dialect features never use a backtracking fallback.
  */
 
 import { detectEnvVars, optAliasTable } from "./cloudUtils";
+import { checkRuleCount, RegexBudgetError, replaceRegex } from "../safeRegex";
 import {
   type ModuleDefinition,
   type ModuleOptions,
@@ -33,6 +34,7 @@ interface ContextRule {
 function optContextRules(options: ModuleOptions): ContextRule[] {
   const value = options.contexts;
   if (!Array.isArray(value)) return [];
+  checkRuleCount(value.length);
 
   const rules: ContextRule[] = [];
   for (const entry of value) {
@@ -51,32 +53,12 @@ function optContextRules(options: ModuleOptions): ContextRule[] {
   return rules;
 }
 
-function anchoredRegex(pattern: string): RegExp | undefined {
-  try {
-    // Rust's `regex` crate accepts both `(?P<name>…)` and `(?<name>…)` for a
-    // named group; JavaScript only understands the latter.
-    return new RegExp(`^${pattern.replace(/\(\?P</g, "(?<")}$`);
-  } catch {
+function regexAlias(pattern: string, value: string, replacement: string): string | undefined {
+  try { return replaceRegex(`^${pattern}$`, value, replacement); }
+  catch (error) {
+    if (error instanceof RegexBudgetError) throw error;
     return undefined;
   }
-}
-
-/**
- * Rewrites a Rust `regex` replacement string in JavaScript's dialect: Rust
- * spells a named reference `$name` or `${name}`, JavaScript spells it
- * `$<name>`. Numeric references are already compatible, and a `$` that starts
- * no reference is literal in Rust, so it is doubled for JavaScript.
- */
-function toJsReplacement(replacement: string): string {
-  return replacement.replace(
-    /\$(\$|\{([A-Za-z0-9_]+)\}|([A-Za-z0-9_]+))?/g,
-    (match, _ref: string | undefined, braced: string | undefined, bare: string | undefined) => {
-      if (match === "$$") return "$$";
-      const name = braced ?? bare;
-      if (name === undefined) return "$$";
-      return /^\d+$/.test(name) ? `$${name}` : `$<${name}>`;
-    },
-  );
 }
 
 /**
@@ -94,19 +76,18 @@ function aliasedName(
   if (currentValue === undefined) return undefined;
   if (currentValue === pattern) return replacement;
 
-  const re = anchoredRegex(pattern);
-  if (!re || !re.test(currentValue)) return undefined;
-  return currentValue.replace(re, toJsReplacement(replacement));
+  return regexAlias(pattern, currentValue, replacement);
 }
 
 /** Port of the deprecated `*_aliases` lookup: literal key first, then regex. */
 function deprecatedAlias(value: string, aliases: Record<string, string>): string {
+  checkRuleCount(Object.keys(aliases).length);
   const literal = aliases[value];
   if (literal !== undefined) return literal;
 
   for (const [pattern, replacement] of Object.entries(aliases)) {
-    const re = anchoredRegex(pattern);
-    if (re?.test(value)) return value.replace(re, toJsReplacement(replacement));
+    const result = regexAlias(pattern, value, replacement);
+    if (result !== undefined) return result;
   }
   return value;
 }

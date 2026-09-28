@@ -16,6 +16,9 @@ import type { Scenario } from "@/lib/scenarios/types";
 
 export interface ParityCase {
   id: string;
+  /** Modules deliberately asserted by this fixture; empty for formatter-only cases. */
+  modules: string[];
+  side?: "left" | "right";
   /** TOML config passed to starship via STARSHIP_CONFIG. */
   config: string;
   scenario: Scenario;
@@ -70,8 +73,42 @@ const GIT_INIT = [
 ];
 
 export const PARITY_CASES: ParityCase[] = [
+  ...["漢", "e\u0301", "👩‍💻"].map((glyph, index) => ({
+    id: `unicode-fill-${index}`,
+    modules: ["fill"],
+    config: `add_newline = false\nformat = "${glyph}$fill"\n[fill]\nsymbol = "${glyph}"\nstyle = "none"\n`,
+    scenario: scenario(`unicode-fill-${index}`, { terminalWidth: 20 }), setup: [],
+  })),
+  {
+    id: "right-prompt-only", side: "right",
+    modules: ["character"],
+    config: 'add_newline = false\nformat = "left"\nright_format = "[右](green)$character"\n',
+    scenario: scenario("right-prompt-only", {}), setup: [],
+  },
+  {
+    id: "named-env-and-custom",
+    modules: ["env_var","custom"],
+    config: 'add_newline = false\nformat = "${env_var.TEST}${custom.demo}"\n[env_var.TEST]\nvariable = "PARITY_MARKER"\n[custom.demo]\nshell = ["sh"]\ncommand = "printf parity-custom"\nwhen = true\n',
+    scenario: scenario("named-env-and-custom", { env: { PARITY_MARKER: "named" }, custom: { demo: { output: "parity-custom", when: true } } }),
+    env: { PARITY_MARKER: "named" }, setup: [],
+  },
+  {
+    id: "directory-regex-named-capture",
+    modules: ["directory"],
+    config: 'add_newline = false\nformat = "$directory"\n[directory]\nsubstitutions = [{from = "(?P<home>~)", to = "${home}/ok", regex = true}]\n',
+    scenario: scenario("directory-regex-named-capture", {}), setup: [],
+  },
+  {
+    id: "kubernetes-regex-alias",
+    modules: ["kubernetes"],
+    config: 'add_newline = false\nformat = "$kubernetes"\n[kubernetes]\ndisabled = false\ncontexts = [{context_pattern = "(?P<team>prod)-(.*)", context_alias = "${team}:$2"}]\n',
+    scenario: scenario("kubernetes-regex-alias", { kubernetes: { context: "prod-west", namespace: "demo" } }),
+    env: { KUBECONFIG: "kubeconfig" },
+    setup: ["printf '%s' '{\"apiVersion\":\"v1\",\"kind\":\"Config\",\"current-context\":\"prod-west\",\"contexts\":[{\"name\":\"prod-west\",\"context\":{\"namespace\":\"demo\"}}]}' > kubeconfig"],
+  },
   {
     id: "character-success",
+    modules: ["character"],
     config: `
 format = "$character"
 add_newline = false
@@ -81,6 +118,7 @@ add_newline = false
   },
   {
     id: "character-error",
+    modules: ["character"],
     config: `
 format = "$character"
 add_newline = false
@@ -90,6 +128,7 @@ add_newline = false
   },
   {
     id: "character-custom-symbols",
+    modules: ["character"],
     config: `
 format = "$character"
 add_newline = false
@@ -103,6 +142,7 @@ error_symbol = "[✗](bold red)"
   },
   {
     id: "directory-plain",
+    modules: ["directory"],
     config: `
 format = "$directory"
 add_newline = false
@@ -112,6 +152,7 @@ add_newline = false
   },
   {
     id: "directory-truncated",
+    modules: ["directory"],
     config: `
 format = "$directory"
 add_newline = false
@@ -125,6 +166,7 @@ truncation_symbol = "…/"
   },
   {
     id: "directory-styled",
+    modules: ["directory"],
     config: `
 format = "$directory"
 add_newline = false
@@ -137,6 +179,7 @@ style = "bold fg:#af8700 bg:blue"
   },
   {
     id: "git-branch-clean",
+    modules: ["git_branch"],
     config: `
 format = "$git_branch"
 add_newline = false
@@ -163,6 +206,7 @@ add_newline = false
   },
   {
     id: "vcs-git-dispatch",
+    modules: ["vcs"],
     config: `
 format = "$vcs"
 add_newline = false
@@ -192,6 +236,7 @@ git_modules = "$git_branch"
   },
   {
     id: "git-status-dirty",
+    modules: ["git_status"],
     config: `
 format = "$git_status"
 add_newline = false
@@ -224,6 +269,7 @@ add_newline = false
   },
   {
     id: "git-state-am-progress",
+    modules: ["git_state"],
     config: `
 format = "$git_state"
 add_newline = false
@@ -264,6 +310,7 @@ add_newline = false
   },
   {
     id: "cmd-duration",
+    modules: ["cmd_duration"],
     config: `
 format = "$cmd_duration"
 add_newline = false
@@ -273,6 +320,7 @@ add_newline = false
   },
   {
     id: "status-failure",
+    modules: ["status"],
     config: `
 format = "$status"
 add_newline = false
@@ -285,6 +333,7 @@ disabled = false
   },
   {
     id: "jobs",
+    modules: ["jobs"],
     config: `
 format = "$jobs"
 add_newline = false
@@ -297,6 +346,7 @@ number_threshold = 1
   },
   {
     id: "format-conditionals",
+    modules: [],
     config: `
 format = "[a](red)(b$missing)([c]($style))[d](bold blue) "
 add_newline = false
@@ -306,6 +356,7 @@ add_newline = false
   },
   {
     id: "format-escapes",
+    modules: [],
     config: `
 format = "\\\\[literal\\\\] \\\\(parens\\\\) \\\\$dollar "
 add_newline = false
@@ -315,6 +366,7 @@ add_newline = false
   },
   {
     id: "palette",
+    modules: [],
     config: `
 format = "[text](mauve) "
 add_newline = false
@@ -328,6 +380,7 @@ mauve = "#cba6f7"
   },
   {
     id: "nested-groups",
+    modules: [],
     config: `
 format = "[outer [inner](red) tail](bold blue) "
 add_newline = false
@@ -343,6 +396,7 @@ add_newline = false
      * than against this port's reading of the grammar.
      */
     id: "switched-off-text",
+    modules: [],
     config: `
 format = "A(off)B([styled](red))C(  )D"
 add_newline = false

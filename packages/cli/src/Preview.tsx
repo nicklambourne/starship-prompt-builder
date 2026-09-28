@@ -1,5 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
+import { segmentsText } from "@/lib/engine/types";
+import { rightPromptGap } from "./terminalWidth";
 
 import type { Color, Segment, Style } from "@/lib/engine/types";
 
@@ -116,7 +118,7 @@ export function PromptPreview({
       {lines.map((line, index) => (
         <Box key={index} justifyContent="space-between" width="100%">
           <StyledSegments segments={line} color={color} />
-          {index === lines.length - 1 && right.length > 0
+          {index === lines.length - 1 && right.length > 0 && rightPromptGap(segmentsText(line), segmentsText(right), width) !== null
             ? <StyledSegments segments={right} color={color} />
             : null}
         </Box>

@@ -4,6 +4,7 @@ import type { StarshipConfig } from "@/lib/engine/prompt";
 import { isFormatOption } from "./meta";
 import { optionEnum } from "./optionEnums";
 import validateSchema from "./validation.generated.mjs";
+import { checkRuleCount, compileRegex } from "@/lib/engine/safeRegex";
 import {
   getModuleSchema,
   getRootOption,
@@ -11,7 +12,7 @@ import {
 } from "./schema";
 
 export interface ConfigDiagnostic {
-  code: "type" | "enum" | "format" | "palette-reference" | "module-reference" | "unknown-option" | "unknown-module";
+  code: "type" | "enum" | "format" | "palette-reference" | "module-reference" | "unknown-option" | "unknown-module" | "preview-limit";
   severity: "error" | "warning";
   path: string;
   message: string;
@@ -47,6 +48,19 @@ export function validateConfig(config: StarshipConfig): ConfigDiagnostic[] {
       return;
     }
     const key = schema.key;
+    if (moduleName === "directory" && key === "substitutions" || moduleName === "kubernetes" && ["contexts", "context_aliases", "user_aliases"].includes(key)) {
+      const rules = Array.isArray(value) ? value : isTable(value) ? Object.keys(value) : [];
+      try {
+        checkRuleCount(rules.length);
+        for (const rule of rules) {
+          const patterns = typeof rule === "string" ? (moduleName === "kubernetes" ? [rule] : []) :
+            isTable(rule) ? moduleName === "directory" ? (rule.regex === true ? [rule.from] : []) : [rule.context_pattern, rule.user_pattern] : [];
+          for (const pattern of patterns) if (typeof pattern === "string") compileRegex(pattern);
+        }
+      } catch (error) {
+        add({ code: "preview-limit", severity: "warning", path, message: `Preview regex unsupported or over budget: ${(error as Error).message}` });
+      }
+    }
     const choices = moduleName ? optionEnum(moduleName, key)?.choices.map((choice) => choice.value) : schema.enum;
     if (choices?.length && typeof value === "string" && !choices.includes(value)) {
       add({ code: "enum", severity: "error", path, message: `Expected one of: ${choices.join(", ")}.` });
