@@ -6,6 +6,7 @@ test("inherited swatches follow group and named module styles without flattening
   const toml = page.getByLabel("starship.toml");
   const config = (color: string) => `format = "$username$directory"\npalette = "mine"\n[palettes.mine]\naccent = "${color}"\n[username]\nshow_always = true\nstyle_user = "bold accent bg:#112233"\nformat = "[hello $user]($style)"\n[directory]\nformat = "[$path]($repo_root_style)"\nstyle = "bold accent bg:#112233"\n`;
   await toml.fill(config("#12ab34"));
+  await page.getByRole("button", { name: /^Apply draft/ }).click();
   await page.getByRole("button", { name: "Expand $username", exact: true }).press("Enter");
   await page.getByRole("button", { name: "Expand format", exact: true }).press("Enter");
   const user = page.locator('[data-option="format"] [data-format-row="0.1"]');
@@ -24,6 +25,7 @@ test("inherited swatches follow group and named module styles without flattening
   await expect(pathSwatch).toHaveCSS("color", "rgb(18, 171, 52)");
 
   await toml.fill(config("#ab1234"));
+  await page.getByRole("button", { name: /^Apply draft/ }).click();
   await expect(userSwatch).toHaveCSS("color", "rgb(171, 18, 52)");
   await expect(pathSwatch).toHaveCSS("color", "rgb(171, 18, 52)");
   await expect(terminal.locator("span[style]").filter({ hasText: /^hello / }).first()).toHaveCSS("color", "rgb(171, 18, 52)");
@@ -36,6 +38,7 @@ test("inherit uses the active status style in the swatch and rendered prompt", a
   await page.locator('[data-section="toml"] button[aria-expanded]').press("Enter");
   const toml = page.getByLabel("starship.toml");
   await toml.fill('format = "$status"\n[status]\ndisabled = false\nstyle = "bold #112233"\nsuccess_style = "bold #12ab34"\nsuccess_symbol = "OK"\nformat = "[$symbol]($style)"\n');
+  await page.getByRole("button", { name: /^Apply draft/ }).click();
   await page.getByRole("button", { name: "Expand $status", exact: true }).press("Enter");
   await page.getByRole("button", { name: "Expand format", exact: true }).press("Enter");
   const swatch = page.getByRole("button", { name: "Change the style of ${symbol}", exact: true });
