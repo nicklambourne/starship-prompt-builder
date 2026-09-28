@@ -75,6 +75,8 @@ pnpm cli --preset plain-text-symbols
 # Headless commands for scripts and quick checks
 pnpm cli preview ~/.config/starship.toml --no-color
 pnpm cli validate ~/.config/starship.toml
+pnpm cli state ~/.config/starship.toml --json
+pnpm cli apply ~/.config/starship.toml --from candidate.toml --json  # review only
 pnpm cli export ~/.config/starship.toml --full
 ```
 
@@ -83,6 +85,10 @@ Space to toggle, `a` to add, `m` to move, Ctrl+Z/Ctrl+Y to undo/redo, and
 Ctrl+S to review and save. Run `pnpm build:cli` to produce the distributable
 `packages/cli/dist/index.js` executable; the package also exposes
 `starship-builder` and `spb` binary names when installed.
+Agents can use `state --json` to inspect the current config and simulated
+preview, then `apply --from` to review a validated candidate before writing
+with `--yes`. See the [CLI guide](packages/cli/README.md) for the hash guard,
+JSON shape, and write semantics.
 
 ## Development
 
