@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { Box, Text, useApp, useInput, useStdin, useStdout } from "ink";
 import { TextInput } from "@inkjs/ui";
 
-import { expandPath, hashContent, loadConfig, saveConfig, type LoadedConfig } from "./configFile";
+import { expandPath, hashContent, loadConfig, type LoadedConfig } from "./configFile";
+import { saveReviewDecision, saveReviewedDocument } from "./saveReview";
 import { changedPaths, reviewLines } from "./documentReview";
 import { loadWorkspace, saveWorkspace } from "./workspaceFile";
 import { loadDraft, removeDraft, saveDraft, type Draft } from "./draftFile";
@@ -619,13 +620,12 @@ export function BuilderApp({
     setSaving(true);
     try {
       const content = proposedContent;
-      const result = await saveConfig({ path: writePath, content, expectedHash });
+      const result = await saveReviewedDocument({ path: displayPath, expectedWritePath: writePath, draftPath: writePath, content, expectedHash });
       setExpectedHash(result.hash);
       setSourceContent(content);
       setDiskContent(content);
       setTimeline((current) => markSaved(current));
-      const draftWarning = await removeDraft(writePath).then(() => "").catch((error: Error) => `; recovery draft cleanup failed: ${error.message}`);
-      announce(`${result.backupPath ? `Saved ${displayPath}; backup: ${result.backupPath}` : `Saved ${displayPath}`}${draftWarning}`);
+      announce(`${result.backupPath ? `Saved ${displayPath}; backup: ${result.backupPath}` : `Saved ${displayPath}`}${result.warnings.length ? "; " + result.warnings.join("; ") : ""}`);
       setView("output");
     } catch (error) {
       fail((error as Error).message);
@@ -727,7 +727,11 @@ export function BuilderApp({
     if (input === "1") { openView("format"); return; }
     if (input === "2") { openView("environment"); return; }
     if (input === "3") { openView("output"); return; }
-    if (key.escape && (currentView === "settings" || currentView === "add" || currentView === "help" || currentView === "save" || currentView === "replace" || currentView === "conflict" || currentView === "share" || currentView === "recover" || currentView === "actions" || currentView === "visibility")) {
+    if (key.escape && currentView === "save") {
+      if (saveReviewDecision("cancel", { busy: saving, diskChanged, hasErrors: false }) === "cancel") setView(previousView);
+      return;
+    }
+    if (key.escape && (currentView === "settings" || currentView === "add" || currentView === "help" || currentView === "replace" || currentView === "conflict" || currentView === "share" || currentView === "recover" || currentView === "actions" || currentView === "visibility")) {
       if (currentView === "replace") { setPendingDocument(null); setPendingScenario(null); }
       setView(currentView === "settings" || currentView === "add" ? "format" : previousView);
       return;
@@ -1356,9 +1360,10 @@ export function BuilderApp({
       else if (key.pageUp) setSaveScroll((current) => Math.max(0, current - contentHeight));
       else if (key.pageDown) setSaveScroll((current) => Math.min(Math.max(0, saveReview.length - contentHeight), current + contentHeight));
       else if (key.return) {
-        if (diskChanged) { setView("conflict"); fail("The destination changed on disk. Reload or choose Save As."); }
-        else if (diagnostics.some((item) => item.severity === "error")) fail("Fix configuration errors before saving.");
-        else void doSave();
+        const decision = saveReviewDecision("confirm", { busy: saving, diskChanged, hasErrors: diagnostics.some((item) => item.severity === "error") });
+        if (decision === "conflict") { setView("conflict"); fail("The destination changed on disk. Reload or choose Save As."); }
+        else if (decision === "invalid") fail("Fix configuration errors before saving.");
+        else if (decision === "save") void doSave();
       }
       else if (input === "a") {
         setEdit({
@@ -1405,7 +1410,7 @@ export function BuilderApp({
         setScenario(recoveryDraft.scenario);
         setExpectedHash(recoveryDraft.baselineHash);
         setView("format");
-        announce("Recovered draft. Review the proposed save; a newer disk file cannot be overwritten.");
+        announce("Recovered draft. Review the proposed save; detected disk changes will block saving.");
         setRecoveryDraft(null);
       } else if (input === "d" && recoveryDraft) {
         void removeDraft(recoveryDraft.targetPath).then(() => announce("Discarded recovery draft"))
@@ -1645,7 +1650,7 @@ export function BuilderApp({
 
       {view === "save" ? (
         <Panel title="REVIEW SAVE" hint="↑↓ scroll · a Save As · Esc cancel">
-          <Text> Destination: <Text color="cyan">{displayPath}</Text>{expectedHash ? " · backup .bak" : " · new file"}</Text>
+          <Text> Destination: <Text color="cyan">{displayPath}</Text>{expectedHash ? " · unique private backup" : " · new file"}</Text>
           <Text color={diskChanged ? "red" : "yellow"}> {diskChanged ? "Destination changed on disk; cannot overwrite it." : "Enter  Save atomically"}</Text>
           <Text dimColor> Changes: {semanticChanges.length ? semanticChanges.slice(0, 7).join(", ") : "none"}{semanticChanges.length > 7 ? ` +${semanticChanges.length - 7} more` : ""}</Text>
           {typeof timeline.baseline?.format === "string" && timeline.baseline.format.includes("$all") && typeof config.format === "string" && !config.format.includes("$all")

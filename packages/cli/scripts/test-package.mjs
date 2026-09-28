@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -181,8 +181,8 @@ try {
 
   const applied = runPnpmResult(["exec", "starship-builder", "apply", target, "--from", "-", "--yes", "--json", "--expect-hash", originalHash], consumer, candidate);
   const result = JSON.parse(applied.stdout);
-  if (applied.status !== 0 || result.applied !== true || result.backupPath !== `${target}.bak`
-    || await readFile(target, "utf8") !== candidate || await readFile(`${target}.bak`, "utf8") !== original) {
+  if (applied.status !== 0 || result.applied !== true || !result.backupPath?.startsWith(await realpath(target) + ".")
+    || await readFile(target, "utf8") !== candidate || await readFile(result.backupPath, "utf8") !== original) {
     throw new Error("Apply did not save candidate bytes with a backup");
   }
 
