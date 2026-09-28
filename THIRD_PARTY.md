@@ -135,8 +135,10 @@ browsers only ever fetching the hashed copies.
 The licence texts stay in `public/fonts/licences/` on purpose: those are meant
 to be served at a stable, linkable URL.
 
-## Validation generator
+## Regex and structural validation
 
-Ajv 8.20.0 generates the standalone structural validator under the MIT licence.
-Its notice is in [public/licences/regex-validation.txt](public/licences/regex-validation.txt)
-and is copied into the packaged CLI's third-party notice.
+RE2JS 2.8.6 (MIT, © 2023 Oleksii Vasyliev) is bundled for bounded regex
+previews. Ajv 8.20.0 (MIT, © 2015–2021 Evgeny Poberezkin) generates the
+standalone structural validator at build time. Their full notices are in
+[`public/licences/regex-validation.txt`](public/licences/regex-validation.txt),
+served with the site and copied into the packed CLI's `dist/THIRD_PARTY.txt`.

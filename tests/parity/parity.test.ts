@@ -21,7 +21,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { PARITY_CASES } from "./fixtures";
 import { SWEEP_CASES, UNSWEEPABLE } from "./sweep";
 import { segmentsToAnsi } from "@/lib/engine/ansi";
-import { ALL_MODULES } from "@/lib/engine/modules";
+import { moduleDefinitionsForConfig } from "@/lib/engine/modules";
 import { PROMPT_ORDER } from "@/lib/engine/promptOrder";
 import { renderPrompt } from "@/lib/engine/prompt";
 import { parseConfig } from "@/lib/config/toml";
@@ -87,6 +87,7 @@ describe("parity with real starship", () => {
 
       const args = [
         "prompt",
+        ...(testCase.side === "right" ? ["--right"] : []),
         "--status",
         String(scenario.status),
         "--cmd-duration",
@@ -126,11 +127,11 @@ describe("parity with real starship", () => {
       const rendered = renderPrompt({
         config: parsed.config,
         scenario,
-        modules: ALL_MODULES,
+        modules: moduleDefinitionsForConfig(parsed.config),
         defaultOrder: PROMPT_ORDER,
       });
 
-      const expected =
+      const expected = testCase.side === "right" ? segmentsToAnsi(rendered.right) :
         (rendered.leadingNewline ? "\n" : "") +
         rendered.lines.map((line) => segmentsToAnsi(line)).join("\n");
 
@@ -145,7 +146,7 @@ describe("parity with real starship", () => {
         );
       }
 
-      expect(printable(actual)).toBe(printable(expected));
+      expect(printable(actual), `${version}; fixture ${testCase.id}`).toBe(printable(expected));
     });
   }
 });

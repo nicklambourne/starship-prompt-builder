@@ -15,6 +15,7 @@ import { type Palette, resolvePalette } from "./styleString";
 import { type Segment } from "./types";
 import type { Scenario } from "@/lib/scenarios/types";
 import { selectedVcsFormat } from "./modules/vcs";
+import { terminalWidth as cellWidth, fillCells } from "@/lib/terminalWidth";
 
 export interface StarshipConfig {
   format?: string;
@@ -141,7 +142,7 @@ function assembleLines(segments: Segment[], terminalWidth: number): Segment[][] 
 function displayWidth(segments: Segment[]): number {
   let width = 0;
   for (const segment of segments) {
-    if (segment.kind === "text") width += [...segment.value].length;
+    if (segment.kind === "text") width += cellWidth(segment.value);
   }
   return width;
 }
@@ -156,11 +157,7 @@ function resolveFills(line: Segment[], terminalWidth: number): Segment[] {
 
   return line.map((segment) => {
     if (segment.kind !== "fill") return segment;
-    const unit = segment.value.length > 0 ? segment.value : " ";
-    let value = "";
-    while ([...value].length < perFill) value += unit;
-    // Cycling can overshoot on multi-character fills; trim to the exact width.
-    value = [...value].slice(0, perFill).join("");
+    const value = fillCells(segment.value, perFill);
     return { kind: "text", value, style: segment.style };
   });
 }

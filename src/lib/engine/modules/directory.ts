@@ -1,4 +1,5 @@
 import { formatMentions, optOptionalString, paletteFor } from "./shared";
+import { checkRuleCount, RegexBudgetError, replaceRegex } from "../safeRegex";
 import {
   type ModuleContext,
   type ModuleDefinition,
@@ -97,15 +98,17 @@ function readSubstitutions(options: ModuleOptions): Substitution[] {
 }
 
 function substitutePath(dirString: string, substitutions: Substitution[]): string {
+  checkRuleCount(substitutions.length);
   try {
     return substitutions.reduce(
       (acc, { from, to, regex }) =>
         // Rust's `Regex::replace` rewrites the first match only; `str::replace`
         // rewrites every occurrence.
-        regex ? acc.replace(new RegExp(from), to) : acc.replaceAll(from, to),
+        regex ? replaceRegex(from, acc, to) ?? acc : acc.replaceAll(from, to),
       dirString,
     );
-  } catch {
+  } catch (error) {
+    if (error instanceof RegexBudgetError) throw error;
     // An invalid regex leaves the path untouched, as upstream.
     return dirString;
   }

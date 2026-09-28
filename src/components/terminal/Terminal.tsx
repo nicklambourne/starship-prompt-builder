@@ -13,6 +13,8 @@ import { useMemo } from "react";
 import { type TerminalTheme, xterm256 } from "@/lib/terminalThemes";
 import type { Color, Segment, Style } from "@/lib/engine/types";
 import { NAMED_COLORS } from "@/lib/engine/types";
+import { segmentsText } from "@/lib/engine/types";
+import { rightPromptGap } from "@/lib/terminalWidth";
 
 const NAMED_INDEX = new Map(NAMED_COLORS.map((name, index) => [name, index]));
 
@@ -123,7 +125,9 @@ export function Terminal({
   className,
   compact = false,
 }: TerminalProps) {
-  const hasRight = (right?.length ?? 0) > 0;
+  const hasRight = (right?.length ?? 0) > 0 && rightPromptGap(
+    segmentsText(lines.at(-1) ?? []) + (command ?? ""), segmentsText(right ?? []), terminalWidth,
+  ) !== null;
 
   // Screen readers get the plain text; the styled spans are decorative detail
   // that would otherwise be read out character by character. Compact
@@ -132,8 +136,8 @@ export function Terminal({
     () =>
       lines
         .map((line) => line.map((s) => (s.kind === "lineTerm" ? "" : s.value)).join(""))
-        .join("\n"),
-    [lines],
+        .join("\n") + (hasRight ? `\nRight prompt: ${segmentsText(right ?? [])}` : ""),
+    [lines, right, hasRight],
   );
 
   if (compact) {

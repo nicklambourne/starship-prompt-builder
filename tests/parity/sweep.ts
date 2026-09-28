@@ -29,6 +29,7 @@ import { hostname, userInfo } from "node:os";
 
 import type { ParityCase } from "./fixtures";
 import type { Scenario } from "@/lib/scenarios/types";
+import { MODULES_BY_NAME } from "@/lib/engine/modules";
 
 /*
  * `username` and `hostname` print what the machine says, so the scenario is
@@ -135,6 +136,14 @@ const SWEEPABLE: SweepCase[] = [
  * that decides whether the module appears at all.
  */
 const LANGUAGE_SHAPES: { module: string; setup: string[]; files: string[] }[] = [
+  ...["buf", "bun", "c", "cobol", "cpp", "daml", "deno", "dotnet", "erlang", "fennel", "fortran", "gleam", "haxe", "helm", "kotlin", "maven", "mojo", "nim", "opa", "quarto", "red", "rlang", "solidity", "typst", "vagrant", "vlang", "xmake", "raku", "odin"].map((module) => {
+    const defaults = MODULES_BY_NAME.get(module)!.defaults;
+    const files = defaults.detect_files as string[];
+    const extensions = defaults.detect_extensions as string[];
+    const file = files?.find((name) => !name.startsWith("!")) ?? `parity.${extensions?.find((name) => !name.startsWith("!"))}`;
+    if (!/^[A-Za-z0-9_.-]+$/.test(file) || file.includes("undefined")) throw new Error(`Add an explicit detection fixture for ${module}`);
+    return { module, files: [file], setup: [`touch '${file}'`] };
+  }),
   { module: "rust", setup: ["touch Cargo.toml"], files: ["Cargo.toml"] },
   { module: "golang", setup: ["touch go.mod"], files: ["go.mod"] },
   { module: "nodejs", setup: ["touch package.json"], files: ["package.json"] },
@@ -170,14 +179,26 @@ export const UNSWEEPABLE: Record<string, string> = {
   time: "prints the wall clock, which differs between the two runs",
   container: "needs /run/.containerenv or /.dockerenv on the host",
   sudo: "runs `sudo -n true`, which depends on the host's sudoers",
-  custom: "runs a shell command the engine deliberately cannot",
   os: "prints the host's own OS, so a fixture cannot choose it",
   shell: "starship reports the shell that launched it, not the fixture's",
   nix_shell: "needs the process to actually be inside a nix shell",
   package: "reads a version out of a manifest the tool must also understand",
-  kubernetes: "needs a kubeconfig the binary will parse and the engine models differently",
   git_metrics: "counts diff lines, which the engine carries as aggregates",
-  fill: "depends on terminal width the two sides measure differently",
+  fossil_branch: "Backlog: needs a Fossil fixture and pinned Fossil executable",
+  fossil_metrics: "Backlog: needs a Fossil diff fixture and pinned Fossil executable",
+  hg_branch: "Backlog: needs a Mercurial fixture and pinned Mercurial executable",
+  hg_state: "Backlog: needs a Mercurial in-progress operation fixture",
+  pijul_channel: "Backlog: needs a Pijul fixture and pinned Pijul executable",
+  git_commit: "Backlog: needs the real generated fixture commit injected into Scenario",
+  nats: "Backlog: needs an isolated NATS configuration fixture",
+  gcloud: "Backlog: needs isolated gcloud account/project configuration",
+  azure: "Backlog: needs isolated Azure subscription configuration",
+  direnv: "Backlog: needs a pinned direnv executable and isolated status fixture",
+  netns: "Linux-only: reads the running process network namespace",
+  pulumi: "Backlog: needs isolated Pulumi stack/project configuration",
+  pixi: "Backlog: needs an isolated Pixi manifest/environment fixture",
+  meson: "Backlog: needs an isolated Meson development environment fixture",
+  mise: "Backlog: needs a pinned mise executable and isolated environment fixture",
 };
 
 /** The engine renders from this; the harness overwrites path and home. */
@@ -189,6 +210,7 @@ function sweepScenario(id: string, overrides: Partial<Scenario> = {}): Scenario 
 export const SWEEP_CASES: ParityCase[] = [
   ...SWEEPABLE.map(({ module, config, setup, env, scenario }) => ({
     id: `module-${module}`,
+    modules: [module],
     config: `add_newline = false\nformat = "$${module}"\n\n[${module}]\ndisabled = false\n${config ?? ""}\n`,
     scenario: sweepScenario(`module-${module}`, scenario),
     setup: setup ?? [],
@@ -196,6 +218,7 @@ export const SWEEP_CASES: ParityCase[] = [
   })),
   ...LANGUAGE_SHAPES.map(({ module, setup, files }) => ({
     id: `language-${module}`,
+    modules: [module],
     config:
       `add_newline = false\nformat = "$${module}"\n\n[${module}]\n` +
       `disabled = false\nformat = "via [$symbol]($style)"\n`,

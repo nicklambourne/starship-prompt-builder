@@ -184,8 +184,7 @@ describe("terminal builder", () => {
     expect(app.lastFrame()).toContain("add_newline");
     expect(app.lastFrame()).toContain("# external edit");
     app.stdin.write("\r");
-    await renderInput();
-    expect(app.lastFrame()).toContain("FILE CHANGED ON DISK");
+    await vi.waitFor(() => expect(app.lastFrame()).toContain("FILE CHANGED ON DISK"));
     expect(await readFile(path, "utf8")).toBe("# external edit\nadd_newline = false\n");
   });
 
