@@ -13,6 +13,7 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { EnvironmentPanel } from "./EnvironmentPanel";
+import { AgentHandoff } from "./AgentHandoff";
 import { Explainer } from "./Explainer";
 import { PaletteEditor } from "./PaletteEditor";
 import { FormatBuilder } from "./FormatBuilder";
@@ -695,7 +696,7 @@ export function Builder() {
           data-open={previewOpen ? "" : undefined}
           className={CARD}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               aria-expanded={previewOpen}
@@ -705,6 +706,14 @@ export function Builder() {
             >
               <span className="text-sm font-semibold text-neutral-100">Preview</span>
             </button>
+
+            <AgentHandoff
+              config={{ ...config, format }}
+              scenario={scenario}
+              themeId={themeId}
+              fontId={fontId}
+              fontSize={fontSize}
+            />
 
             {/*
               The same download as the TOML card's, at the top of the page

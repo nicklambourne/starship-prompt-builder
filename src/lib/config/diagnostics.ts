@@ -10,12 +10,14 @@ import {
 } from "./schema";
 
 export interface ConfigDiagnostic {
-  code: "type" | "enum" | "format" | "palette-reference" | "module-reference" | "unknown-option" | "unknown-module";
+  code: "type" | "enum" | "format" | "palette-reference" | "module-reference" | "unknown-option" | "unknown-module" | "toml-parse";
   severity: "error" | "warning";
   path: string;
   message: string;
   /** Character offset inside a format option, when the parser provides one. */
   index?: number;
+  /** Line number of a TOML parse failure, when available. */
+  line?: number;
 }
 
 function isTable(value: unknown): value is Record<string, unknown> {

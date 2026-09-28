@@ -16,6 +16,39 @@ export interface Guide {
 
 export const GUIDES: readonly Guide[] = [
   {
+    slug: "ai-assisted-prompt-design",
+    title: "Design a Starship prompt with an AI assistant",
+    description: "Hand your current Starship design to an AI assistant, compare candidate prompts visually, and approve the exact TOML before it is installed.",
+    summary: "The builder gives an assistant your current design; the CLI lets it inspect the installed file, compare simulated prompts, and propose a reviewable change.",
+    sections: [
+      {
+        heading: "Hand off the design you can see",
+        paragraphs: [
+          "In the builder, choose Continue with AI beside the preview. Describe the change you want, inspect the TOML and simulated context, then copy the instructions into your assistant. The message contains the full configuration because a URL fragment alone cannot be fetched as page content by an agent.",
+          "The browser design may differ from the configuration installed on your computer. Tell the assistant which starship.toml it should edit. The copied scenario JSON describes the same shell situation and terminal width you were viewing.",
+        ],
+        code: "Make this a compact two-line prompt: directory and Git branch, with a clear red failure indicator and no Nerd Font icons.",
+      },
+      {
+        heading: "Ask for a visual comparison",
+        paragraphs: [
+          "The assistant starts with state to read the target file and its hash, writes a separate candidate, and uses compare to show current and proposed prompts across clean, dirty, failed-command, and SSH contexts at narrow and wide terminal widths. The optional HTML file is a self-contained before-and-after review you can open locally.",
+          "If you copied a browser scenario, the assistant can save its JSON as scenario.json and pass --scenario-file scenario.json. It can inspect supported commands and options with capabilities, and its instructions with agent-guide.",
+        ],
+        code: "starship-builder state ~/.config/starship.toml --json\nstarship-builder compare ~/.config/starship.toml --from candidate.toml --json --html review.html\nstarship-builder apply ~/.config/starship.toml --from candidate.toml --json",
+      },
+      {
+        heading: "Approve the exact file",
+        paragraphs: [
+          "The first apply command only reviews the old and new TOML, validation diagnostics, changed option paths, and a reviewHash. Check that report before approving the write. The assistant passes both the reviewHash and the original file hash when it applies; the CLI refuses a changed candidate or target.",
+          "After a successful write, the old file is saved as starship.toml.bak. The assistant can review that backup as a candidate if you want to restore it. The preview is simulated, so also check the prompt in a real shell after installing it.",
+        ],
+        code: "starship-builder apply ~/.config/starship.toml --from candidate.toml --yes --review-hash REVIEW_HASH --expect-hash BEFORE_HASH --json",
+      },
+    ],
+    related: ["starship-config-generator", "import-existing-config", "custom-modules"],
+  },
+  {
     slug: "starship-config-generator",
     title: "Starship config generator",
     description: "Build a starship.toml visually, preview it against a simulated shell, and export a portable Starship prompt configuration.",

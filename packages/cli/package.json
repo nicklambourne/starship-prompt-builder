@@ -1,11 +1,14 @@
 {
   "name": "starship-prompt-builder-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Build and preview a Starship prompt from your terminal",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nicklambourne/starship-prompt-builder.git",
+    "url": "git+https://github.com/nicklambourne/starship-prompt-builder.git",
     "directory": "packages/cli"
   },
   "type": "module",

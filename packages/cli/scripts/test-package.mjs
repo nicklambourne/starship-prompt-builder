@@ -101,6 +101,17 @@ try {
     throw new Error("Installed binary did not render a prompt preview");
   }
 
+  const capabilities = JSON.parse(runPnpm(["exec", "starship-builder", "capabilities"], consumer));
+  if (capabilities.schemaVersion !== 1 || !capabilities.commands.includes("compare")
+    || !capabilities.scenarios.some(({ id }) => id === "failed-command")
+    || !capabilities.configSchema.modules.some(({ name }) => name === "git_branch")) {
+    throw new Error("Installed CLI did not expose agent capabilities and config schema");
+  }
+  const agentGuide = runPnpm(["exec", "starship-builder", "agent-guide"], consumer);
+  if (!agentGuide.includes("--review-hash") || !agentGuide.includes("compare")) {
+    throw new Error("Installed CLI did not include versioned agent instructions");
+  }
+
   const missing = runPnpmResult([
     "exec", "starship-builder", "validate", join(consumer, "missing.toml"),
   ], consumer);
@@ -143,6 +154,14 @@ try {
   }
   const statePreview = runPnpm(["exec", "starship-builder", "preview", target, "--scenario", "simple", "--width", "80", "--no-color"], consumer);
   if (snapshot.preview.text !== statePreview) throw new Error("State preview differs from the plain CLI preview");
+  if (!snapshot.preview.styledLines.some((line) => line.some((run) => run.fg || run.bg))) {
+    throw new Error("State does not expose styled preview runs");
+  }
+
+  const missingState = runPnpmResult(["exec", "starship-builder", "state", join(consumer, "not-created.toml"), "--json"], consumer);
+  if (missingState.status !== 0 || JSON.parse(missingState.stdout).source.kind !== "missing") {
+    throw new Error("State could not describe a missing target for first-run agents");
+  }
   const rightInput = 'format = "$directory"\nright_format = "$time"\n';
   const rightState = runPnpmResult(["exec", "starship-builder", "state", "-", "--width", "80"], consumer, rightInput);
   const rightPreview = runPnpmResult(["exec", "starship-builder", "preview", "-", "--width", "80", "--no-color"], consumer, rightInput);
@@ -163,6 +182,33 @@ try {
     throw new Error("Apply candidate preview differs from the plain CLI preview");
   }
   if (await readFile(target, "utf8") !== original) throw new Error("Apply review changed the target");
+  if (!/^[a-f0-9]{64}$/.test(plan.reviewHash)) throw new Error("Apply review omitted its approval hash");
+
+  const comparisonPath = join(consumer, "review.html");
+  const comparison = runPnpmResult([
+    "exec", "starship-builder", "compare", target, "--from", "-", "--json", "--html", comparisonPath,
+    "--scenarios", "simple,dirty-repo,failed-command,ssh-root", "--widths", "40,80",
+  ], consumer, candidate);
+  const comparisons = JSON.parse(comparison.stdout);
+  if (comparison.status !== 0 || comparisons.comparisons.length !== 8
+    || !comparisons.changedPaths.includes("format") || comparisons.htmlPath !== comparisonPath
+    || !comparisons.afterShareUrl.startsWith("https://starship.ndl.au/#")) {
+    throw new Error("Compare did not review candidate across scenarios and widths");
+  }
+  const comparisonHtml = await readFile(comparisonPath, "utf8");
+  if (!comparisonHtml.includes("Starship prompt comparison") || !comparisonHtml.includes("Proposed")
+    || !comparisonHtml.includes("color:")) {
+    throw new Error("Compare did not produce a styled self-contained review");
+  }
+  if (await readFile(target, "utf8") !== original) throw new Error("Compare changed the target");
+
+  const changedCandidate = runPnpmResult([
+    "exec", "starship-builder", "apply", target, "--from", "-", "--yes", "--json", "--review-hash", plan.reviewHash,
+  ], consumer, 'format = "$character"\n');
+  if (changedCandidate.status !== 1 || JSON.parse(changedCandidate.stdout).error.code !== "conflict"
+    || await readFile(target, "utf8") !== original) {
+    throw new Error("Reviewed candidate changed before apply without rejection");
+  }
 
   const invalidApply = runPnpmResult(["exec", "starship-builder", "apply", target, "--from", "-", "--yes", "--json"], consumer, 'add_newline = "false"\n');
   if (invalidApply.status !== 2 || JSON.parse(invalidApply.stdout).valid !== false || await readFile(target, "utf8") !== original) {
@@ -179,7 +225,7 @@ try {
     throw new Error("Strict apply wrote a candidate with unknown options");
   }
 
-  const applied = runPnpmResult(["exec", "starship-builder", "apply", target, "--from", "-", "--yes", "--json", "--expect-hash", originalHash], consumer, candidate);
+  const applied = runPnpmResult(["exec", "starship-builder", "apply", target, "--from", "-", "--yes", "--json", "--expect-hash", originalHash, "--review-hash", plan.reviewHash], consumer, candidate);
   const result = JSON.parse(applied.stdout);
   if (applied.status !== 0 || result.applied !== true || result.backupPath !== `${target}.bak`
     || await readFile(target, "utf8") !== candidate || await readFile(`${target}.bak`, "utf8") !== original) {
@@ -189,6 +235,34 @@ try {
   const stale = runPnpmResult(["exec", "starship-builder", "apply", target, "--from", "-", "--yes", "--expect-hash", originalHash], consumer, original);
   if (stale.status !== 1 || !stale.stderr.includes("changed after it was loaded") || await readFile(target, "utf8") !== candidate) {
     throw new Error("Apply overwrote a target after a stale agent snapshot");
+  }
+
+  const malformedTarget = join(consumer, "malformed-current.toml");
+  const malformedSource = "[broken\n";
+  await writeFile(malformedTarget, malformedSource);
+  const malformedState = runPnpmResult(["exec", "starship-builder", "state", malformedTarget, "--json"], consumer);
+  const malformedSnapshot = JSON.parse(malformedState.stdout);
+  if (malformedState.status !== 2 || malformedSnapshot.validation.diagnostics[0]?.code !== "toml-parse"
+    || malformedSnapshot.raw !== malformedSource || malformedSnapshot.preview !== null) {
+    throw new Error("State did not provide recoverable malformed TOML details");
+  }
+  const sharedUrl = runPnpm(["exec", "starship-builder", "share", target], consumer).trim();
+  const sharedState = runPnpmResult(["exec", "starship-builder", "state", malformedTarget, "--from-share", sharedUrl, "--json"], consumer);
+  if (sharedState.status !== 0 || !JSON.parse(sharedState.stdout).validation.valid
+    || JSON.parse(sharedState.stdout).preview === null) {
+    throw new Error("A shared config did not replace an invalid local file for state inspection");
+  }
+  const repairReviewResult = runPnpmResult(["exec", "starship-builder", "apply", malformedTarget, "--from", "-", "--json"], consumer, candidate);
+  if (repairReviewResult.status !== 0) throw new Error(`Malformed target review failed: ${repairReviewResult.stderr}`);
+  const repairReview = JSON.parse(repairReviewResult.stdout);
+  const repaired = runPnpmResult([
+    "exec", "starship-builder", "apply", malformedTarget, "--from", "-", "--yes", "--json",
+    "--expect-hash", malformedSnapshot.source.hash, "--review-hash", repairReview.reviewHash,
+  ], consumer, candidate);
+  if (repaired.status !== 0 || !JSON.parse(repaired.stdout).applied
+    || await readFile(malformedTarget, "utf8") !== candidate
+    || await readFile(`${malformedTarget}.bak`, "utf8") !== malformedSource) {
+    throw new Error("Apply could not repair a malformed current TOML with review and backup");
   }
 
   const newTarget = join(consumer, "new-agent.toml");

@@ -25,6 +25,7 @@ export interface LoadedConfig {
   expectedHash: string | null;
   source: "file" | "preset";
   sourceLabel: string;
+  parseError?: { message: string; line?: number };
 }
 
 export class ConfigConflictError extends Error {
@@ -77,6 +78,7 @@ export async function loadConfig(options: {
   path?: string;
   preset?: string;
   requireFile?: boolean;
+  allowInvalid?: boolean;
 } = {}): Promise<LoadedConfig> {
   const displayPath = options.path ? expandPath(options.path) : defaultConfigPath();
   const writePath = await targetPath(displayPath);
@@ -89,6 +91,18 @@ export async function loadConfig(options: {
   if (!options.preset && existing !== null) {
     const parsed = parseConfig(existing);
     if (!parsed.ok) {
+      if (options.allowInvalid) {
+        return {
+          config: {},
+          originalContent: existing,
+          displayPath,
+          writePath,
+          expectedHash: hashContent(existing),
+          source: "file",
+          sourceLabel: displayPath,
+          parseError: { message: parsed.error, line: parsed.line },
+        };
+      }
       const location = parsed.line ? ` at line ${parsed.line}` : "";
       throw new Error(`Cannot load ${displayPath}${location}: ${parsed.error}`);
     }

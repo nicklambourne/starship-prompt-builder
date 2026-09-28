@@ -1,9 +1,10 @@
 import { compressToEncodedURIComponent } from "lz-string";
 import { describe, expect, it } from "vitest";
 import { PRESETS } from "./presets";
-import { decodeShare, encodeShare, SHARE_LIMITS } from "./share";
+import { decodeReviewShare, decodeShare, encodeReviewShare, encodeShare, SHARE_LIMITS } from "./share";
 import { parseConfig } from "./toml";
 import type { StarshipConfig } from "@/lib/engine/prompt";
+import { getScenario } from "@/lib/scenarios";
 
 describe("encodeShare / decodeShare", () => {
   it("round-trips a simple config", () => {
@@ -113,5 +114,26 @@ describe("encodeShare / decodeShare", () => {
     ).join(",");
     const toml = `values = [${values}]`;
     expect(decodeShare(compressToEncodedURIComponent(toml))).toBeNull();
+  });
+});
+
+describe("review share links", () => {
+  it("round-trips the config and visual context", () => {
+    const value = {
+      config: { format: "$directory$character", character: { success_symbol: "[❯](green)" } },
+      scenario: { ...getScenario("dirty-repo"), terminalWidth: 42 },
+      themeId: "tokyo-night",
+      fontId: "system-mono",
+      fontSize: 16,
+    };
+    expect(decodeReviewShare(`#${encodeReviewShare(value)}`)).toEqual(value);
+    expect(decodeShare(`#${encodeReviewShare(value)}`)).toBeNull();
+  });
+
+  it("rejects malformed or oversized review fragments", () => {
+    expect(decodeReviewShare("#review=not-a-review")).toBeNull();
+    expect(decodeReviewShare(`#review=${"a".repeat(SHARE_LIMITS.payloadCharacters + 1)}`)).toBeNull();
+    const invalid = { version: 1, configToml: "format = '$character'", scenario: { ...getScenario("simple"), os: {} }, themeId: "tokyo-night", fontId: "system-mono", fontSize: 14 };
+    expect(decodeReviewShare(`#review=${compressToEncodedURIComponent(JSON.stringify(invalid))}`)).toBeNull();
   });
 });

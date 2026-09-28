@@ -11,7 +11,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { decodeShare, encodeShare } from "@/lib/config/share";
+import { decodeReviewShare, decodeShare, encodeReviewShare, encodeShare } from "@/lib/config/share";
 import {
   loadSession,
   saveSession,
@@ -54,20 +54,24 @@ export function useBuilderSession({
    * reading it during render would disagree with that HTML during hydration.
    */
   useEffect(() => {
-    const shared = decodeShare(window.location.hash);
+    const review = decodeReviewShare(window.location.hash);
+    const shared = review?.config ?? decodeShare(window.location.hash);
     if (shared) loadShared(shared);
 
-    // A shared config outranks the stored config. The simulated environment,
-    // font, and colour scheme are still this visitor’s own settings.
+    // A review link carries its own preview context. A config-only link keeps
+    // the visitor's local environment and appearance settings.
     const session = loadSession();
-    if (session) restoreSession(session, { config: !shared });
+    if (review) restoreSession({ ...review, version: 1 }, { config: false });
+    else if (session) restoreSession(session, { config: !shared });
     sessionReady.current = true;
 
     // A fragment pasted into an already-open tab is same-document navigation,
     // so mount does not run again. replaceState from this app emits no event.
     const onHashChange = () => {
-      const next = decodeShare(window.location.hash);
+      const nextReview = decodeReviewShare(window.location.hash);
+      const next = nextReview?.config ?? decodeShare(window.location.hash);
       if (next) loadShared(next);
+      if (nextReview) restoreSession({ ...nextReview, version: 1 }, { config: false });
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
@@ -104,7 +108,9 @@ export function useBuilderSession({
     const timer = window.setTimeout(() => {
       saveSession(sessionSnapshot.current);
       // This is the same document, so edits replace rather than grow history.
-      window.history.replaceState(null, "", `#${encodeShare(config)}`);
+      window.history.replaceState(null, "", `#${window.location.hash.startsWith("#review=")
+        ? encodeReviewShare(sessionSnapshot.current)
+        : encodeShare(config)}`);
     }, 250);
     return () => window.clearTimeout(timer);
   }, [
