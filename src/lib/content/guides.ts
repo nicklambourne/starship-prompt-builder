@@ -60,7 +60,7 @@ export const GUIDES: readonly Guide[] = [
       {
         heading: "Paste the whole file",
         paragraphs: [
-          "Choose Paste a config or open the starship.toml card. Your text stays in a draft, including comments, while valid edits preview locally. Choose Apply draft to update the visual editor, share link and downloads as one undoable change.",
+          "Open the starship.toml card and paste your existing configuration. Valid TOML is applied as one undoable change.",
           "Root format values become structured rows when they can be represented safely. Named custom and env_var tables appear as their own instances.",
         ],
         code: "format = \"$directory$git_branch$git_status$character\"\n\n[directory]\nstyle = \"bold cyan\"",

@@ -74,7 +74,6 @@ test.describe("user-named modules", () => {
       "",
     ].join("\n");
     await toml.fill(repeated);
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
 
     const format = page.locator("[data-format-scope='root-format']");
     const rows = format.locator("[data-format-row]").filter({ hasText: "$env_var.SHELL" });
@@ -88,7 +87,6 @@ test.describe("user-named modules", () => {
     await expect(toml).toHaveValue(/\[env_var\.SHELL\]/);
 
     await toml.fill(repeated);
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(rows).toHaveCount(2);
     await activate(rows.first().getByRole("button", { name: "Remove $env_var.SHELL", exact: true }));
     dialog = page.getByRole("alertdialog", { name: "Remove $env_var.SHELL" });
@@ -110,7 +108,6 @@ test.describe("user-named modules", () => {
         "",
       ].join("\n"),
     );
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
 
     const format = page.locator("[data-format-scope='root-format']");
     await activate(format.getByRole("button", { name: /^\+ Add module$/ }));
@@ -144,7 +141,6 @@ test.describe("user-named modules", () => {
         "",
       ].join("\n"),
     );
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
 
     const format = page.locator("[data-format-scope='root-format']");
     const row = format.locator("[data-format-row]").filter({ hasText: "$custom.project" });

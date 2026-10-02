@@ -10,8 +10,8 @@ Run lint, deadcode, both type checks, `pnpm test`, `pnpm check:generated`,
 `pnpm build`, `pnpm test:e2e`, `pnpm test:cli:package`, `pnpm test:cli:pty`, and
 `pnpm test:parity` with the workflow's checksum-verified Starship 1.26.0 binary.
 Missing Starship is a failure in CI; local skips are not parity evidence.
-Install Chromium, Firefox and WebKit before the browser suite. Its latter two
-engines run a small compatibility smoke, not the entire Chromium suite or real iOS.
+Install Chromium before the browser suite. Desktop and mobile automation use
+Chromium; Firefox, Safari and real iOS need separate manual verification.
 
 ## Deployment identity and gates
 
@@ -61,10 +61,11 @@ The initial script budget is 2 MiB decoded (observed approximately 1.62 MB on
 claims about internet transfer speeds.
 
 Manual accessibility checklist: test both themes at 390px and desktop; confirm
-the measured viewport and no page overflow; reach paste/preset controls by
-keyboard; preserve editor selection/comments; apply/undo/discard and recover;
+the measured viewport and no page overflow; reach the TOML editor and preset picker by
+keyboard; verify valid TOML updates immediately and invalid TOML keeps the last
+valid config; check undo/redo and recovery;
 check dialog focus return and no keyboard traps; hear left and visible right
-prompts once using an actual screen reader. Axe/DOM checks and WebKit automation
+prompts once using an actual screen reader. Axe/DOM checks and Chromium automation
 do not substitute for a physical Safari/iOS or screen-reader session.
 
 ## Agent evaluation
