@@ -6,7 +6,6 @@ async function loadConfig(page: Page, toml: string, module: string) {
   await page.goto("./");
   await page.locator('[data-section="toml"] button[aria-expanded]').press("Enter");
   await page.getByLabel("starship.toml").fill(toml);
-  await page.getByRole("button", { name: /^Apply draft/ }).click();
   await page.getByRole("button", { name: `Expand $${module}`, exact: true }).press("Enter");
 }
 
@@ -80,7 +79,6 @@ test("optional styles follow the live module style, with explicit empty override
   await expect(row.getByRole("button", { name: "Foreground: blue", exact: true })).toHaveAttribute("aria-pressed", "true");
   const toml = page.getByLabel("starship.toml");
   await toml.fill(config("italic green"));
-  await page.getByRole("button", { name: /^Apply draft/ }).click();
   await expect(row.getByRole("button", { name: "Foreground: green", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(row.getByRole("button", { name: "italic", exact: true })).toHaveAttribute("aria-pressed", "true");
   await row.getByRole("button", { name: "Override", exact: true }).press("Enter");

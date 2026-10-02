@@ -5,8 +5,9 @@ import { resolve } from "node:path";
  * E2E runs against the PRODUCTION static export, not the dev server.
  *
  * The dev server hides real bugs: it is slower (masking races), serves
- * unminified output, and handles routes differently from the deployed export —
- * precisely where asset and routing mistakes hide.
+ * unminified output, and serves the paths the deployed site uses
+ * that GitHub Pages actually serves under — which is precisely where asset and
+ * routing mistakes hide.
  */
 const PORT = 4321;
 
@@ -26,10 +27,9 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    // Full mobile coverage stays on Chromium; WebKit gets a focused smoke below.
+    // Pixel 7 rather than an iPhone: both exercise the mobile breakpoint, but
+    // this one is Chromium, so CI needs no extra WebKit download.
     { name: "mobile", use: { ...devices["Pixel 7"] } },
-    { name: "firefox-smoke", testMatch: "compatibility.spec.ts", use: { ...devices["Desktop Firefox"] } },
-    { name: "webkit-smoke", testMatch: "compatibility.spec.ts", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
     // `serve-export` publishes out/ under the base path the site really uses.

@@ -8,7 +8,7 @@ test("production cold-load and first-edit baseline", async ({ browser }, info) =
     const page = await context.newPage();
     const start = performance.now();
     await page.goto("./");
-    await page.getByRole("button", { name: "Paste a config", exact: true }).click();
+    await page.locator("[data-section='toml'] button[aria-expanded]").click();
     const readyMs = performance.now() - start;
     const editStart = performance.now();
     await page.getByLabel("starship.toml").fill('format = "performance-marker"\n');
@@ -25,7 +25,7 @@ test("production cold-load and first-edit baseline", async ({ browser }, info) =
     samples.push({ readyMs, editMs, decodedScriptBytes, resources });
     await context.close();
   }
-  const report = { fixture: "default preset -> literal draft", viewport: "1280x900", network: "unthrottled loopback, fresh context per sample", cpu: "unthrottled", node: process.version, browser: browser.version(), samples };
+  const report = { fixture: "default preset -> literal config", viewport: "1280x900", network: "unthrottled loopback, fresh context per sample", cpu: "unthrottled", node: process.version, browser: browser.version(), samples };
   await info.attach("performance-baseline.json", { body: JSON.stringify(report, null, 2), contentType: "application/json" });
   console.log("PERFORMANCE_BASELINE", JSON.stringify({ ...report, samples: samples.map(({ readyMs, editMs, decodedScriptBytes }) => ({ readyMs, editMs, decodedScriptBytes })) }));
 });

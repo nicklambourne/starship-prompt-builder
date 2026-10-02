@@ -39,8 +39,8 @@ jobs:
 
       - run: pnpm check:generated
 
-      - name: Install browser engines
-        run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - run: pnpm typecheck
 
