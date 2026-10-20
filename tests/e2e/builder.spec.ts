@@ -91,8 +91,6 @@ async function pickTerminalOption(
 async function useStructuredDefault(page: import("@playwright/test").Page) {
   await openToml(page);
   await page.getByLabel("starship.toml").fill("add_newline = true\n");
-  await page.getByRole("button", { name: /^Apply draft/ }).click();
-  await page.getByRole("button", { name: "Regenerate from applied config" }).click();
   await expect(
     page.getByRole("button", { name: /^Reorder Git \(\d+\)/ }),
   ).toBeVisible();
@@ -356,7 +354,6 @@ test.describe("builder", () => {
     await page
       .getByLabel("starship.toml")
       .fill('format = "$git_state"\nadd_newline = false\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await openEnvSection(page, "Version control");
 
     const operation = page.getByLabel("Git operation in progress");
@@ -500,7 +497,7 @@ test.describe("builder", () => {
     const toml = page.locator("[data-section='toml']");
 
     await expect(toml.getByRole("button", { name: "Download config" })).toBeVisible();
-    await expect(toml.getByRole("button", { name: "Copy draft", exact: true })).toBeVisible();
+    await expect(toml.getByRole("button", { name: "Copy", exact: true })).toBeVisible();
     // The body used to carry a second one saying the same thing.
     await expect(
       toml.locator("#toml-body").getByRole("button", { name: /^Download/ }),
@@ -820,7 +817,6 @@ test.describe("builder", () => {
     // is the document, and this is only a way of holding one reading of it.
     await openToml(page);
     await page.getByLabel("starship.toml").fill('format = "$directory$character"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(textRows).toHaveCount(0);
   });
 
@@ -882,7 +878,6 @@ test.describe("builder", () => {
         "",
       ].join("\n"),
     );
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     const card = page.locator("[data-section='palettes']");
     await activate(card.locator("summary"));
 
@@ -913,7 +908,6 @@ test.describe("builder", () => {
         "",
       ].join("\n"),
     );
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(card).toContainText("1 colour is not in mine");
     await expect(card).toContainText(
       "Copying or renaming a palette entry does not update existing styles",
@@ -990,7 +984,6 @@ test.describe("builder", () => {
     await page.getByLabel("starship.toml").fill(
       'format = "[$directory](fg:#ff00ff)$character"\n',
     );
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(
       card
         .locator("span[title$='written directly in a style']")
@@ -1040,7 +1033,6 @@ test.describe("builder", () => {
     await page.getByLabel("starship.toml").fill(
       'format = "$directory\u2009$character"\n',
     );
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     // Named, so the reason the prompt looks like it has an ordinary space —
     // which in a terminal it effectively does — is visible rather than a
     // mystery in the config.
@@ -1556,7 +1548,6 @@ test.describe("builder", () => {
     // format spends: the control is the option, and the option always takes a
     // value. A format that has lost $style is said in the panel instead.
     await toml.fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol](bold red)"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(osControl).toBeEnabled();
     await activate(osControl);
     await expect(osRow).toContainText("no longer uses");
@@ -1565,14 +1556,12 @@ test.describe("builder", () => {
 
     // Spending it again, the warning goes and the control is unchanged.
     await toml.fill('format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol]($style)"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(osControl).toBeEnabled();
     await expect(osRow).not.toContainText("no longer uses");
 
     // The strike is for the six modules with no style option of their own,
     // where the swatch is still a style written around them in the format.
     await toml.fill('format = "$username"\n\n[username]\nshow_always = true\nformat = "[$user]($style)"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(
       page.getByRole("button", { name: /^Style of \$username — no effect/ }),
     ).toBeDisabled();
@@ -1586,7 +1575,6 @@ test.describe("builder", () => {
     await page
       .getByLabel("starship.toml")
       .fill('format = "$os"\n\n[os]\ndisabled = false\nstyle = "bold green"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     const osRow = page
       .locator("li")
       .filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) })
@@ -1633,7 +1621,6 @@ test.describe("builder", () => {
       const toml = page.getByLabel("starship.toml");
       const inner = target === "variable" ? "$symbol" : target === "text" ? "hello" : "$symbol hello";
       await toml.fill(`format = "$os"\n[os]\ndisabled = false\nstyle = "none"\nformat = "[[${inner}](\${style}) tail](blue)"\n`);
-      await page.getByRole("button", { name: /^Apply draft/ }).click();
       await activate(page.getByRole("button", { name: "Expand $os", exact: true }));
       const option = page.locator('[data-option="format"]');
       await openOption(page.locator("li").filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) }).first(), "format");
@@ -1676,7 +1663,6 @@ test.describe("builder", () => {
     await toml.fill(
       'format = "$os"\n\n[os]\ndisabled = false\nformat = "[$symbol](red)"\nstyle = "bold green"\n',
     );
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     const osRow = page
       .locator("li")
       .filter({ has: page.getByRole("button", { name: /^Reorder \$os\b/ }) })
@@ -2102,7 +2088,6 @@ test.describe("builder", () => {
     await page
       .getByLabel("starship.toml")
       .fill('format = "$directory"\n\n[directory]\nstyle = "bold magenta"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(page.getByLabel("Simulated terminal prompt")).toBeVisible();
 
     await page.getByRole("button", { name: /Copy a share link/ }).click();
@@ -2156,13 +2141,11 @@ test.describe("builder", () => {
     await page
       .getByLabel("starship.toml")
       .fill('format = "$directory"\n\n[directory]\nstyle = "bold magenta"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await page.getByRole("button", { name: /Copy a share link/ }).click();
     const shared = await page.evaluate(() => navigator.clipboard.readText());
 
     // Leave a different config in storage, then follow the link somewhere new.
     await page.getByLabel("starship.toml").fill('format = "$username"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(page.getByLabel("starship.toml")).toHaveValue(/username/);
     await page.waitForTimeout(400);
 
@@ -2177,7 +2160,6 @@ test.describe("builder", () => {
     await page.goto("./");
     await openToml(page);
     await page.getByLabel("starship.toml").fill('format = "$directory"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect
       .poll(() => page.evaluate(() => window.location.hash.length))
       .toBeGreaterThan(1);
@@ -2186,7 +2168,6 @@ test.describe("builder", () => {
     // Editing again must move it on, or the URL describes a prompt that is
     // no longer on screen.
     await page.getByLabel("starship.toml").fill('format = "$username"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect
       .poll(() => page.evaluate(() => window.location.hash))
       .not.toBe(first);
@@ -2354,7 +2335,6 @@ test.describe("builder", () => {
     await page
       .getByLabel("starship.toml")
       .fill('format = "[hello-from-toml](bold red)"\n');
-    await page.getByRole("button", { name: /^Apply draft/ }).click();
     await expect(page.getByLabel("Simulated terminal prompt")).toContainText(
       "hello-from-toml",
     );

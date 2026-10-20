@@ -14,7 +14,6 @@ async function loadModule(page: Page, module: string, toml: string) {
   await page.goto("./");
   await openToml(page);
   await page.getByLabel("starship.toml").fill(toml);
-  await page.getByRole("button", { name: /^Apply draft/ }).click();
   await activate(page.getByRole("button", { name: `Expand $${module}`, exact: true }));
 }
 
@@ -41,7 +40,6 @@ test("prompt-wide symlink scanning and WSL Starship path are editable", async ({
   await expect(toml).toHaveValue(/follow_symlinks = false/);
 
   await toml.fill('format = "$git_status"\n[git_status]\n');
-  await page.getByRole("button", { name: /^Apply draft/ }).click();
   await activate(page.getByRole("button", { name: "Expand $git_status", exact: true }));
   const module = page.locator('[data-format-row]').filter({ hasText: "$git_status" });
   await openOption(module, "windows_starship");

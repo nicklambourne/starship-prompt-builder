@@ -44,7 +44,7 @@ import {
   type NamedModuleKind,
 } from "@/lib/engine/modules";
 import { PROMPT_ORDER } from "@/lib/engine/promptOrder";
-import { DEFAULT_FORMAT, isModuleDisabled, renderPrompt, type StarshipConfig } from "@/lib/engine/prompt";
+import { DEFAULT_FORMAT, isModuleDisabled, renderPrompt } from "@/lib/engine/prompt";
 import { collectVariables, tryParseFormatString } from "@/lib/engine/formatString";
 import { resolvePalette } from "@/lib/engine/styleString";
 import { expandAll, structuredFormatString } from "@/lib/config/defaultFormat";
@@ -146,12 +146,6 @@ export function Builder() {
   const [previewOpen, setPreviewOpen] = useState(true);
   const [formatOpen, setFormatOpen] = useState(true);
   const [tomlOpen, setTomlOpen] = useState(false);
-  const [tomlPreview, setTomlPreview] = useState<StarshipConfig | null>(null);
-  const [tomlDirty, setTomlDirty] = useState(false);
-  const previewToml = useCallback((next: StarshipConfig | null, dirty: boolean) => {
-    setTomlPreview(next);
-    setTomlDirty(dirty);
-  }, []);
 
   useBuilderSession({
     config,
@@ -200,16 +194,15 @@ export function Builder() {
   );
   const format =
     typeof config.format === "string" ? config.format : structuredDefault;
-  const appliedConfig = useMemo(() => ({ ...config, format }), [config, format]);
   const rendered = useMemo(
     () =>
       renderPrompt({
-        config: tomlPreview ?? appliedConfig,
+        config: { ...config, format },
         scenario,
-        modules: tomlPreview ? moduleDefinitionsForConfig(tomlPreview) : moduleDefinitions,
+        modules: moduleDefinitions,
         defaultOrder: PROMPT_ORDER,
       }),
-    [tomlPreview, appliedConfig, scenario, moduleDefinitions],
+    [config, format, scenario, moduleDefinitions],
   );
 
 
@@ -685,13 +678,7 @@ export function Builder() {
       </SiteHeader>
 
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 pt-4">
-        <Explainer onPresets={() => {
-          document.getElementById("format-section")?.scrollIntoView();
-          document.querySelector<HTMLButtonElement>("#format-section button[aria-haspopup]")?.focus();
-        }} onImport={() => {
-          setTomlOpen(true);
-          requestAnimationFrame(() => document.getElementById("toml-editor")?.focus());
-        }} />
+        <Explainer />
 
         {/*
           Full width, above the columns: the prompt is a single long line, and
@@ -716,7 +703,7 @@ export function Builder() {
               onClick={() => setPreviewOpen((open) => !open)}
               className="flex min-w-0 flex-1 items-center gap-3 text-left"
             >
-              <span className="text-sm font-semibold text-neutral-100">{tomlDirty ? (tomlPreview ? "Preview · unapplied TOML draft" : "Preview · applied config (draft invalid)") : "Preview"}</span>
+              <span className="text-sm font-semibold text-neutral-100">Preview</span>
             </button>
 
             {/*
@@ -728,8 +715,8 @@ export function Builder() {
             <button
               type="button"
               onClick={downloadConfig}
-              aria-label={tomlDirty ? "Download applied config" : "Download config"}
-              title={tomlDirty ? "Download applied config" : "Download config"}
+              aria-label="Download config"
+              title="Download config"
               className="inline-flex shrink-0 cursor-pointer items-center rounded bg-emerald-700 p-1.5 text-on-solid transition hover:bg-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
             >
               <DownloadIcon />
@@ -774,7 +761,6 @@ export function Builder() {
         <div className="flex min-w-0 flex-col gap-4">
           <section
             data-section="format"
-            id="format-section"
             data-open={formatOpen ? "" : undefined}
             className={CARD}
           >
@@ -1010,8 +996,8 @@ export function Builder() {
                 <DownloadIcon />
                 {/* On a phone the icon carries it; the name stays as the
                     accessible label. */}
-                <span className="hidden sm:inline">{tomlDirty ? "Download applied config" : "Download config"}</span>
-                <span className="sr-only sm:hidden">{tomlDirty ? "Download applied config" : "Download config"}</span>
+                <span className="hidden sm:inline">Download config</span>
+                <span className="sr-only sm:hidden">Download config</span>
               </button>
 
               {/*
@@ -1033,7 +1019,8 @@ export function Builder() {
               </span>
             </div>
 
-              <div id="toml-body" hidden={!tomlOpen}>
+            {tomlOpen ? (
+              <div id="toml-body">
                 <p className="mb-3 text-xs text-neutral-500">
                   Bringing an existing file?{" "}
                   <Link
@@ -1046,22 +1033,18 @@ export function Builder() {
                 </p>
                 <div className="mt-3">
                   <TomlPane
-                    config={appliedConfig}
-                    onConfigChange={(next) => {
-                      const applied = { ...next, format: next.format ?? structuredDefault };
-                      setConfig(applied);
-                      return applied;
-                    }}
-                    onPreviewChange={previewToml}
+                    config={{ ...config, format }}
+                    onConfigChange={setConfig}
                     defaults={defaultsByModule}
                   />
                 </div>
 
-                {tomlOpen ? <UsageGuide
+                <UsageGuide
                   shell={scenario.shell}
                   className="col-span-2 mt-5 border-t border-white/10 pt-4"
-                /> : null}
+                />
               </div>
+            ) : null}
           </section>
         </div>
       </div>
