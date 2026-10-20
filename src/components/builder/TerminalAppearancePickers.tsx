@@ -110,7 +110,6 @@ function CardPicker<T extends PickerOption>({
               <button
                 key={option.id}
                 type="button"
-                aria-label={option.label}
                 aria-pressed={isSelected}
                 onClick={() => {
                   onChange(option.id);

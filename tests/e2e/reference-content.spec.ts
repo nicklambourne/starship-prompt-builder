@@ -154,7 +154,7 @@ test.describe("guide and module reference content", () => {
     await expect(page.locator("main")).toContainText("Powerline Extra");
     await expect(page.locator("main")).toContainText("Material Design");
     const open = page.getByRole("link", {
-      name: "Open the Text example in the builder",
+      name: "Open in the builder: Text example",
     });
     await expect(open).toHaveAttribute("href", /\/#/);
     await open.click();
@@ -249,7 +249,7 @@ test.describe("guide and module reference content", () => {
     page,
   }) => {
     await page.goto("./modules/git-status/");
-    const open = page.getByRole("link", { name: "Open git status in the builder" });
+    const open = page.getByRole("link", { name: "Open in the builder: git status" });
     await expect(open).toHaveAttribute("href", /\/#.+/);
     await open.click();
     await expect(page).toHaveURL(/\/#.+/);
