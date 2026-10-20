@@ -80,7 +80,9 @@ async function pickTerminalOption(
   await activate(page.getByLabel(triggerLabel));
   const panel = page.getByRole("dialog", { name: panelLabel });
   await expect(panel).toBeVisible();
-  await activate(panel.getByRole("button", { name: optionLabel, exact: true }));
+  await activate(panel.getByRole("button").filter({
+    has: page.getByText(optionLabel, { exact: true }),
+  }));
   await expect(panel).toHaveCount(0);
 }
 
@@ -2396,7 +2398,7 @@ test.describe("builder", () => {
     );
     expect(colorRows.every((rows) => rows === 1)).toBe(true);
 
-    const tokyoNight = themes.getByRole("button", { name: "Tokyo Night", exact: true });
+    const tokyoNight = themes.getByRole("button", { name: "Tokyo Night Dark", exact: true });
     await expect(tokyoNight).toHaveAttribute("aria-pressed", "true");
     const nameBox = await tokyoNight.getByText("Tokyo Night", { exact: true }).boundingBox();
     const swatchBox = await tokyoNight.locator('[data-theme-swatch="tokyo-night"]').boundingBox();
@@ -2404,7 +2406,7 @@ test.describe("builder", () => {
     expect(swatchBox).not.toBeNull();
     expect(swatchBox!.x).toBeGreaterThan(nameBox!.x + nameBox!.width);
 
-    await themes.getByRole("button", { name: "Gruvbox Dark", exact: true }).click();
+    await themes.getByRole("button", { name: "Gruvbox Dark Dark", exact: true }).click();
     await expect(
       page
         .getByLabel("Terminal color scheme")

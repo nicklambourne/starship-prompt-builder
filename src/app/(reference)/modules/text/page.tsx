@@ -92,7 +92,7 @@ export default function TextComponentPage() {
             <CodeBlock>{TEXT_EXAMPLE}</CodeBlock>
             <a
               href={BUILDER_HREF}
-              aria-label="Open the Text example in the builder"
+              aria-label="Open in the builder: Text example"
               className="inline-flex w-fit rounded border border-accent-400 bg-neutral-900 px-3 py-2 text-sm font-medium text-neutral-100 transition hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
             >
               Open in the builder
