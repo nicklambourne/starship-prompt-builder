@@ -24,7 +24,11 @@ import { SiteFooter } from "@/components/builder/SiteFooter";
 import { PRESETS, type Preset } from "@/lib/config/presets";
 import { TERMINAL_FONTS } from "@/lib/fonts";
 
-export const metadata = { title: "Licences — Starship Prompt Builder" };
+export const metadata = {
+  title: "Licences",
+  description:
+    "Licences and notices for the fonts, data and open-source software the Starship Prompt Builder bundles.",
+};
 
 interface FontNotice {
   /** File name under `public/fonts/licences/`. */
