@@ -6,11 +6,12 @@ export default function Home() {
       {/*
         For crawlers that do not run scripts, and for anyone whose browser
         cannot. The app itself needs JavaScript — it renders a prompt — but a
-        blank page tells nobody what this is.
+        blank page tells nobody what this is. An h2: the statically rendered
+        site header already holds the page's one h1.
       */}
       <noscript>
         <div style={{ padding: "1.5rem", maxWidth: "42rem", lineHeight: 1.6 }}>
-          <h1>Starship Prompt Builder</h1>
+          <h2>Starship Prompt Builder</h2>
           <p>
             A visual editor for <code>starship.toml</code>, the configuration
             file of the{" "}

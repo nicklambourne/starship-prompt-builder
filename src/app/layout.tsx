@@ -13,10 +13,11 @@ import "./globals.css";
  */
 const SITE = "https://starship.ndl.au";
 
+// Search engines show about 160 characters of a description; Bing flags longer.
 const DESCRIPTION =
-  "Configure the Starship prompt visually. Edit every module, style and " +
-  "format string against a live preview of a simulated shell, then export " +
-  "the starship.toml that reproduces it. Runs entirely in your browser.";
+  "Configure the Starship prompt visually: edit every module, style and " +
+  "format string against a live preview, then export your starship.toml. " +
+  "Runs in your browser.";
 
 const TITLE = "Starship Prompt Builder — a visual editor for starship.toml";
 
